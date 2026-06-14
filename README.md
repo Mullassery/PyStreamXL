@@ -10,13 +10,16 @@
 
 ## The problem with existing XLSX libraries
 
-| Library | 100k rows — time | 100k rows — memory | Notes |
-|---------|------------------|--------------------|-------|
-| openpyxl (full load) | 8.70s | **188 MB** | Loads entire workbook before row 1 |
-| openpyxl (read_only) | 6.19s | 8.1 MB | Streaming, but slow XML parsing in Python |
-| **streamxl** | **1.79s** | **21 MB** | Rust ZIP + XML engine, true streaming |
+Benchmarked on Apple Silicon, Python 3.13, Rust 1.96 — 10 mixed-type columns:
 
-At 500k+ rows, openpyxl full load exceeds 1 GB of RAM and crashes on typical cloud instances. streamxl memory stays constant regardless of file size.
+| Rows | streamxl | openpyxl read_only | openpyxl full load | Speedup |
+|------|----------|--------------------|--------------------|---------|
+| 10,000 | **0.40s** / 2.8 MB | 1.52s / 1.5 MB | 1.94s / 38 MB | **3.8×** |
+| 50,000 | **1.81s** / 13.8 MB | 7.72s / 4.3 MB | 9.83s / 186 MB | **4.3×** |
+| 100,000 | **3.59s** / 27.5 MB | 15.80s / 8.1 MB | 19.77s / 373 MB | **4.4×** |
+| 250,000 | **9.04s** / 68.7 MB | 40.46s / 19.6 MB | 50.67s / **911 MB** | **4.5×** |
+
+streamxl processes ~27,000 rows/sec consistently. openpyxl full load approaches 1 GB RAM at 250k rows and crashes beyond that on typical cloud instances. See [`benchmarks/results.md`](benchmarks/results.md) for full details.
 
 ---
 
@@ -114,27 +117,22 @@ See [docs/architecture.md](docs/architecture.md) for full details.
 
 ## Benchmarks
 
-Run on Apple M-series, 16 GB RAM, Python 3.13, Rust 1.96, macOS.
+Apple Silicon, Python 3.13, Rust 1.96 — 10 mixed-type columns (strings, floats, booleans, dates).
 
-### 50,000 rows × 5 columns
+| Rows | streamxl | openpyxl read_only | openpyxl full load | Speedup |
+|------|----------|--------------------|--------------------|---------|
+| 10k  | **0.40s** · 2.8 MB | 1.52s · 1.5 MB | 1.94s · 38 MB | **3.8×** |
+| 50k  | **1.81s** · 13.8 MB | 7.72s · 4.3 MB | 9.83s · 186 MB | **4.3×** |
+| 100k | **3.59s** · 27.5 MB | 15.80s · 8.1 MB | 19.77s · 373 MB | **4.4×** |
+| 250k | **9.04s** · 68.7 MB | 40.46s · 19.6 MB | 50.67s · **911 MB** | **4.5×** |
 
-| Library | Time | Peak Memory |
-|---------|------|-------------|
-| openpyxl (full load) | 4.30s | ~85 MB |
-| openpyxl (read_only) | 3.09s | 4.4 MB |
-| **streamxl** | **0.88s** | **10.7 MB** |
+**4–5× faster than openpyxl across all file sizes. Throughput: ~27,000 rows/sec.**
 
-### 100,000 rows × 5 columns
+Full results and reproduction steps: [`benchmarks/results.md`](benchmarks/results.md)
 
-| Library | Time | Peak Memory |
-|---------|------|-------------|
-| openpyxl (full load) | 8.70s | **188 MB** |
-| openpyxl (read_only) | 6.19s | 8.1 MB |
-| **streamxl** | **1.79s** | **21 MB** |
-
-**3.5× faster than openpyxl read_only. 5× faster than full load.**
-
-Reproduce: `python benchmarks/openpyxl_vs_streamxl.py your_file.xlsx`
+```bash
+python benchmarks/openpyxl_vs_streamxl.py your_file.xlsx
+```
 
 ---
 
