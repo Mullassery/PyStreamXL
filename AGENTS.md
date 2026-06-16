@@ -1,16 +1,15 @@
 # Agent Instructions — streamxl
 
-This file tells AI coding agents (Claude, Copilot, Cursor, Gemini, etc.) everything they need to understand, build, test, and extend this repository correctly.
+This file tells AI coding agents (Copilot, Cursor, Gemini, etc.) everything they need to understand, build, test, and extend this repository correctly.
 
 ---
 
 ## What this repo is
 
-**streamxl** is a Python library that reads `.xlsx` files row-by-row using a Rust engine, exposed to Python via PyO3. It is designed to process large Excel files in ETL and data pipelines without loading the full file into memory.
+**streamxl** is a Python library that reads `.xlsx` files row-by-row using a high-performance engine. It is designed to process large Excel files in ETL and data pipelines without loading the full file into memory.
 
 - Language split: Rust (engine) + Python (API layer)
 - Build tool: [maturin](https://github.com/PyO3/maturin)
-- Python bindings: [PyO3](https://pyo3.rs) 0.23
 - Rust crates: `zip`, `quick-xml`
 
 ---
