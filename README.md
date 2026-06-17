@@ -145,16 +145,16 @@ openpyxl full load approaches 1 GB RAM at 250k rows and crashes on typical cloud
 
 All benchmarks measured on Apple Silicon (M-series), Python 3.13, Rust 1.96, 10 mixed-type columns.
 
-**Read** — streamxl vs openpyxl:
+**Read** — streamxl vs openpyxl, 10 mixed-type columns:
 
 | Rows | streamxl | openpyxl read_only | openpyxl full load | Speedup |
 |------|----------|--------------------|--------------------|---------|
-| 10,000 | **0.40s** · 2.8 MB | 1.52s · 1.5 MB | 1.94s · 38 MB | **3.8×** |
-| 50,000 | **1.81s** · 13.8 MB | 7.72s · 4.3 MB | 9.83s · 186 MB | **4.3×** |
-| 100,000 | **3.59s** · 27.5 MB | 15.80s · 8.1 MB | 19.77s · 373 MB | **4.4×** |
-| 250,000 | **9.04s** · 68.7 MB | 40.46s · 19.6 MB | 50.67s · **911 MB** | **4.5×** |
+| 10,000 | **29ms** · 4.3 MB | 1.31s · 2.9 MB | 1.25s · 34 MB | **44×** |
+| 50,000 | **149ms** · 21.6 MB | 7.02s · 13.3 MB | 6.76s · 166 MB | **47×** |
+| 100,000 | **308ms** · 43.2 MB | 14.33s · 26.3 MB | 13.34s · 332 MB | **46×** |
+| 250,000 | **777ms** · 108 MB | 35.99s · 66 MB | 34.63s · **811 MB** | **46×** |
 
-Read throughput: ~27,000 rows/sec. Full results: [`benchmarks/results.md`](benchmarks/results.md)
+Read throughput: ~320,000 rows/sec. Full results: [`benchmarks/results.md`](benchmarks/results.md)
 
 **Write** — streamxl vs openpyxl write_only:
 
@@ -199,16 +199,23 @@ python benchmarks/openpyxl_vs_streamxl_write.py
 
 ## Roadmap
 
-- [x] Streaming XLSX reader (sheet1)
-- [x] sharedStrings resolution
-- [x] inlineStr cell type support
-- [x] Boolean, numeric, and string cell types
+**Done**
+- [x] Streaming XLSX reader — sheet1, sharedStrings, inlineStr, bool, number, empty
+- [x] XLSX writer — `streamxl.write()` and `streamxl.writer()` context manager
 - [x] pip and uv installable wheel
-- [x] XLSX writer (`streamxl.write()` and `streamxl.writer()`)
-- [ ] Multi-sheet support (`sheet="SheetName"` parameter)
-- [ ] Date/datetime cell type
-- [ ] Header row as dict keys (`as_dict=True`)
-- [ ] PyPI wheel distribution (manylinux + macOS + Windows)
+
+**Next**
+- [ ] Date / datetime cell type (read and write)
+- [ ] Multi-sheet read — `streamxl.read("file.xlsx", sheet="Sheet2")`
+- [ ] Multi-sheet write — `writer.add_sheet("Summary")`
+- [ ] Header row as dict — `streamxl.read("file.xlsx", as_dict=True)`
+- [ ] Column name / index filtering — skip columns you don't need on read
+
+**Later**
+- [ ] PyPI manylinux + macOS + Windows wheel distribution
+- [ ] Append mode — open an existing XLSX and add rows
+- [ ] Cell formatting on write — bold headers, number formats
+- [ ] `streamxl.read_all()` → returns a list of dicts, one per sheet
 
 ---
 
