@@ -99,3 +99,76 @@ def writer(path: str) -> _XlsxWriter:
 def sheets(path: str) -> List[str]:
     """Return the list of sheet names in an Excel (.xlsx) file."""
     return list_sheets(path)
+
+
+def read_all(
+    path: str,
+    as_dict: bool = False,
+) -> Dict[str, List[Any]]:
+    """
+    Read every sheet from an Excel (.xlsx) file.
+
+    Returns a dict mapping each sheet name to its rows::
+
+        {
+            "Sheet1": [["Name", "Age"], ["Alice", 30.0]],
+            "Summary": [["Total", 1.0]],
+        }
+
+    Args:
+        path:     Path to the .xlsx file.
+        as_dict:  If True, each sheet's rows are returned as dicts
+                  keyed by the header row (same semantics as read(as_dict=True)).
+    """
+    return {
+        name: list(read(path, sheet=name, as_dict=as_dict))
+        for name in sheets(path)
+    }
+
+
+def append(path: str, rows: Iterable[Iterable[Any]], sheet: Optional[str] = None) -> None:
+    """
+    Append rows to a sheet in an existing Excel (.xlsx) file.
+
+    All other sheets in the file are preserved unchanged. The file is
+    rewritten atomically (write to a temp file, then replace).
+
+    Args:
+        path:  Path to the existing .xlsx file.
+        rows:  Rows to append to the target sheet.
+        sheet: Sheet name to append to. Defaults to the first sheet.
+
+    Example::
+
+        streamxl.write("log.xlsx", [["Date", "Event"]])
+        streamxl.append("log.xlsx", [[datetime.date.today(), "started"]])
+        streamxl.append("log.xlsx", [[datetime.date.today(), "finished"]])
+    """
+    import os, tempfile
+
+    sheet_names = sheets(path)
+    if not sheet_names:
+        write(path, rows)
+        return
+
+    target = sheet or sheet_names[0]
+    if target not in sheet_names:
+        raise ValueError(f"sheet '{target}' not found; available: {sheet_names}")
+
+    new_rows = list(rows)
+    tmp = path + ".~tmp"
+    try:
+        with writer(tmp) as w:
+            for i, name in enumerate(sheet_names):
+                if i > 0:
+                    w.add_sheet(name)
+                for row in read(path, sheet=name):
+                    w.write_row(row)
+                if name == target:
+                    for row in new_rows:
+                        w.write_row(list(row))
+        os.replace(tmp, path)
+    except Exception:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise

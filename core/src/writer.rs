@@ -57,9 +57,24 @@ impl XlsxWriter {
         self.current_buf = sheet_header();
     }
 
-    pub fn write_row(&mut self, cells: &[WriteCell]) {
+    /// Write a row. `bold=true` applies bold font to every cell in the row.
+    pub fn write_row(&mut self, cells: &[WriteCell], bold: bool) {
         self.current_buf.extend_from_slice(b"<row>");
         for cell in cells {
+            // xf index: 0=default, 1=date, 2=datetime, 3=bold, 4=bold-date, 5=bold-datetime
+            let xf: Option<u8> = match (cell, bold) {
+                (WriteCell::Date(_), false)     => Some(1),
+                (WriteCell::DateTime(_), false) => Some(2),
+                (WriteCell::Empty, _)           => None,
+                (WriteCell::Date(_), true)      => Some(4),
+                (WriteCell::DateTime(_), true)  => Some(5),
+                (_, true)                       => Some(3),
+                _                               => None,
+            };
+            let s_attr: std::borrow::Cow<str> = match xf {
+                Some(n) => format!(" s=\"{n}\"").into(),
+                None    => "".into(),
+            };
             match cell {
                 WriteCell::Str(s) => {
                     let idx = match self.sst_index.get(s) {
@@ -71,22 +86,20 @@ impl XlsxWriter {
                             i
                         }
                     };
-                    write!(self.current_buf, "<c t=\"s\"><v>{idx}</v></c>").unwrap();
+                    write!(self.current_buf, "<c t=\"s\"{s_attr}><v>{idx}</v></c>").unwrap();
                 }
                 WriteCell::Num(n) => {
-                    write!(self.current_buf, "<c><v>{n}</v></c>").unwrap();
+                    write!(self.current_buf, "<c{s_attr}><v>{n}</v></c>").unwrap();
                 }
                 WriteCell::Bool(b) => {
                     let v = if *b { 1u8 } else { 0u8 };
-                    write!(self.current_buf, "<c t=\"b\"><v>{v}</v></c>").unwrap();
+                    write!(self.current_buf, "<c t=\"b\"{s_attr}><v>{v}</v></c>").unwrap();
                 }
                 WriteCell::Date(serial) => {
-                    // s="1" → xf index 1 = numFmtId 14 (date)
-                    write!(self.current_buf, "<c s=\"1\"><v>{serial}</v></c>").unwrap();
+                    write!(self.current_buf, "<c{s_attr}><v>{serial}</v></c>").unwrap();
                 }
                 WriteCell::DateTime(serial) => {
-                    // s="2" → xf index 2 = numFmtId 22 (datetime)
-                    write!(self.current_buf, "<c s=\"2\"><v>{serial}</v></c>").unwrap();
+                    write!(self.current_buf, "<c{s_attr}><v>{serial}</v></c>").unwrap();
                 }
                 WriteCell::Empty => {
                     self.current_buf.extend_from_slice(b"<c/>");
@@ -247,19 +260,27 @@ Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/offic
 Target=\"xl/workbook.xml\"/>\
 \n</Relationships>";
 
-// Styles with 3 xf entries: 0=default, 1=date (numFmtId=14), 2=datetime (numFmtId=22)
+// Styles with 6 xf entries:
+//   0=default, 1=date, 2=datetime
+//   3=bold,    4=bold-date, 5=bold-datetime
 const STYLES_XML: &[u8] = b"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\
 \n<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">\
-\n<fonts count=\"1\"><font><sz val=\"11\"/><name val=\"Calibri\"/></font></fonts>\
+\n<fonts count=\"2\">\
+\n<font><sz val=\"11\"/><name val=\"Calibri\"/></font>\
+\n<font><b/><sz val=\"11\"/><name val=\"Calibri\"/></font>\
+\n</fonts>\
 \n<fills count=\"2\">\
 \n<fill><patternFill patternType=\"none\"/></fill>\
 \n<fill><patternFill patternType=\"gray125\"/></fill>\
 \n</fills>\
 \n<borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>\
 \n<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>\
-\n<cellXfs count=\"3\">\
-\n<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>\
+\n<cellXfs count=\"6\">\
+\n<xf numFmtId=\"0\"  fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>\
 \n<xf numFmtId=\"14\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>\
 \n<xf numFmtId=\"22\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>\
+\n<xf numFmtId=\"0\"  fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/>\
+\n<xf numFmtId=\"14\" fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/>\
+\n<xf numFmtId=\"22\" fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/>\
 \n</cellXfs>\
 \n</styleSheet>";

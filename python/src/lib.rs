@@ -115,7 +115,7 @@ fn write(py: Python<'_>, path: &str, rows: PyObject) -> PyResult<()> {
             let cell = cell_obj?.unbind();
             cells.push(pyobject_to_writecell(py, &cell)?);
         }
-        writer.write_row(&cells);
+        writer.write_row(&cells, false);
     }
     writer
         .finish()
@@ -140,7 +140,8 @@ impl PyXlsxWriter {
         Self { inner: Some(XlsxWriter::new(path)) }
     }
 
-    fn write_row(&mut self, py: Python<'_>, row: PyObject) -> PyResult<()> {
+    #[pyo3(signature = (row, bold = false))]
+    fn write_row(&mut self, py: Python<'_>, row: PyObject, bold: bool) -> PyResult<()> {
         let writer = self.inner.as_mut().ok_or_else(|| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("writer already closed")
         })?;
@@ -149,7 +150,7 @@ impl PyXlsxWriter {
             let cell = item?.unbind();
             cells.push(pyobject_to_writecell(py, &cell)?);
         }
-        writer.write_row(&cells);
+        writer.write_row(&cells, bold);
         Ok(())
     }
 
