@@ -1,6 +1,6 @@
 # streamxl
 
-**High-performance streaming XLSX reader for Python — powered by Rust**
+**Read large `.xlsx` files row by row without loading them into memory — powered by Rust.**
 
 [![CI](https://github.com/Mullassery/StreamXL/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/StreamXL/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/Mullassery/StreamXL/releases)
@@ -8,79 +8,50 @@
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://pypi.org/project/streamxl/)
 [![Rust](https://img.shields.io/badge/rust-1.96%2B-orange)](https://www.rust-lang.org/)
 
-> **What is this?**
-> streamxl is a Python library that reads `.xlsx` files row-by-row without loading the entire file into memory. It is designed for ETL pipelines, data engineering workflows, and any scenario where openpyxl runs out of memory or is too slow.
+If you've hit openpyxl's memory wall on a large file — or just watched it crawl through 100k rows for 20 seconds — streamxl is the drop-in fix. It streams the sheet XML one row at a time, never holding the full file in memory, and runs 4–5× faster than openpyxl across all file sizes.
 
 ---
 
-## The problem with existing XLSX libraries
+## Install
 
-Benchmarked on Apple Silicon, Python 3.13, Rust 1.96 — 10 mixed-type columns:
+```bash
+pip install streamxl
+# or
+uv add streamxl
+```
 
-| Rows | streamxl | openpyxl read_only | openpyxl full load | Speedup |
-|------|----------|--------------------|--------------------|---------|
-| 10,000 | **0.40s** / 2.8 MB | 1.52s / 1.5 MB | 1.94s / 38 MB | **3.8×** |
-| 50,000 | **1.81s** / 13.8 MB | 7.72s / 4.3 MB | 9.83s / 186 MB | **4.3×** |
-| 100,000 | **3.59s** / 27.5 MB | 15.80s / 8.1 MB | 19.77s / 373 MB | **4.4×** |
-| 250,000 | **9.04s** / 68.7 MB | 40.46s / 19.6 MB | 50.67s / **911 MB** | **4.5×** |
+**Wheels:** Linux (x86_64, aarch64) · macOS (Apple Silicon, Intel) · Windows (x86_64)
 
-streamxl processes ~27,000 rows/sec consistently. openpyxl full load approaches 1 GB RAM at 250k rows and crashes beyond that on typical cloud instances. See [`benchmarks/results.md`](benchmarks/results.md) for full details.
+<details>
+<summary>Other install options</summary>
 
----
-
-## Installation
-
-### One-liner (recommended)
-
+**One-liner (auto-detects uv or pip, builds from source if no wheel exists):**
 ```bash
 curl -sSf https://raw.githubusercontent.com/Mullassery/StreamXL/main/scripts/install.sh | sh
 ```
 
-Auto-detects Python and package manager (uv or pip). Tries PyPI first; falls back to building from source if no pre-built wheel is available for your platform. Installs Rust automatically if needed.
-
-### pip
-
-```bash
-pip install streamxl
-```
-
-### uv
-
-```bash
-uv add streamxl
-```
-
-### From GitHub (always latest)
-
+**Latest from GitHub:**
 ```bash
 pip install git+https://github.com/Mullassery/StreamXL.git
-# or
-uv pip install git+https://github.com/Mullassery/StreamXL.git
 ```
 
-### From source (for development)
-
+**From source:**
 ```bash
-# Install Rust if not already present
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# Install maturin build tool
-pip install maturin   # or: uv add maturin
-
-# Clone and build
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh  # Rust, if not installed
+pip install maturin
 git clone https://github.com/Mullassery/StreamXL.git
 cd StreamXL
-maturin develop --release   # installs into current Python env
+maturin develop --release
 ```
+</details>
 
-**Requires:** Python 3.9+ · Rust 1.70+ (source builds only)  
-**Wheels available for:** Linux (x86_64, aarch64) · macOS (Apple Silicon, Intel) · Windows (x86_64)
+**Requires:** Python 3.9+ · Rust 1.70+ (source builds only)
 
 ---
 
 ## Usage
 
-### Basic — iterate rows
+### Iterate rows
 
 ```python
 import streamxl
@@ -92,7 +63,7 @@ for row in streamxl.read("data.xlsx"):
 # ...
 ```
 
-### ETL pipeline — stream to CSV
+### Stream to CSV
 
 ```python
 import csv, streamxl
@@ -103,7 +74,7 @@ with open("output.csv", "w", newline="") as f:
         writer.writerow(row)
 ```
 
-### Stream to pandas (chunk by chunk)
+### Process in chunks with pandas
 
 ```python
 import pandas as pd, streamxl
@@ -118,13 +89,27 @@ for row in streamxl.read("large.xlsx"):
         rows.clear()
 ```
 
-### Use as an alias
+`streamxl.stream()` is an alias for `streamxl.read()` — use whichever reads better in your context.
 
-```python
-from streamxl import stream   # identical to read()
+---
 
-for row in stream("data.xlsx"):
-    print(row)
+## Why not just use openpyxl?
+
+Benchmarked on Apple Silicon, Python 3.13, Rust 1.96 — 10 mixed-type columns:
+
+| Rows | streamxl | openpyxl read_only | openpyxl full load | Speedup |
+|------|----------|--------------------|--------------------|---------|
+| 10,000 | **0.40s** · 2.8 MB | 1.52s · 1.5 MB | 1.94s · 38 MB | **3.8×** |
+| 50,000 | **1.81s** · 13.8 MB | 7.72s · 4.3 MB | 9.83s · 186 MB | **4.3×** |
+| 100,000 | **3.59s** · 27.5 MB | 15.80s · 8.1 MB | 19.77s · 373 MB | **4.4×** |
+| 250,000 | **9.04s** · 68.7 MB | 40.46s · 19.6 MB | 50.67s · **911 MB** | **4.5×** |
+
+openpyxl full load approaches 1 GB RAM at 250k rows and crashes beyond that on typical cloud instances. streamxl processes ~27,000 rows/sec regardless of file size.
+
+Full results and reproduction steps: [`benchmarks/results.md`](benchmarks/results.md)
+
+```bash
+python benchmarks/openpyxl_vs_streamxl.py your_file.xlsx
 ```
 
 ---
@@ -141,9 +126,21 @@ for row in stream("data.xlsx"):
 
 ---
 
-## How it works
+## Roadmap
 
-streamxl is built in two layers:
+- [x] Streaming XLSX reader (sheet1)
+- [x] sharedStrings resolution
+- [x] inlineStr cell type support
+- [x] Boolean, numeric, and string cell types
+- [x] pip and uv installable wheel
+- [ ] Multi-sheet support (`sheet="SheetName"` parameter)
+- [ ] Date/datetime cell type
+- [ ] Header row as dict keys (`as_dict=True`)
+- [ ] PyPI wheel distribution (manylinux + macOS + Windows)
+
+---
+
+## How it works
 
 ```
 streamxl.read("file.xlsx")
@@ -198,50 +195,7 @@ streamxl/
 
 ---
 
-## Benchmarks
-
-Apple Silicon, Python 3.13, Rust 1.96 — 10 mixed-type columns (strings, floats, booleans, dates).
-
-| Rows | streamxl | openpyxl read_only | openpyxl full load | Speedup |
-|------|----------|--------------------|--------------------|---------|
-| 10k  | **0.40s** · 2.8 MB | 1.52s · 1.5 MB | 1.94s · 38 MB | **3.8×** |
-| 50k  | **1.81s** · 13.8 MB | 7.72s · 4.3 MB | 9.83s · 186 MB | **4.3×** |
-| 100k | **3.59s** · 27.5 MB | 15.80s · 8.1 MB | 19.77s · 373 MB | **4.4×** |
-| 250k | **9.04s** · 68.7 MB | 40.46s · 19.6 MB | 50.67s · **911 MB** | **4.5×** |
-
-**4–5× faster than openpyxl across all file sizes. Throughput: ~27,000 rows/sec.**
-
-Full results and reproduction steps: [`benchmarks/results.md`](benchmarks/results.md)
-
-```bash
-python benchmarks/openpyxl_vs_streamxl.py your_file.xlsx
-```
-
----
-
-## Roadmap
-
-- [x] Streaming XLSX reader (sheet1)
-- [x] sharedStrings resolution
-- [x] inlineStr cell type support
-
-- [x] Boolean, numeric, and string cell types
-- [x] pip and uv installable wheel
-- [ ] Multi-sheet support (`sheet="SheetName"` parameter)
-- [ ] Date/datetime cell type
-- [ ] Header row as dict keys (`as_dict=True`)
-- [ ] PyPI wheel distribution (manylinux + macOS + Windows)
-
----
-
 ## Development
-
-### Prerequisites
-
-- Rust (stable): `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
-- maturin: `pip install maturin`
-
-### Build
 
 ```bash
 git clone https://github.com/Mullassery/StreamXL.git
@@ -249,24 +203,24 @@ cd StreamXL
 maturin develop
 ```
 
-### Test
-
+**Test:**
 ```bash
 pip install pytest
 pytest tests/ -v
 ```
 
-### Benchmark
-
+**Benchmark:**
 ```bash
 bash scripts/benchmark.sh path/to/large_file.xlsx
 ```
+
+Read [docs/design_decisions.md](docs/design_decisions.md) before opening a large PR.
 
 ---
 
 ## Contributing
 
-PRs welcome. See [docs/design_decisions.md](docs/design_decisions.md) for context on key architectural choices before opening a large PR.
+PRs welcome. See [docs/design_decisions.md](docs/design_decisions.md) for context on key architectural choices.
 
 ---
 
