@@ -199,11 +199,6 @@ python benchmarks/openpyxl_vs_streamxl_write.py
 
 ## Roadmap
 
-**Done**
-- [x] Streaming XLSX reader — sheet1, sharedStrings, inlineStr, bool, number, empty
-- [x] XLSX writer — `streamxl.write()` and `streamxl.writer()` context manager
-- [x] pip and uv installable wheel
-
 **Next**
 - [ ] Date / datetime cell type (read and write)
 - [ ] Multi-sheet read — `streamxl.read("file.xlsx", sheet="Sheet2")`
