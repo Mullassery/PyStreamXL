@@ -1,3 +1,4 @@
+import datetime
 import pytest
 import streamxl
 

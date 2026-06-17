@@ -9,34 +9,56 @@ pub enum WriteCell {
     Str(String),
     Num(f64),
     Bool(bool),
+    Date(u32),      // Excel serial date (days, integer)
+    DateTime(f64),  // Excel serial datetime (days + fractional time)
     Empty,
 }
 
 pub struct XlsxWriter {
     output_path: PathBuf,
-    sheet_buf: Vec<u8>,
+    // Completed sheets: (name, finalized XML bytes)
+    sheets: Vec<(String, Vec<u8>)>,
+    // Current sheet being written
+    current_name: String,
+    current_buf: Vec<u8>,
+    // Shared string table across all sheets
     sst: Vec<String>,
     sst_index: HashMap<String, usize>,
 }
 
-impl XlsxWriter {
-    pub fn new(path: impl AsRef<Path>) -> Self {
-        let mut sheet_buf = Vec::with_capacity(64 * 1024);
-        sheet_buf.extend_from_slice(
-            b"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\
+fn sheet_header() -> Vec<u8> {
+    let mut buf = Vec::with_capacity(64 * 1024);
+    buf.extend_from_slice(
+        b"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\
 \n<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">\
 \n<sheetData>\n",
-        );
+    );
+    buf
+}
+
+impl XlsxWriter {
+    pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
             output_path: path.as_ref().to_path_buf(),
-            sheet_buf,
+            sheets: Vec::new(),
+            current_name: "Sheet1".to_string(),
+            current_buf: sheet_header(),
             sst: Vec::new(),
             sst_index: HashMap::new(),
         }
     }
 
+    /// Finalise the current sheet and start a new one with the given name.
+    pub fn add_sheet(&mut self, name: &str) {
+        let mut buf = std::mem::take(&mut self.current_buf);
+        buf.extend_from_slice(b"</sheetData>\n</worksheet>");
+        let old_name = std::mem::replace(&mut self.current_name, name.to_string());
+        self.sheets.push((old_name, buf));
+        self.current_buf = sheet_header();
+    }
+
     pub fn write_row(&mut self, cells: &[WriteCell]) {
-        self.sheet_buf.extend_from_slice(b"<row>");
+        self.current_buf.extend_from_slice(b"<row>");
         for cell in cells {
             match cell {
                 WriteCell::Str(s) => {
@@ -49,44 +71,55 @@ impl XlsxWriter {
                             i
                         }
                     };
-                    write!(self.sheet_buf, "<c t=\"s\"><v>{idx}</v></c>").unwrap();
+                    write!(self.current_buf, "<c t=\"s\"><v>{idx}</v></c>").unwrap();
                 }
                 WriteCell::Num(n) => {
-                    write!(self.sheet_buf, "<c><v>{n}</v></c>").unwrap();
+                    write!(self.current_buf, "<c><v>{n}</v></c>").unwrap();
                 }
                 WriteCell::Bool(b) => {
                     let v = if *b { 1u8 } else { 0u8 };
-                    write!(self.sheet_buf, "<c t=\"b\"><v>{v}</v></c>").unwrap();
+                    write!(self.current_buf, "<c t=\"b\"><v>{v}</v></c>").unwrap();
+                }
+                WriteCell::Date(serial) => {
+                    // s="1" → xf index 1 = numFmtId 14 (date)
+                    write!(self.current_buf, "<c s=\"1\"><v>{serial}</v></c>").unwrap();
+                }
+                WriteCell::DateTime(serial) => {
+                    // s="2" → xf index 2 = numFmtId 22 (datetime)
+                    write!(self.current_buf, "<c s=\"2\"><v>{serial}</v></c>").unwrap();
                 }
                 WriteCell::Empty => {
-                    self.sheet_buf.extend_from_slice(b"<c/>");
+                    self.current_buf.extend_from_slice(b"<c/>");
                 }
             }
         }
-        self.sheet_buf.extend_from_slice(b"</row>\n");
+        self.current_buf.extend_from_slice(b"</row>\n");
     }
 
     pub fn finish(mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.sheet_buf.extend_from_slice(b"</sheetData>\n</worksheet>");
+        // Finalise the last sheet
+        self.current_buf.extend_from_slice(b"</sheetData>\n</worksheet>");
+        self.sheets.push((self.current_name, self.current_buf));
+
+        let n_sheets = self.sheets.len();
+        let has_sst = !self.sst.is_empty();
 
         let file = File::create(&self.output_path)?;
         let mut zip = ZipWriter::new(file);
         let opts = SimpleFileOptions::default()
             .compression_method(zip::CompressionMethod::Deflated);
 
-        let has_sst = !self.sst.is_empty();
-
         zip.start_file("[Content_Types].xml", opts)?;
-        zip.write_all(content_types_xml(has_sst).as_bytes())?;
+        zip.write_all(build_content_types(n_sheets, has_sst).as_bytes())?;
 
         zip.start_file("_rels/.rels", opts)?;
         zip.write_all(RELS_XML)?;
 
         zip.start_file("xl/workbook.xml", opts)?;
-        zip.write_all(WORKBOOK_XML)?;
+        zip.write_all(build_workbook_xml(&self.sheets).as_bytes())?;
 
         zip.start_file("xl/_rels/workbook.xml.rels", opts)?;
-        zip.write_all(workbook_rels_xml(has_sst).as_bytes())?;
+        zip.write_all(build_workbook_rels(n_sheets, has_sst).as_bytes())?;
 
         zip.start_file("xl/styles.xml", opts)?;
         zip.write_all(STYLES_XML)?;
@@ -96,57 +129,96 @@ impl XlsxWriter {
             zip.write_all(build_sst(&self.sst).as_bytes())?;
         }
 
-        zip.start_file("xl/worksheets/sheet1.xml", opts)?;
-        zip.write_all(&self.sheet_buf)?;
+        for (i, (_, sheet_xml)) in self.sheets.iter().enumerate() {
+            zip.start_file(format!("xl/worksheets/sheet{}.xml", i + 1), opts)?;
+            zip.write_all(sheet_xml)?;
+        }
 
         zip.finish()?;
         Ok(())
     }
 }
 
-fn content_types_xml(has_sst: bool) -> String {
-    let sst_part = if has_sst {
-        "<Override PartName=\"/xl/sharedStrings.xml\" \
-ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml\"/>"
-    } else {
-        ""
-    };
-    format!(
+// ── XML builders ──────────────────────────────────────────────────────────────
+
+fn build_content_types(n_sheets: usize, has_sst: bool) -> String {
+    let mut xml = String::from(
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\
 \n<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">\
 \n<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\
 \n<Default Extension=\"xml\" ContentType=\"application/xml\"/>\
 \n<Override PartName=\"/xl/workbook.xml\" \
-ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/>\
-\n<Override PartName=\"/xl/worksheets/sheet1.xml\" \
-ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>\
-\n<Override PartName=\"/xl/styles.xml\" \
-ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/>\
-\n{sst_part}\
-\n</Types>"
-    )
+ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/>\n",
+    );
+    for i in 1..=n_sheets {
+        xml.push_str(&format!(
+            "<Override PartName=\"/xl/worksheets/sheet{i}.xml\" \
+ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>\n"
+        ));
+    }
+    xml.push_str(
+        "<Override PartName=\"/xl/styles.xml\" \
+ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/>\n",
+    );
+    if has_sst {
+        xml.push_str(
+            "<Override PartName=\"/xl/sharedStrings.xml\" \
+ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml\"/>\n",
+        );
+    }
+    xml.push_str("</Types>");
+    xml
 }
 
-fn workbook_rels_xml(has_sst: bool) -> String {
-    let sst_rel = if has_sst {
-        "<Relationship Id=\"rId2\" \
-Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings\" \
-Target=\"sharedStrings.xml\"/>"
-    } else {
-        ""
-    };
-    format!(
+fn build_workbook_xml(sheets: &[(String, Vec<u8>)]) -> String {
+    let mut xml = String::from(
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\
-\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\
-\n<Relationship Id=\"rId1\" \
+\n<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" \
+xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\
+\n<sheets>\n",
+    );
+    for (i, (name, _)) in sheets.iter().enumerate() {
+        let escaped = name
+            .replace('&', "&amp;").replace('<', "&lt;")
+            .replace('>', "&gt;").replace('"', "&quot;");
+        xml.push_str(&format!(
+            "<sheet name=\"{escaped}\" sheetId=\"{sid}\" r:id=\"rId{rid}\"/>\n",
+            sid = i + 1,
+            rid = i + 1,
+        ));
+    }
+    xml.push_str("</sheets>\n</workbook>");
+    xml
+}
+
+fn build_workbook_rels(n_sheets: usize, has_sst: bool) -> String {
+    let mut xml = String::from(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\
+\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\n",
+    );
+    for i in 1..=n_sheets {
+        xml.push_str(&format!(
+            "<Relationship Id=\"rId{i}\" \
 Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" \
-Target=\"worksheets/sheet1.xml\"/>\
-\n<Relationship Id=\"rId3\" \
+Target=\"worksheets/sheet{i}.xml\"/>\n"
+        ));
+    }
+    xml.push_str(&format!(
+        "<Relationship Id=\"rId{styles_id}\" \
 Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" \
-Target=\"styles.xml\"/>\
-\n{sst_rel}\
-\n</Relationships>"
-    )
+Target=\"styles.xml\"/>\n",
+        styles_id = n_sheets + 1,
+    ));
+    if has_sst {
+        xml.push_str(&format!(
+            "<Relationship Id=\"rId{sst_id}\" \
+Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings\" \
+Target=\"sharedStrings.xml\"/>\n",
+            sst_id = n_sheets + 2,
+        ));
+    }
+    xml.push_str("</Relationships>");
+    xml
 }
 
 fn build_sst(strings: &[String]) -> String {
@@ -158,10 +230,8 @@ count=\"{count}\" uniqueCount=\"{count}\">\n"
     );
     for s in strings {
         let escaped = s
-            .replace('&', "&amp;")
-            .replace('<', "&lt;")
-            .replace('>', "&gt;")
-            .replace('"', "&quot;");
+            .replace('&', "&amp;").replace('<', "&lt;")
+            .replace('>', "&gt;").replace('"', "&quot;");
         out.push_str("<si><t>");
         out.push_str(&escaped);
         out.push_str("</t></si>\n");
@@ -177,14 +247,7 @@ Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/offic
 Target=\"xl/workbook.xml\"/>\
 \n</Relationships>";
 
-const WORKBOOK_XML: &[u8] = b"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\
-\n<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" \
-xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\
-\n<sheets>\
-\n<sheet name=\"Sheet1\" sheetId=\"1\" r:id=\"rId1\"/>\
-\n</sheets>\
-\n</workbook>";
-
+// Styles with 3 xf entries: 0=default, 1=date (numFmtId=14), 2=datetime (numFmtId=22)
 const STYLES_XML: &[u8] = b"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\
 \n<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">\
 \n<fonts count=\"1\"><font><sz val=\"11\"/><name val=\"Calibri\"/></font></fonts>\
@@ -194,5 +257,9 @@ const STYLES_XML: &[u8] = b"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=
 \n</fills>\
 \n<borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>\
 \n<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>\
-\n<cellXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/></cellXfs>\
+\n<cellXfs count=\"3\">\
+\n<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>\
+\n<xf numFmtId=\"14\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>\
+\n<xf numFmtId=\"22\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>\
+\n</cellXfs>\
 \n</styleSheet>";

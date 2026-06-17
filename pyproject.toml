@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "streamxl"
-version = "0.2.0"
+version = "0.3.0"
 description = "High-performance streaming XLSX reader and writer for Python, powered by Rust"
 readme = "README.md"
 license = { text = "MIT" }
