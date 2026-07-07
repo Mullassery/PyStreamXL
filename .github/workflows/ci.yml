@@ -1,0 +1,29 @@
+name: Rust CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cargo check
+      run: cargo check --verbose
+    
+    - name: Cargo test
+      run: cargo test --verbose --all
+    
+    - name: Cargo clippy
+      run: cargo clippy --all-targets -- -D warnings
+    
+    - name: Cargo fmt
+      run: cargo fmt --all -- --check
