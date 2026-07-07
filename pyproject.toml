@@ -5,17 +5,60 @@ build-backend = "maturin"
 [project]
 name = "streamxl"
 version = "0.4.0"
-description = "High-performance streaming XLSX reader and writer for Python, powered by Rust"
+description = "High-performance Excel file reader with constant memory usage. Stream large .xlsx files row-by-row without loading entire file. 46x faster than openpyxl, handles multi-sheet workbooks. Rust-powered, Python API."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.8"
-keywords = ["xlsx", "excel", "streaming", "rust", "performance"]
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Rust",
-    "License :: OSI Approved :: MIT License",
-    "Topic :: Software Development :: Libraries",
+keywords = [
+    "excel",
+    "xlsx",
+    "spreadsheet",
+    "streaming",
+    "file-parsing",
+    "data-loading",
+    "performance",
+    "rust",
+    "python-api",
+    "memory-efficient",
+    "big-data",
+    "etl",
+    "data-pipeline",
+    "file-handling",
+    "openpyxl-alternative",
+    "pandas-io",
+    "data-engineering",
+    "batch-processing",
+    "file-processing",
+    "performance-optimization"
 ]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Office/Business :: Spreadsheets",
+    "Topic :: System :: File Formats",
+    "Topic :: Utilities",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/Mullassery/StreamXL"
+Repository = "https://github.com/Mullassery/StreamXL"
+Documentation = "https://github.com/Mullassery/StreamXL#readme"
+"Bug Tracker" = "https://github.com/Mullassery/StreamXL/issues"
+Changelog = "https://github.com/Mullassery/StreamXL/releases"
+"Source Code" = "https://github.com/Mullassery/StreamXL/tree/main"
+Discussions = "https://github.com/Mullassery/StreamXL/discussions"
 
 [tool.maturin]
 python-source = "python"
