@@ -4,8 +4,10 @@ build-backend = "maturin"
 
 [project]
 name = "streamxl"
-version = "0.4.0"
+version = "1.0.0"
 description = "High-performance Excel file reader with constant memory usage. Stream large .xlsx files row-by-row without loading entire file. 46x faster than openpyxl, handles multi-sheet workbooks. Rust-powered, Python API."
+authors = [{ name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com" }]
+maintainers = [{ name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com" }]
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.8"
@@ -32,7 +34,7 @@ keywords = [
     "performance-optimization"
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Financial and Insurance Industry",
     "License :: OSI Approved :: MIT License",
@@ -45,8 +47,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Rust",
-    "Topic :: Office/Business :: Spreadsheets",
-    "Topic :: System :: File Formats",
+    "Topic :: Office/Business",
     "Topic :: Utilities",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
@@ -64,3 +65,4 @@ Discussions = "https://github.com/Mullassery/StreamXL/discussions"
 python-source = "python"
 module-name = "streamxl._core"
 manifest-path = "python/Cargo.toml"
+include = ["LICENSE", "README.md"]
