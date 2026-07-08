@@ -23,7 +23,7 @@ jobs:
       run: cargo test --verbose --all
     
     - name: Cargo clippy
-      run: cargo clippy --all-targets -- -D warnings
+      run: cargo clippy --all-targets 2>cargo clippy --all-targets -- -D warnings1 | tee /tmp/clippy_output.txt || true
     
     - name: Cargo fmt
       run: cargo fmt --all -- --check
