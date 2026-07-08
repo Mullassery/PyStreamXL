@@ -2,7 +2,6 @@
 ///
 /// Provides functionality to enumerate sheets, select specific sheets,
 /// and handle cross-sheet references.
-
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]

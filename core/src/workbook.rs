@@ -12,13 +12,15 @@ pub fn parse_sheet_names(xml: &[u8]) -> Result<Vec<(String, String)>, Box<dyn st
         match reader.read_event()? {
             Event::Empty(ref e) | Event::Start(ref e) if e.name().as_ref() == b"sheet" => {
                 let name = e
-                    .attributes().flatten()
+                    .attributes()
+                    .flatten()
                     .find(|a| a.key.as_ref() == b"name")
                     .map(|a| String::from_utf8_lossy(&a.value).into_owned())
                     .unwrap_or_default();
                 // The r:id attribute is stored with the namespace prefix as part of the key bytes
                 let r_id = e
-                    .attributes().flatten()
+                    .attributes()
+                    .flatten()
                     .find(|a| {
                         let k = a.key.as_ref();
                         k == b"r:id" || k.ends_with(b":id")
@@ -45,16 +47,16 @@ pub fn parse_rels(xml: &[u8]) -> Result<HashMap<String, String>, Box<dyn std::er
 
     loop {
         match reader.read_event()? {
-            Event::Empty(ref e) | Event::Start(ref e)
-                if e.name().as_ref() == b"Relationship" =>
-            {
+            Event::Empty(ref e) | Event::Start(ref e) if e.name().as_ref() == b"Relationship" => {
                 let id = e
-                    .attributes().flatten()
+                    .attributes()
+                    .flatten()
                     .find(|a| a.key.as_ref() == b"Id")
                     .map(|a| String::from_utf8_lossy(&a.value).into_owned())
                     .unwrap_or_default();
                 let target = e
-                    .attributes().flatten()
+                    .attributes()
+                    .flatten()
                     .find(|a| a.key.as_ref() == b"Target")
                     .map(|a| String::from_utf8_lossy(&a.value).into_owned())
                     .unwrap_or_default();

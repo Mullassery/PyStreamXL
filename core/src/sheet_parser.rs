@@ -23,7 +23,11 @@ impl<'a> SheetParser<'a> {
     pub fn new(xml: &'a [u8], sst: &'a [String], styles: &'a StyleInfo) -> Self {
         let mut reader = Reader::from_reader(xml);
         reader.config_mut().trim_text(true);
-        Self { reader, sst, styles }
+        Self {
+            reader,
+            sst,
+            styles,
+        }
     }
 
     pub fn next_row(&mut self) -> Result<Option<Vec<CellValue>>, Box<dyn std::error::Error>> {
@@ -40,12 +44,14 @@ impl<'a> SheetParser<'a> {
                     b"row" => row = Some(Vec::new()),
                     b"c" => {
                         cell_type = e
-                            .attributes().flatten()
+                            .attributes()
+                            .flatten()
                             .find(|a| a.key.as_ref() == b"t")
                             .map(|a| String::from_utf8_lossy(&a.value).into_owned())
                             .unwrap_or_else(|| "n".to_string());
                         cell_style = e
-                            .attributes().flatten()
+                            .attributes()
+                            .flatten()
                             .find(|a| a.key.as_ref() == b"s")
                             .and_then(|a| String::from_utf8_lossy(&a.value).parse().ok())
                             .unwrap_or(0);

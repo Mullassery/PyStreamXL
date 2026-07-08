@@ -21,8 +21,15 @@ fn cell_to_pyobject(py: Python<'_>, cell: &CellValue) -> PyResult<PyObject> {
         CellValue::DateTime(n) => {
             let (year, month, day, hour, min, sec, us) = dates::serial_to_datetime(*n);
             Ok(PyDateTime::new_bound(
-                py, year, month as u8, day as u8,
-                hour as u8, min as u8, sec as u8, us, None,
+                py,
+                year,
+                month as u8,
+                day as u8,
+                hour as u8,
+                min as u8,
+                sec as u8,
+                us,
+                None,
             )?
             .into_any()
             .unbind())
@@ -83,11 +90,8 @@ fn pyobject_to_writecell(py: Python<'_>, obj: &PyObject) -> PyResult<WriteCell> 
 
     if bound.is_instance_of::<PyDate>() {
         if let Ok(d) = bound.downcast::<PyDate>() {
-            let serial = dates::date_to_serial(
-                d.get_year(),
-                d.get_month() as u32,
-                d.get_day() as u32,
-            );
+            let serial =
+                dates::date_to_serial(d.get_year(), d.get_month() as u32, d.get_day() as u32);
             return Ok(WriteCell::Date(serial));
         }
     }
@@ -137,7 +141,9 @@ struct PyXlsxWriter {
 impl PyXlsxWriter {
     #[new]
     fn new(path: &str) -> Self {
-        Self { inner: Some(XlsxWriter::new(path)) }
+        Self {
+            inner: Some(XlsxWriter::new(path)),
+        }
     }
 
     #[pyo3(signature = (row, bold = false))]

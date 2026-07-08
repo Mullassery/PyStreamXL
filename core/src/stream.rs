@@ -14,7 +14,10 @@ pub struct XlsxStream {
 
 impl XlsxStream {
     /// Open an XLSX file. `sheet` selects by name; `None` uses the first sheet.
-    pub fn open(path: impl AsRef<Path>, sheet: Option<&str>) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn open(
+        path: impl AsRef<Path>,
+        sheet: Option<&str>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let file = File::open(path)?;
         let mut zip = XlsxZip::new(file)?;
 
@@ -35,7 +38,11 @@ impl XlsxStream {
         let sheet_path = resolve_sheet_path(&mut zip, sheet)?;
         let sheet_xml = zip.read_entry(&sheet_path)?;
 
-        Ok(Self { sheet_xml, sst, style_info })
+        Ok(Self {
+            sheet_xml,
+            sst,
+            style_info,
+        })
     }
 
     /// Return all sheet names from the workbook.

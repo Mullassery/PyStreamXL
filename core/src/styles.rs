@@ -54,47 +54,48 @@ pub fn parse(xml: &[u8]) -> Result<StyleInfo, Box<dyn std::error::Error>> {
 
     loop {
         match reader.read_event()? {
-            Event::Start(ref e) | Event::Empty(ref e) => {
-                match e.name().as_ref() {
-                    b"numFmts" => in_num_fmts = true,
-                    b"cellXfs" => in_cell_xfs = true,
-                    b"numFmt" if in_num_fmts => {
-                        let id: u32 = e
-                            .attributes().flatten()
-                            .find(|a| a.key.as_ref() == b"numFmtId")
-                            .and_then(|a| String::from_utf8_lossy(&a.value).parse().ok())
-                            .unwrap_or(0);
-                        if id >= 164 {
-                            let fmt = e
-                                .attributes().flatten()
-                                .find(|a| a.key.as_ref() == b"formatCode")
-                                .map(|a| String::from_utf8_lossy(&a.value).into_owned())
-                                .unwrap_or_default();
-                            let (is_d, is_dt) = classify_format(&fmt);
-                            if is_dt {
-                                custom_datetime_ids.insert(id);
-                            } else if is_d {
-                                custom_date_ids.insert(id);
-                            }
+            Event::Start(ref e) | Event::Empty(ref e) => match e.name().as_ref() {
+                b"numFmts" => in_num_fmts = true,
+                b"cellXfs" => in_cell_xfs = true,
+                b"numFmt" if in_num_fmts => {
+                    let id: u32 = e
+                        .attributes()
+                        .flatten()
+                        .find(|a| a.key.as_ref() == b"numFmtId")
+                        .and_then(|a| String::from_utf8_lossy(&a.value).parse().ok())
+                        .unwrap_or(0);
+                    if id >= 164 {
+                        let fmt = e
+                            .attributes()
+                            .flatten()
+                            .find(|a| a.key.as_ref() == b"formatCode")
+                            .map(|a| String::from_utf8_lossy(&a.value).into_owned())
+                            .unwrap_or_default();
+                        let (is_d, is_dt) = classify_format(&fmt);
+                        if is_dt {
+                            custom_datetime_ids.insert(id);
+                        } else if is_d {
+                            custom_date_ids.insert(id);
                         }
                     }
-                    b"xf" if in_cell_xfs => {
-                        let fmt_id: u32 = e
-                            .attributes().flatten()
-                            .find(|a| a.key.as_ref() == b"numFmtId")
-                            .and_then(|a| String::from_utf8_lossy(&a.value).parse().ok())
-                            .unwrap_or(0);
-                        let is_datetime = BUILTIN_DATETIME_IDS.contains(&fmt_id)
-                            || custom_datetime_ids.contains(&fmt_id);
-                        let is_date = BUILTIN_DATE_IDS.contains(&fmt_id)
-                            || custom_date_ids.contains(&fmt_id)
-                            || is_datetime;
-                        xf_is_date.push(is_date);
-                        xf_is_datetime.push(is_datetime);
-                    }
-                    _ => {}
                 }
-            }
+                b"xf" if in_cell_xfs => {
+                    let fmt_id: u32 = e
+                        .attributes()
+                        .flatten()
+                        .find(|a| a.key.as_ref() == b"numFmtId")
+                        .and_then(|a| String::from_utf8_lossy(&a.value).parse().ok())
+                        .unwrap_or(0);
+                    let is_datetime = BUILTIN_DATETIME_IDS.contains(&fmt_id)
+                        || custom_datetime_ids.contains(&fmt_id);
+                    let is_date = BUILTIN_DATE_IDS.contains(&fmt_id)
+                        || custom_date_ids.contains(&fmt_id)
+                        || is_datetime;
+                    xf_is_date.push(is_date);
+                    xf_is_datetime.push(is_datetime);
+                }
+                _ => {}
+            },
             Event::End(ref e) => match e.name().as_ref() {
                 b"numFmts" => in_num_fmts = false,
                 b"cellXfs" => in_cell_xfs = false,
@@ -105,5 +106,8 @@ pub fn parse(xml: &[u8]) -> Result<StyleInfo, Box<dyn std::error::Error>> {
         }
     }
 
-    Ok(StyleInfo { xf_is_date, xf_is_datetime })
+    Ok(StyleInfo {
+        xf_is_date,
+        xf_is_datetime,
+    })
 }

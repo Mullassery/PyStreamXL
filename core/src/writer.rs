@@ -9,8 +9,8 @@ pub enum WriteCell {
     Str(String),
     Num(f64),
     Bool(bool),
-    Date(u32),      // Excel serial date (days, integer)
-    DateTime(f64),  // Excel serial datetime (days + fractional time)
+    Date(u32),     // Excel serial date (days, integer)
+    DateTime(f64), // Excel serial datetime (days + fractional time)
     Empty,
 }
 
@@ -63,17 +63,17 @@ impl XlsxWriter {
         for cell in cells {
             // xf index: 0=default, 1=date, 2=datetime, 3=bold, 4=bold-date, 5=bold-datetime
             let xf: Option<u8> = match (cell, bold) {
-                (WriteCell::Date(_), false)     => Some(1),
+                (WriteCell::Date(_), false) => Some(1),
                 (WriteCell::DateTime(_), false) => Some(2),
-                (WriteCell::Empty, _)           => None,
-                (WriteCell::Date(_), true)      => Some(4),
-                (WriteCell::DateTime(_), true)  => Some(5),
-                (_, true)                       => Some(3),
-                _                               => None,
+                (WriteCell::Empty, _) => None,
+                (WriteCell::Date(_), true) => Some(4),
+                (WriteCell::DateTime(_), true) => Some(5),
+                (_, true) => Some(3),
+                _ => None,
             };
             let s_attr: std::borrow::Cow<str> = match xf {
                 Some(n) => format!(" s=\"{n}\"").into(),
-                None    => "".into(),
+                None => "".into(),
             };
             match cell {
                 WriteCell::Str(s) => {
@@ -111,7 +111,8 @@ impl XlsxWriter {
 
     pub fn finish(mut self) -> Result<(), Box<dyn std::error::Error>> {
         // Finalise the last sheet
-        self.current_buf.extend_from_slice(b"</sheetData>\n</worksheet>");
+        self.current_buf
+            .extend_from_slice(b"</sheetData>\n</worksheet>");
         self.sheets.push((self.current_name, self.current_buf));
 
         let n_sheets = self.sheets.len();
@@ -119,8 +120,8 @@ impl XlsxWriter {
 
         let file = File::create(&self.output_path)?;
         let mut zip = ZipWriter::new(file);
-        let opts = SimpleFileOptions::default()
-            .compression_method(zip::CompressionMethod::Deflated);
+        let opts =
+            SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
         zip.start_file("[Content_Types].xml", opts)?;
         zip.write_all(build_content_types(n_sheets, has_sst).as_bytes())?;
@@ -192,8 +193,10 @@ xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">
     );
     for (i, (name, _)) in sheets.iter().enumerate() {
         let escaped = name
-            .replace('&', "&amp;").replace('<', "&lt;")
-            .replace('>', "&gt;").replace('"', "&quot;");
+            .replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+            .replace('"', "&quot;");
         xml.push_str(&format!(
             "<sheet name=\"{escaped}\" sheetId=\"{sid}\" r:id=\"rId{rid}\"/>\n",
             sid = i + 1,
@@ -243,8 +246,10 @@ count=\"{count}\" uniqueCount=\"{count}\">\n"
     );
     for s in strings {
         let escaped = s
-            .replace('&', "&amp;").replace('<', "&lt;")
-            .replace('>', "&gt;").replace('"', "&quot;");
+            .replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+            .replace('"', "&quot;");
         out.push_str("<si><t>");
         out.push_str(&escaped);
         out.push_str("</t></si>\n");

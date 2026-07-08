@@ -30,7 +30,8 @@ impl<R: Read + Seek> XlsxZip<R> {
             return Err(format!(
                 "ZIP entry '{}' exceeds size limit: {} > {}",
                 name, uncompressed_size, MAX_ENTRY_SIZE
-            ).into());
+            )
+            .into());
         }
 
         // Check compression ratio (ZIP bomb detection)
@@ -50,7 +51,8 @@ impl<R: Read + Seek> XlsxZip<R> {
             return Err(format!(
                 "ZIP total size would exceed limit: {} + {} > {}",
                 self.total_decompressed, uncompressed_size, MAX_TOTAL_SIZE
-            ).into());
+            )
+            .into());
         }
 
         let mut buf = Vec::new();
