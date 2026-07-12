@@ -460,3 +460,52 @@ StreamXL includes:
 - 📋 v1.3.0: Type inference and data validation
 
 Full roadmap: [ROADMAP.md](ROADMAP.md)
+
+## 🆕 What's New in v1.2.0 (Q4 2026)
+
+### Formula Preservation 📊
+Read, write, and manage Excel formulas:
+
+```python
+from streamxl import FormulaPreserver, FormulaAnalyzer
+
+# Preserve formulas when reading
+preserver = FormulaPreserver()
+preserver.add_formula(0, 0, '=SUM(A1:A10)', value=100.5)
+
+# Analyze formulas
+analyzer = FormulaAnalyzer()
+refs = analyzer.extract_references('=SUM(A1:A10)')  # ['A1', 'A10']
+formula_type = analyzer.get_formula_type('=SUM(...)')  # FormulaType.SUM
+
+# Find/replace in formulas
+from streamxl import FormulaSubstitution
+updated = FormulaSubstitution.substitute_range(
+    formula='=SUM(A1:A10)',
+    old_range='A1:A10',
+    new_range='C5:C15'
+)  # Returns '=SUM(C5:C15)'
+```
+
+**Supported Formula Types:**
+- Aggregations: SUM, AVERAGE, COUNT, PRODUCT, SUBTOTAL
+- Logic: IF, AND, OR
+- Lookups: VLOOKUP, INDEX/MATCH
+- Custom: Any formula pattern
+
+**Features:**
+- ✅ Formula detection and extraction
+- ✅ Formula type classification
+- ✅ Cell reference updating (after row/column changes)
+- ✅ Circular reference detection
+- ✅ Formula validation
+- ✅ Export/import formulas in JSON
+- ✅ Find and replace in formulas
+
+**Why This Matters:**
+- Finance teams can't work without formulas
+- Formulas are the heart of financial workbooks
+- Enables template-based reporting
+- Critical for financial modeling and analysis
+
+See `streamxl/_formula_support.py` for implementation.
