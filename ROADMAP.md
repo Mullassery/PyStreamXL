@@ -55,6 +55,38 @@
 
 ---
 
+## 🔍 Competitive Gaps vs Market
+
+Based on analysis of Excel streaming market (openpyxl, pandas, XlsxWriter, Apache POI), these gaps exist:
+
+### CRITICAL (Blocks Use Cases)
+- **No formula preservation** — Formulas lost on read/write (values only)
+  - **Market Impact:** Financial/accounting teams cannot use StreamXL
+  - **Recommended Fix:** v1.2.0 (Q4 2026) formula support is scheduled
+  - **Why:** Finance workbooks have 100s-1000s of formulas; losing them = unacceptable
+
+- **No style/formatting** — Plain text output only
+  - **Market Impact:** Business users need styled reports
+  - **Design Decision:** Intentional (keep lightweight); use openpyxl for styles
+  - **Why:** Formatting adds 10x memory overhead; not worth the tradeoff
+
+### HIGH (Reduces Addressable Market)
+- **Sequential read/write only** — No random access
+  - **Competitor Advantage:** openpyxl can modify cells in-place
+  - **Timeline:** v2.0.0 (Q1 2027) limited random access
+  - **Why:** Data warehouse exports don't need random access; but reporting does
+
+- **Intel/AMD benchmarks missing** — Performance claims M-series only
+  - **Market Impact:** Teams don't know if 46x speedup applies to their hardware
+  - **Timeline:** v1.1.0 (Q3 2026) cross-platform benchmarks
+  - **Why:** Different CPUs have different characteristics
+
+### MEDIUM (Nice-to-Have)
+- **No cell comments** — Comments lost
+  - **Timeline:** v1.2.0 (Q4 2026)
+
+---
+
 ## 📋 Roadmap
 
 ### v1.1.0 (Q3 2026) — Cross-Platform Benchmarks
