@@ -1,99 +1,121 @@
-# StreamXL Roadmap
+# StreamXL Development Roadmap
 
 **Current Version:** v1.0.0  
 **Last Updated:** July 2026  
-**Status:** Production-ready for streaming read/write; advanced features in development
+**Status:** Production-ready streaming Excel I/O
 
 ---
 
-## Known Limitations (v1.0.0)
+## ✅ Completed Milestones (v1.0.0 - v1.0.1)
 
-### 🔴 Blocking Issues
-None identified.
-
-### 🟡 Experimental Features
-- **Benchmark accuracy:** 46x and 10x performance claims are **hardware-specific**
-  - ℹ️ Benchmarks run on Apple M-series only
-  - ℹ️ Intel/AMD performance may differ (tested: ~15-25x)
-  - ℹ️ Your mileage depends on file characteristics (compression, data types)
-  - **Impact:** Benchmark on your actual hardware before depending on timing
-  - **Fix timeline:** v1.1.0 (Q3 2026) with cross-platform benchmarks
-
-### 🟢 Shipping/Stable (v1.0.0)
-- ✅ Streaming read (constant memory, row-by-row)
-- ✅ Streaming write (append rows one-at-a-time)
+### v1.0.0 — Core Streaming ✅
+- ✅ Streaming read (constant memory)
+- ✅ Streaming write (append rows)
 - ✅ Multi-sheet support
-- ✅ Dictionary output (header-based)
 - ✅ Column filtering
-- ✅ Cross-platform wheels (Windows, macOS, Linux)
+- ✅ Cross-platform wheels
 
-### 🚫 Not Shipped (Listed in Code)
-- ❌ Formula preservation (values only, formulas lost)
-- ❌ Style/formatting (no styling preserved)
-- ❌ Random access (sequential only)
-- ❌ Merged cells (not supported)
-
----
-
-## TODOs in Code
-None found.
-
----
-
-## Roadmap
-
-### 🔒 Security (See SECURITY_AUDIT.md)
-
-**HIGH — v1.0.1**
-- [ ] Pin all dependencies
-
-**MEDIUM — v1.1.0**
-- [ ] Path traversal validation (validate write paths)
-- [ ] File integrity checks (atomic writes)
+### v1.0.1 — Security Hardening ✅
+- ✅ **HIGH:** Pin all dependencies
+- ✅ **MEDIUM:** Path traversal validation
+  - validate_read_path() for safe reads
+  - validate_write_path() for safe writes
+- ✅ **MEDIUM:** File integrity checks
+  - Atomic write operations
+  - SHA256 verification
+  - AtomicFileWriter context manager
+- ✅ **Audit:** Security audit completed (SECURITY_AUDIT.md)
+- ✅ **Error Messages:** 8 detailed error types with file operation guidance
 
 ---
 
-### v1.0.1 (Q3 2026) — Documentation + Security
-- [ ] **[SECURITY]** Pin all dependencies
-- [ ] Cross-platform benchmarks (Intel, AMD, Apple)
-- [ ] Document formula/formatting limitations clearly
-- [ ] Add performance tips for large files
-- [ ] Add examples for common use cases
+## 🔒 Security Implementation Status
 
-### v1.1.0 (Q3 2026) — Cross-Platform Performance
-- [ ] Benchmark on Intel x86_64
-- [ ] Benchmark on AMD processors
-- [ ] Update performance documentation with hardware-specific results
+### HIGH Priority Issues — ✅ FIXED
+- [x] Floating dependency versions
+  - **Impact:** Supply chain vulnerability
+  - **Fix:** Pinned all dependencies
+  - **Timeline:** ✅ v1.0.1
+
+### MEDIUM Priority Issues — ✅ FIXED
+- [x] Path traversal vulnerabilities
+  - **Impact:** Directory escape attacks
+  - **Fix:** Path validation with resolve() checks
+  - **Timeline:** ✅ v1.0.1
+
+- [x] No file integrity checks
+  - **Impact:** Silent file corruption on write failure
+  - **Fix:** Atomic writes with SHA256 verification
+  - **Timeline:** ✅ v1.0.1
+
+- [x] No user-friendly error messages
+  - **Impact:** Poor debugging of file operation failures
+  - **Fix:** Added error_messages.py with 8 file-specific error types
+  - **Timeline:** ✅ v1.0.1
+
+---
+
+## 📋 Roadmap
+
+### v1.1.0 (Q3 2026) — Cross-Platform Benchmarks
+- [ ] Intel x86_64 performance benchmarks
+- [ ] AMD processor benchmarks
+- [ ] Platform-specific performance tips
+- [ ] Hardware-dependent optimization guide
 
 ### v1.2.0 (Q4 2026) — Advanced Features
 - [ ] Read formula values (calculated results)
 - [ ] Cell comment preservation
 - [ ] Better error messages for corrupted files
+- [ ] Recovery mode for partially corrupt sheets
 
 ### v1.3.0 (Q4 2026) — Data Wrangling
 - [ ] Type inference for columns
 - [ ] Data validation rules during read
 - [ ] Schema specification for write
+- [ ] Automatic type conversion
 
 ### v2.0.0 (Q1 2027) — Advanced Capabilities
 - [ ] Limited random access (cache first N rows)
 - [ ] Parallel multi-sheet reading
-- [ ] Integration with polars/pandas for transformation
+- [ ] Integration with polars/pandas
 
 ---
 
 ## Performance Notes
 
-Current benchmarks:
-- Apple M-series: 46x faster than openpyxl read, 10x faster on write
-- Intel/AMD: ~15-25x faster (estimated, needs validation)
-- File characteristics matter: compression ratio, data types, sheet count
+Current benchmarks (M-series):
+- ✅ 46x faster than openpyxl on read
+- ✅ 10x faster on write
+- ⚠️  Intel/AMD performance varies (15-25x estimated)
 
-Always benchmark on your actual hardware and data before production deployment.
+**Important:** Always benchmark on your actual hardware!
 
 ---
 
-## Not Planned
-- Style/formatting preservation (design decision: keep it lightweight)
-- Formula calculation/preservation (use LibreOffice for complex sheets)
-- VBA macro support
+## Known Limitations (v1.0.1)
+
+### 🟢 Working
+- ✅ Streaming read/write
+- ✅ Multi-sheet support
+- ✅ Column filtering
+- ✅ Path-safe operations
+- ✅ Atomic writes with verification
+
+### 🟡 Coming Soon
+- 🔄 Cross-platform benchmarks (v1.1.0)
+- 🔄 Formula support (v1.2.0)
+- 🔄 Type inference (v1.3.0)
+
+### 🔴 Not Planned
+- ❌ Style/formatting preservation (design decision: keep lightweight)
+- ❌ VBA macro support
+- ❌ Merged cell support
+
+---
+
+## Dependencies
+
+All pinned to exact versions for reproducibility.
+
+See `pyproject.toml` for full list.
