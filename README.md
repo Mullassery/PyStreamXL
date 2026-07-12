@@ -441,3 +441,22 @@ For security issues, see [SECURITY.md](SECURITY.md).
 
 MIT © Georgi Mullassery
 
+
+## 🔒 Security & Error Handling
+
+StreamXL includes:
+
+- **Path Traversal Prevention**: Validates read/write paths for safety
+- **File Integrity**: Atomic writes with SHA256 verification
+- **Atomic Operations**: All file operations are atomic to prevent corruption
+- **Detailed Error Messages**: See `python/streamxl/error_messages.py` for file operation guidance
+
+### Security & Performance Roadmap
+
+- ✅ v1.0.1: Path validation, atomic writes, file integrity checks
+- ✅ v1.0.0: Basic streaming read/write
+- 🔄 v1.1.0: Cross-platform benchmarks (Intel, AMD, Apple)
+- 🔄 v1.2.0: Formula value support, better error messages
+- 📋 v1.3.0: Type inference and data validation
+
+Full roadmap: [ROADMAP.md](ROADMAP.md)
