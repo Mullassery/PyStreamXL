@@ -1,17 +1,52 @@
 version: 2
 updates:
-  - package-ecosystem: cargo
+  # Rust dependencies (Cargo.toml)
+  - package-ecosystem: "cargo"
     directory: "/"
     schedule:
-      interval: weekly
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
     open-pull-requests-limit: 5
     reviewers:
       - "Mullassery"
+    labels:
+      - "dependencies"
+      - "rust"
+    commit-message:
+      prefix: "chore(deps):"
+      include: "scope"
 
-  - package-ecosystem: pip
+  # Python dependencies (pip/pyproject.toml)
+  - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: weekly
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
     open-pull-requests-limit: 5
     reviewers:
       - "Mullassery"
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "chore(deps):"
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "Mullassery"
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci):"
+      include: "scope"
