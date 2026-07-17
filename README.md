@@ -335,15 +335,6 @@ pystreamxl.append(path, rows, sheet=None)
 
 ---
 
-## Roadmap
-
-- [ ] PyPI manylinux + macOS + Windows wheel distribution via CI
-- [ ] Cell background colour on write
-- [ ] Column width hints on write
-- [ ] `pystreamxl.read_all()` with sheet-level filtering
-
----
-
 ## How it works
 
 `.xlsx` is a ZIP archive of XML files. On **read**, pystreamxl loads `sharedStrings.xml` and `styles.xml` once, then event-streams the target sheet via `quick-xml` — one row in memory at a time. Numeric cells with a date style are converted to Python `datetime` objects using a Julian Day Number algorithm. On **write**, rows are encoded directly to XML in Rust as they arrive, with strings deduplicated into a shared string table and the bold flag applied per-row; the ZIP is assembled and flushed to disk on close.
@@ -451,16 +442,6 @@ PyStreamXL includes:
 - **File Integrity**: Atomic writes with SHA256 verification
 - **Atomic Operations**: All file operations are atomic to prevent corruption
 - **Detailed Error Messages**: See `python/pystreamxl/error_messages.py` for file operation guidance
-
-### Security & Performance Roadmap
-
-- ✅ v1.0.1: Path validation, atomic writes, file integrity checks
-- ✅ v1.0.0: Basic streaming read/write
-- ✅ v1.1.0: Cross-platform benchmarks (Intel, AMD, Apple)
-- ✅ v1.2.0: Formula value support, better error messages
-- 📋 v1.3.0: Type inference and data validation
-
-Full roadmap: [ROADMAP.md](ROADMAP.md)
 
 ## 🆕 What's New in v1.2.0 (Q4 2026)
 
