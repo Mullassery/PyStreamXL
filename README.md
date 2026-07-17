@@ -2,7 +2,8 @@
 
 **A Python library for reading and writing Microsoft Excel files (`.xlsx`) — powered by Rust.**
 
-[![Version](https://img.shields.io/badge/version-0.4.0-blue)](https://github.com/Mullassery/PyStreamXL/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0+-blue)](https://github.com/Mullassery/PyStreamXL/releases)
+![Status: v1.0 Production Ready](https://img.shields.io/badge/Status-v1.0%20Production%20Ready-brightgreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://pypi.org/project/pystreamxl/)
 [![Rust](https://img.shields.io/badge/rust-1.96%2B-orange)](https://www.rust-lang.org/)
