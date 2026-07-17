@@ -1,7 +1,8 @@
 from .api import read, stream, write, writer, sheets, read_all, append
 from .core import XlsxWriter
+from .security import SecurityError, get_security_limits
 
-# CRITICAL: Formula preservation support (unblocks finance teams)
+# Formula preservation support (unblocks finance teams)
 from ._formula_support import (
     FormulaAnalyzer,
     FormulaPreserver,
@@ -13,6 +14,8 @@ from ._formula_support import (
 
 __all__ = [
     "read", "stream", "write", "writer", "sheets", "read_all", "append", "XlsxWriter",
+    # Security
+    "SecurityError", "get_security_limits",
     # Formula support (v1.2.0+)
     "FormulaAnalyzer",
     "FormulaPreserver",
@@ -21,4 +24,4 @@ __all__ = [
     "FormulaCell",
     "FormulaMapping",
 ]
-__version__ = "0.4.0"
+__version__ = "1.1.0"  # Security hardening release

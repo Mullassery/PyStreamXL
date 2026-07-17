@@ -2,9 +2,11 @@ use std::io::{Read, Seek};
 use zip::ZipArchive;
 
 // SECURITY: Limits to prevent ZIP bomb (decompression bomb) attacks
-const MAX_ENTRY_SIZE: u64 = 2 * 1024 * 1024 * 1024; // 2GB per file
-const MAX_TOTAL_SIZE: u64 = 10 * 1024 * 1024 * 1024; // 10GB total
-const MAX_COMPRESSION_RATIO: f64 = 100.0; // Max 100:1 compression
+// These are conservative limits suitable for enterprise Excel documents
+// Most legitimate Excel files are < 50MB. Limits prevent resource exhaustion.
+const MAX_ENTRY_SIZE: u64 = 512 * 1024 * 1024; // 512MB per file (reasonable limit for large spreadsheets)
+const MAX_TOTAL_SIZE: u64 = 1024 * 1024 * 1024; // 1GB total (prevents consuming all system memory)
+const MAX_COMPRESSION_RATIO: f64 = 30.0; // Max 30:1 compression (industry standard ZIP bomb threshold)
 
 pub struct XlsxZip<R: Read + Seek> {
     archive: ZipArchive<R>,

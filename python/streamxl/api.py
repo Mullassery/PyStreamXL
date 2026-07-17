@@ -1,5 +1,6 @@
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Union
 from .core import list_sheets, read_rows, write_rows, XlsxWriter as _XlsxWriter
+from .security import validate_read_path, validate_write_path, SecurityError
 
 
 def read(
@@ -23,7 +24,12 @@ def read(
 
     Yields:
         List of cell values per row, or dict if as_dict=True.
+
+    Raises:
+        SecurityError: If file fails security validation (ZIP bomb protection).
     """
+    # Validate path before attempting to read (DOS/ZIP bomb protection)
+    validate_read_path(path)
     raw = read_rows(path, sheet)
 
     if not as_dict and columns is None:
@@ -77,7 +83,11 @@ def write(path: str, rows: Iterable[Iterable[Any]]) -> None:
             ["Name", "Joined", "Score"],
             ["Alice", datetime.date(2024, 1, 15), 95.5],
         ])
+
+    Raises:
+        SecurityError: If path fails security validation.
     """
+    validate_write_path(path)
     write_rows(path, rows)
 
 
@@ -92,12 +102,22 @@ def writer(path: str) -> _XlsxWriter:
             w.write_row(["Alice", 30])
             w.add_sheet("Summary")
             w.write_row(["Total", 1])
+
+    Raises:
+        SecurityError: If path fails security validation.
     """
+    validate_write_path(path)
     return _XlsxWriter(path)
 
 
 def sheets(path: str) -> List[str]:
-    """Return the list of sheet names in an Excel (.xlsx) file."""
+    """
+    Return the list of sheet names in an Excel (.xlsx) file.
+
+    Raises:
+        SecurityError: If file fails security validation (ZIP bomb protection).
+    """
+    validate_read_path(path)
     return list_sheets(path)
 
 
@@ -143,9 +163,14 @@ def append(path: str, rows: Iterable[Iterable[Any]], sheet: Optional[str] = None
         streamxl.write("log.xlsx", [["Date", "Event"]])
         streamxl.append("log.xlsx", [[datetime.date.today(), "started"]])
         streamxl.append("log.xlsx", [[datetime.date.today(), "finished"]])
+
+    Raises:
+        SecurityError: If file fails security validation (ZIP bomb protection).
     """
     import os, tempfile
 
+    # Validate path before attempting to read/write
+    validate_read_path(path)
     sheet_names = sheets(path)
     if not sheet_names:
         write(path, rows)
