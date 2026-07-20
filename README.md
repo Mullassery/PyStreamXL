@@ -1,6 +1,6 @@
 # PyStreamXL
 
-**A Python library for reading and writing Microsoft Excel files (`.xlsx`) — powered by Rust.**
+**Intelligent spreadsheet data engine. Query, transform, and govern spreadsheet data with quality validation and governance.**
 
 [![Version](https://img.shields.io/badge/version-1.0.0+-blue)](https://github.com/Mullassery/PyStreamXL/releases)
 ![Status: v1.0 Production Ready](https://img.shields.io/badge/Status-v1.0%20Production%20Ready-brightgreen)
@@ -8,7 +8,16 @@
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://pypi.org/project/pystreamxl/)
 [![Rust](https://img.shields.io/badge/rust-1.96%2B-orange)](https://www.rust-lang.org/)
 
-PyStreamXL is a Python library for reading and writing `.xlsx` spreadsheets — files used by Microsoft Excel, Google Sheets, LibreOffice Calc, and any tool that uses the Office Open XML format. It streams row by row on both read and write, so you never load the entire workbook into memory, and runs ~46× faster than openpyxl on read and ~10× faster on write.
+PyStreamXL treats spreadsheet data as enterprise asset — query with SQL-like language, validate quality, track transformations, and govern with audit trails. Streams row by row on both read and write, so you never load the entire workbook into memory. Runs ~46× faster than openpyxl on read and ~10× faster on write.
+
+**Architectural Role:** Owns spreadsheet data as enterprise asset. Applies same quality validation and governance as databases. Bridge between spreadsheets and data platforms.
+
+## Why Star This?
+
+- **Process 1M-row spreadsheets in milliseconds** — Never load a workbook into memory; stream rows on demand
+- **46× faster than openpyxl** — Rust-powered performance without sacrificing Python simplicity
+- **Quality validation built-in** — Catch data errors at the source, not downstream in your pipeline
+- **Governance + audit trails** — Track every transformation; prove data lineage for compliance
 
 ---
 
