@@ -42,7 +42,17 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: pip install -e ".[dev]"
+        run: cd python && pip install -e ".[dev]"
 
       - name: Run pytest
-        run: pytest tests/ -v --tb=short
+        run: |
+
+          if [ -d "python/tests" ]; then
+
+            cd python && pytest tests/ -v --tb=short
+
+          else
+
+            echo "No Python tests found in python/tests directory"
+
+          fi
