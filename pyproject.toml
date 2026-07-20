@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "streamxl"
-version = "1.0.0"
+version = "1.0.1"
 description = "High-performance Excel file reader with constant memory usage. Stream large .xlsx files row-by-row without loading entire file. 46x faster than openpyxl, handles multi-sheet workbooks. Rust-powered, Python API."
 authors = [{ name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com" }]
 maintainers = [{ name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com" }]
