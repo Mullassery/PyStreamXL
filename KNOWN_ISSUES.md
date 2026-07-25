@@ -1,8 +1,8 @@
 # PyStreamXL - Known Issues
 
-**Last Updated:** 2026-07-20  
-**Version:** 1.0.0  
-**Status:** 🟡 Builds successfully; PyPI publication blocked (403 Forbidden)
+**Last Updated:** 2026-07-26  
+**Version:** 1.0.1  
+**Status:** ✅ Published to PyPI successfully
 
 ---
 
@@ -48,63 +48,21 @@ warning: use of deprecated associated function `pyo3::types::PyDateTime::new_bou
 
 ## PyPI Publication Status
 
-### Issue: 403 Forbidden Error
+### ✅ RESOLVED: v1.0.1 Published Successfully
 
-**Status:** 🔴 Blocked  
-**Error:** `HTTPError: 403 Forbidden from https://upload.pypi.org/legacy/`  
-**Possible Causes:**
-1. Token permissions don't include `streamxl` project
-2. Project name conflict on PyPI (someone else owns it)
-3. Token scope limited to specific packages
+**Status:** ✅ Published  
+**Package:** `streamxl` on PyPI  
+**Latest Version:** 1.0.1  
+**Install:** `pip install streamxl`
 
-#### What This Means
-- Build artifacts created successfully
-- Upload to PyPI rejected with permission error
-- Package likely NOT on PyPI (vs v2.0.1 "400 already exists")
-- Need to investigate authentication/permissions
+#### Previous Issue (Now Fixed)
+The 403 Forbidden error that occurred during earlier upload attempts has been resolved. The package is now successfully available on PyPI and installable by end users.
 
-#### Diagnosis Steps
+#### Verify Installation
 ```bash
-# Check if package exists on PyPI
-pip search streamxl
-# or
-curl https://pypi.org/pypi/streamxl/json
-
-# Check token permissions
-python -c "from twine.commands import check; check.check(['--metadata'])"
-```
-
-#### Solution Options
-
-**Option 1: Use Different Token** (if available)
-```bash
-# Try with alternative PyPI token
-python -m twine upload dist/* --username __token__ --password YOUR_OTHER_TOKEN
-```
-
-**Option 2: Rename Project**
-```bash
-# Edit pyproject.toml
-name = "streamxl-core"  # Avoid conflict
-
-# Rebuild and re-publish
-python -m build
-python -m twine upload dist/*
-```
-
-**Option 3: GitHub Releases**
-```bash
-# Publish as GitHub Release instead
-# Users can install from GitHub:
-# pip install git+https://github.com/Mullassery/PyStreamXL.git
-```
-
-**Option 4: Check Token Scope**
-```bash
-# If using token, verify it's not limited to specific packages
-# PyPI tokens can be scoped to:
-#   - All projects (recommended)
-#   - Specific project only (would cause 403 for others)
+pip install streamxl
+python -c "import streamxl; print(streamxl.__version__)"
+# Output: 1.0.1
 ```
 
 ---
@@ -247,31 +205,33 @@ python -c "import ctypes; ctypes.cdll.LoadLibrary('/usr/lib/liblzma.5.dylib')"
 
 | Version | Status | Notes |
 |---------|--------|-------|
-| 1.0.0 | 🟡 Current | Builds OK; PyPI blocked by 403 |
-| 0.4.0 | ⚠️ Pre-release | Early development |
-| 0.1.0 | ⚠️ Deprecated | Initial version |
+| 1.0.1 | ✅ Current | Published on PyPI; Production ready |
+| 1.0.0 | ✅ Released | Core streaming engine complete |
+| 0.4.0 | ⚠️ Archived | Early development |
+| 0.1.0 | ⚠️ Archived | Initial version |
 
 ---
 
 ## Recommendations
 
-### Immediate Actions
-1. Investigate PyPI token permissions
-2. Verify project name availability on PyPI
-3. Test alternative authentication methods
+### Current Actions (v1.0.1+)
+1. ✅ PyPI publication resolved
+2. → Begin Phase 1: Query Engine implementation (v1.0 → v1.5)
+3. → Add cross-platform benchmarks (v1.1.0 - Q3 2026)
 
-### If Cannot Publish to PyPI
-1. Publish to GitHub Releases instead
-2. Provide installation via git URL
-3. Consider private PyPI or artifact repository
+### Cosmetic/Low-Priority
+1. Fix PyO3 deprecation warnings in `python/src/lib.rs` (lines 17, 23)
+   - Replace `PyDate::new_bound` → `PyDate::new`
+   - Replace `PyDateTime::new_bound` → `PyDateTime::new`
 
-### Long-Term
-1. Fix PyO3 deprecation warnings (cosmetic)
-2. Consider external library packaging strategy
-3. Set up CI/CD for automated builds and publishing
+### Long-Term (2026+)
+1. Phase 1: Query Engine (DuckDB integration, SQL queries)
+2. Phase 2: Modern Integrations (Arrow, Polars, DataFusion)
+3. Phase 3: Multi-File & AI (federation, schema discovery)
+4. Phase 4: Enterprise Governance (lineage, compliance)
 
 ---
 
-**Status:** Build complete; PyPI publication blocked (permission issue)  
-**Action Required:** Resolve token/permissions or rename project  
-**Last Review:** 2026-07-20
+**Status:** ✅ v1.0.1 Published and Production Ready  
+**Next Phase:** v1.1.0 Cross-Platform Benchmarks (Q3 2026)  
+**Last Review:** 2026-07-26
