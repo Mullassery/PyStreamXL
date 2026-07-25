@@ -9,5 +9,6 @@ pub mod writer;
 pub mod zip_reader;
 
 pub use sheet_manager::{SheetManager, SheetMetadata};
+pub use sheet_parser::{CellValue, CellMetadata};
 pub use stream::XlsxStream;
 pub use writer::{WriteCell, XlsxWriter};

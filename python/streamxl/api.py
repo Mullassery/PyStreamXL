@@ -1,5 +1,5 @@
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Union
-from .core import list_sheets, read_rows, write_rows, XlsxWriter as _XlsxWriter
+from .core import list_sheets, read_rows, read_rows_with_metadata, write_rows, XlsxWriter as _XlsxWriter
 from .security import validate_read_path, validate_write_path, SecurityError
 
 
@@ -8,6 +8,7 @@ def read(
     sheet: Optional[str] = None,
     as_dict: bool = False,
     columns: Optional[List[Union[int, str]]] = None,
+    with_formulas: bool = False,
 ) -> Iterator[Any]:
     """
     Stream rows from an Excel (.xlsx) file.
@@ -21,16 +22,25 @@ def read(
                   - List of int: zero-based column indices to keep.
                   - List of str: column names to keep (requires the file to
                     have a header row; works with or without as_dict=True).
+        with_formulas: If True, return cell metadata (value, formula, formula_type)
+                  instead of just values. Each cell is a dict with keys:
+                  'value', 'formula', 'formula_type'.
 
     Yields:
-        List of cell values per row, or dict if as_dict=True.
+        List of cell values per row, or dict if as_dict=True, or list of
+        cell metadata dicts if with_formulas=True.
 
     Raises:
         SecurityError: If file fails security validation (ZIP bomb protection).
     """
     # Validate path before attempting to read (DOS/ZIP bomb protection)
     validate_read_path(path)
-    raw = read_rows(path, sheet)
+
+    # Use metadata reader if formulas requested
+    if with_formulas:
+        raw = read_rows_with_metadata(path, sheet)
+    else:
+        raw = read_rows(path, sheet)
 
     if not as_dict and columns is None:
         yield from raw
@@ -41,7 +51,13 @@ def read(
 
     for i, row in enumerate(raw):
         if i == 0:
-            header = row
+            # Extract header values for column indexing
+            if with_formulas:
+                header_values = [cell.get("value") if isinstance(cell, dict) else cell for cell in row]
+            else:
+                header_values = row
+
+            header = header_values
             if columns is not None:
                 if all(isinstance(c, str) for c in columns):
                     name_to_pos = {h: j for j, h in enumerate(header)}

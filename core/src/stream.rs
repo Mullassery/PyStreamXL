@@ -1,5 +1,5 @@
 use crate::shared_strings;
-use crate::sheet_parser::{CellValue, SheetParser};
+use crate::sheet_parser::{CellValue, CellMetadata, SheetParser};
 use crate::styles::{self, StyleInfo};
 use crate::workbook;
 use crate::zip_reader::XlsxZip;
@@ -62,6 +62,13 @@ impl XlsxStream {
             done: false,
         }
     }
+
+    pub fn rows_with_metadata(&self) -> RowIterMetadata<'_> {
+        RowIterMetadata {
+            parser: SheetParser::new(&self.sheet_xml, &self.sst, &self.style_info),
+            done: false,
+        }
+    }
 }
 
 fn resolve_sheet_path(
@@ -109,6 +116,32 @@ impl<'a> Iterator for RowIter<'a> {
             return None;
         }
         match self.parser.next_row() {
+            Ok(Some(row)) => Some(Ok(row)),
+            Ok(None) => {
+                self.done = true;
+                None
+            }
+            Err(e) => {
+                self.done = true;
+                Some(Err(e))
+            }
+        }
+    }
+}
+
+pub struct RowIterMetadata<'a> {
+    parser: SheetParser<'a>,
+    done: bool,
+}
+
+impl<'a> Iterator for RowIterMetadata<'a> {
+    type Item = Result<Vec<CellMetadata>, Box<dyn std::error::Error>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.done {
+            return None;
+        }
+        match self.parser.next_row_with_metadata() {
             Ok(Some(row)) => Some(Ok(row)),
             Ok(None) => {
                 self.done = true;

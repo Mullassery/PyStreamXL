@@ -1,4 +1,5 @@
 from streamxl._core import read as _read_all
+from streamxl._core import read_with_metadata as _read_with_metadata
 from streamxl._core import write as _write_all
 from streamxl._core import sheets as _list_sheets
 from streamxl._core import PyXlsxWriter as XlsxWriter
@@ -6,6 +7,10 @@ from streamxl._core import PyXlsxWriter as XlsxWriter
 
 def read_rows(path: str, sheet=None):
     yield from _read_all(path, sheet)
+
+
+def read_rows_with_metadata(path: str, sheet=None):
+    yield from _read_with_metadata(path, sheet)
 
 
 def write_rows(path: str, rows):

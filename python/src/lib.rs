@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyDate, PyDateAccess, PyDateTime, PyList, PyTimeAccess};
+use pyo3::types::{PyDate, PyDateAccess, PyDateTime, PyDict, PyList, PyTimeAccess};
 use streamxl_core::dates;
-use streamxl_core::sheet_parser::CellValue;
+use streamxl_core::sheet_parser::{CellValue, CellMetadata};
 use streamxl_core::writer::WriteCell;
 use streamxl_core::{XlsxStream, XlsxWriter};
 
@@ -14,13 +14,13 @@ fn cell_to_pyobject(py: Python<'_>, cell: &CellValue) -> PyResult<PyObject> {
         CellValue::Bool(b) => Ok(b.into_pyobject(py)?.as_any().clone().unbind()),
         CellValue::Date(n) => {
             let (year, month, day) = dates::serial_to_date(*n as u32);
-            Ok(PyDate::new_bound(py, year, month as u8, day as u8)?
+            Ok(PyDate::new(py, year, month as u8, day as u8)?
                 .into_any()
                 .unbind())
         }
         CellValue::DateTime(n) => {
             let (year, month, day, hour, min, sec, us) = dates::serial_to_datetime(*n);
-            Ok(PyDateTime::new_bound(
+            Ok(PyDateTime::new(
                 py,
                 year,
                 month as u8,
@@ -34,8 +34,28 @@ fn cell_to_pyobject(py: Python<'_>, cell: &CellValue) -> PyResult<PyObject> {
             .into_any()
             .unbind())
         }
+        CellValue::Error(e) => Ok(e.clone().into_pyobject(py)?.into_any().unbind()),
         CellValue::Empty => Ok(py.None()),
     }
+}
+
+fn metadata_to_pydict(py: Python<'_>, metadata: &CellMetadata) -> PyResult<Py<PyDict>> {
+    let dict = PyDict::new(py);
+    dict.set_item("value", cell_to_pyobject(py, &metadata.value)?)?;
+
+    if let Some(formula) = &metadata.formula {
+        dict.set_item("formula", formula)?;
+    } else {
+        dict.set_item("formula", py.None())?;
+    }
+
+    if let Some(formula_type) = &metadata.formula_type {
+        dict.set_item("formula_type", formula_type)?;
+    } else {
+        dict.set_item("formula_type", py.None())?;
+    }
+
+    Ok(dict.into())
 }
 
 #[pyfunction]
@@ -51,6 +71,25 @@ fn read(py: Python<'_>, path: &str, sheet: Option<&str>) -> PyResult<Py<PyList>>
         let py_row = PyList::empty(py);
         for cell in &row {
             py_row.append(cell_to_pyobject(py, cell)?)?;
+        }
+        result.append(py_row)?;
+    }
+    Ok(result.into())
+}
+
+#[pyfunction]
+#[pyo3(signature = (path, sheet = None))]
+fn read_with_metadata(py: Python<'_>, path: &str, sheet: Option<&str>) -> PyResult<Py<PyList>> {
+    let stream = XlsxStream::open(path, sheet)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
+
+    let result = PyList::empty(py);
+    for row_result in stream.rows_with_metadata() {
+        let row = row_result
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        let py_row = PyList::empty(py);
+        for cell in &row {
+            py_row.append(metadata_to_pydict(py, cell)?)?;
         }
         result.append(py_row)?;
     }
@@ -196,6 +235,7 @@ impl PyXlsxWriter {
 #[pymodule]
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(read, m)?)?;
+    m.add_function(wrap_pyfunction!(read_with_metadata, m)?)?;
     m.add_function(wrap_pyfunction!(write, m)?)?;
     m.add_function(wrap_pyfunction!(sheets, m)?)?;
     m.add_class::<PyXlsxWriter>()?;
