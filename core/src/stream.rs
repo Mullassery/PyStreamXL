@@ -1,3 +1,4 @@
+use crate::comments::CommentCache;
 use crate::shared_strings;
 use crate::sheet_parser::{CellValue, CellMetadata, SheetParser};
 use crate::styles::{self, StyleInfo};
@@ -10,6 +11,7 @@ pub struct XlsxStream {
     sheet_xml: Vec<u8>,
     sst: Vec<String>,
     style_info: StyleInfo,
+    comments: CommentCache,
 }
 
 impl XlsxStream {
@@ -35,6 +37,14 @@ impl XlsxStream {
             StyleInfo::default()
         };
 
+        // Load comments (typically from xl/comments1.xml for first sheet)
+        let comments = if zip.has_entry("xl/comments1.xml") {
+            let raw = zip.read_entry("xl/comments1.xml")?;
+            CommentCache::from_xml(&raw).unwrap_or_default()
+        } else {
+            CommentCache::new()
+        };
+
         let sheet_path = resolve_sheet_path(&mut zip, sheet)?;
         let sheet_xml = zip.read_entry(&sheet_path)?;
 
@@ -42,6 +52,7 @@ impl XlsxStream {
             sheet_xml,
             sst,
             style_info,
+            comments,
         })
     }
 
@@ -66,7 +77,9 @@ impl XlsxStream {
     pub fn rows_with_metadata(&self) -> RowIterMetadata<'_> {
         RowIterMetadata {
             parser: SheetParser::new(&self.sheet_xml, &self.sst, &self.style_info),
+            comments: &self.comments,
             done: false,
+            current_row: 0,
         }
     }
 }
@@ -131,7 +144,9 @@ impl<'a> Iterator for RowIter<'a> {
 
 pub struct RowIterMetadata<'a> {
     parser: SheetParser<'a>,
+    comments: &'a CommentCache,
     done: bool,
+    current_row: usize,
 }
 
 impl<'a> Iterator for RowIterMetadata<'a> {
@@ -142,7 +157,17 @@ impl<'a> Iterator for RowIterMetadata<'a> {
             return None;
         }
         match self.parser.next_row_with_metadata() {
-            Ok(Some(row)) => Some(Ok(row)),
+            Ok(Some(mut row)) => {
+                // Attach comments to cells in this row
+                for (col_idx, cell) in row.iter_mut().enumerate() {
+                    if let Some(comment) = self.comments.get(self.current_row, col_idx) {
+                        cell.comment = Some(comment.text.clone());
+                        cell.comment_author = comment.author.clone();
+                    }
+                }
+                self.current_row += 1;
+                Some(Ok(row))
+            }
             Ok(None) => {
                 self.done = true;
                 None

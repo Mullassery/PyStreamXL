@@ -55,6 +55,18 @@ fn metadata_to_pydict(py: Python<'_>, metadata: &CellMetadata) -> PyResult<Py<Py
         dict.set_item("formula_type", py.None())?;
     }
 
+    if let Some(comment) = &metadata.comment {
+        dict.set_item("comment", comment)?;
+    } else {
+        dict.set_item("comment", py.None())?;
+    }
+
+    if let Some(author) = &metadata.comment_author {
+        dict.set_item("comment_author", author)?;
+    } else {
+        dict.set_item("comment_author", py.None())?;
+    }
+
     Ok(dict.into())
 }
 

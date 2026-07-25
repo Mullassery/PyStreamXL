@@ -18,6 +18,8 @@ pub struct CellMetadata {
     pub value: CellValue,
     pub formula: Option<String>,      // e.g., "=SUM(A1:A10)"
     pub formula_type: Option<String>, // "sum", "vlookup", "custom", etc
+    pub comment: Option<String>,      // Cell comment text
+    pub comment_author: Option<String>, // Comment author
 }
 
 impl CellMetadata {
@@ -26,12 +28,20 @@ impl CellMetadata {
             value,
             formula: None,
             formula_type: None,
+            comment: None,
+            comment_author: None,
         }
     }
 
     pub fn with_formula(mut self, formula: String, ftype: String) -> Self {
         self.formula = Some(formula);
         self.formula_type = Some(ftype);
+        self
+    }
+
+    pub fn with_comment(mut self, text: String, author: Option<String>) -> Self {
+        self.comment = Some(text);
+        self.comment_author = author;
         self
     }
 }
