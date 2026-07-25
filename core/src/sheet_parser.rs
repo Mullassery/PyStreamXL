@@ -223,22 +223,23 @@ impl<'a> SheetParser<'a> {
     }
 
     fn detect_formula_type(formula: &str) -> String {
+        // Note: formula text doesn't include the leading "=" sign
         let formula_upper = formula.to_uppercase();
-        if formula_upper.starts_with("=SUM(") {
+        if formula_upper.starts_with("SUM(") {
             "sum".to_string()
-        } else if formula_upper.starts_with("=AVERAGE(") || formula_upper.starts_with("=AVG(") {
+        } else if formula_upper.starts_with("AVERAGE(") || formula_upper.starts_with("AVG(") {
             "average".to_string()
-        } else if formula_upper.starts_with("=IF(") {
+        } else if formula_upper.starts_with("IF(") {
             "if".to_string()
-        } else if formula_upper.starts_with("=VLOOKUP(") {
+        } else if formula_upper.starts_with("VLOOKUP(") {
             "vlookup".to_string()
-        } else if formula_upper.starts_with("=INDEX(") && formula_upper.contains("MATCH") {
+        } else if formula_upper.starts_with("INDEX(") && formula_upper.contains("MATCH") {
             "index_match".to_string()
-        } else if formula_upper.starts_with("=COUNT") {
+        } else if formula_upper.starts_with("COUNT") {
             "count".to_string()
-        } else if formula_upper.starts_with("=PRODUCT(") {
+        } else if formula_upper.starts_with("PRODUCT(") {
             "product".to_string()
-        } else if formula_upper.starts_with("=SUBTOTAL(") {
+        } else if formula_upper.starts_with("SUBTOTAL(") {
             "subtotal".to_string()
         } else {
             "custom".to_string()
