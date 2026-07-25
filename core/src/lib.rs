@@ -1,5 +1,6 @@
 pub mod comments;
 pub mod dates;
+pub mod error_handling;
 pub mod shared_strings;
 pub mod sheet_manager;
 pub mod sheet_parser;
@@ -10,6 +11,7 @@ pub mod writer;
 pub mod zip_reader;
 
 pub use comments::CommentCache;
+pub use error_handling::{ErrorKind, ErrorSeverity, ErrorContext};
 pub use sheet_manager::{SheetManager, SheetMetadata};
 pub use sheet_parser::{CellValue, CellMetadata};
 pub use stream::XlsxStream;

@@ -14,6 +14,17 @@ from ._formula_support import (
 # Phase 3: Formula Tools
 from .formula_reference_mapper import FormulaReferenceMapper
 from .formula_io import FormulaSerializer
+# Phase 5: Error Recovery & Validation
+from .error_recovery import (
+    ErrorSeverity,
+    ErrorCategory,
+    RecoveryMode,
+    CellError,
+    ValidationReport,
+    ErrorRecoveryHandler,
+    ExcelValidationError,
+    validate_excel_file,
+)
 
 __all__ = [
     "read", "stream", "write", "writer", "sheets", "read_all", "append", "XlsxWriter",
@@ -29,5 +40,14 @@ __all__ = [
     # Phase 3: Formula Tools (v1.2.0+)
     "FormulaReferenceMapper",
     "FormulaSerializer",
+    # Phase 5: Error Recovery & Validation (v1.2.0+)
+    "ErrorSeverity",
+    "ErrorCategory",
+    "RecoveryMode",
+    "CellError",
+    "ValidationReport",
+    "ErrorRecoveryHandler",
+    "ExcelValidationError",
+    "validate_excel_file",
 ]
-__version__ = "1.2.0"  # Formula tools + Comments (Phase 3-4)
+__version__ = "1.2.0"  # Formulas + Tools + Comments + Error Recovery (Phases 1,3-5)
