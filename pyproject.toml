@@ -11,6 +11,11 @@ maintainers = [{ name = "Georgi Mammen Mullassery", email = "mullassery@gmail.co
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.8"
+dependencies = ["rich>=13.0"]
+
+[project.scripts]
+pystreamxl = "streamxl.cli:main"
+
 keywords = [
     "excel",
     "xlsx",
