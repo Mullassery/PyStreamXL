@@ -10,6 +10,7 @@ pub mod workbook;
 pub mod writer;
 pub mod zip_reader;
 pub mod formula_parser;
+pub mod incremental_recalculation;
 
 pub use comments::CommentCache;
 pub use error_handling::{ErrorKind, ErrorSeverity, ErrorContext};
@@ -18,3 +19,4 @@ pub use sheet_parser::{CellValue, CellMetadata};
 pub use stream::XlsxStream;
 pub use writer::{WriteCell, XlsxWriter};
 pub use formula_parser::{Formula, CellReference, FormulaExtractor, ReferenceMapper};
+pub use incremental_recalculation::{RecalcNode, IncrementalRecalculator, RecalcChange, RecalcOptimizer};
