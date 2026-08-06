@@ -6,4 +6,4 @@ resolver = "2"
 version = "1.0.0"
 edition = "2021"
 authors = ["Georgi Mullassery"]
-license = "MIT"
+license = "Proprietary"

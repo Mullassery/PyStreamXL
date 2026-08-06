@@ -4,18 +4,14 @@ build-backend = "maturin"
 
 [project]
 name = "streamxl"
-version = "1.2.1"
+version = "1.2.2"
 description = "High-performance Excel file reader with formula extraction and comment support. Stream large .xlsx files row-by-row without loading entire file. 46x faster than openpyxl, handles multi-sheet workbooks, formulas, and comments. Rust-powered, Python API."
 authors = [{ name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com" }]
 maintainers = [{ name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com" }]
 readme = "README.md"
-license = { text = "MIT" }
+license = { text = "Proprietary" }
 requires-python = ">=3.8"
 dependencies = ["rich>=13.0"]
-
-[project.scripts]
-pystreamxl = "streamxl.cli:main"
-
 keywords = [
     "excel",
     "xlsx",
@@ -42,7 +38,7 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Financial and Insurance Industry",
-    "License :: OSI Approved :: MIT License",
+    "License :: Other/Proprietary License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
@@ -57,6 +53,9 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
+[project.scripts]
+pystreamxl = "streamxl.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/Mullassery/StreamXL"
 Repository = "https://github.com/Mullassery/StreamXL"
@@ -66,14 +65,14 @@ Changelog = "https://github.com/Mullassery/StreamXL/releases"
 "Source Code" = "https://github.com/Mullassery/StreamXL/tree/main"
 Discussions = "https://github.com/Mullassery/StreamXL/discussions"
 
-[tool.maturin]
-python-source = "python"
-module-name = "streamxl._core"
-manifest-path = "python/Cargo.toml"
-include = ["LICENSE", "README.md"]
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
 ]
 
+[tool.maturin]
+python-source = "python"
+module-name = "streamxl._core"
+manifest-path = "python/Cargo.toml"
+include = ["LICENSE", "README.md"]

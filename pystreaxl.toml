@@ -1,0 +1,20 @@
+[mcp]
+enabled = true
+port = 8781
+discovery_method = "stdio"
+
+[mcp.tools]
+parse_spreadsheet = true
+extract_formulas = true
+map_cell_references = true
+detect_data_types = true
+validate_spreadsheet = true
+extract_named_ranges = true
+detect_pivot_tables = true
+analyze_conditional_formatting = true
+export_to_format = true
+detect_merged_cells = true
+extract_vba_macros = true
+
+[mcp.security]
+require_auth = false
