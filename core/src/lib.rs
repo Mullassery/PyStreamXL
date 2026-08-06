@@ -11,6 +11,7 @@ pub mod writer;
 pub mod zip_reader;
 pub mod formula_parser;
 pub mod incremental_recalculation;
+pub mod collaboration_detection;
 
 pub use comments::CommentCache;
 pub use error_handling::{ErrorKind, ErrorSeverity, ErrorContext};
@@ -20,3 +21,4 @@ pub use stream::XlsxStream;
 pub use writer::{WriteCell, XlsxWriter};
 pub use formula_parser::{Formula, CellReference, FormulaExtractor, ReferenceMapper};
 pub use incremental_recalculation::{RecalcNode, IncrementalRecalculator, RecalcChange, RecalcOptimizer};
+pub use collaboration_detection::{CollaborationDetector, CellCollaborationGroup, OptimizationOpportunity};
