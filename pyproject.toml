@@ -4,8 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "streamxl"
-version = "1.2.2"
-description = "High-performance Excel file reader with formula extraction and comment support. Stream large .xlsx files row-by-row without loading entire file. 46x faster than openpyxl, handles multi-sheet workbooks, formulas, and comments. Rust-powered, Python API."
+version = "5.0.0"
+description = "High-performance Excel with cross-sheet analysis and multi-sheet optimization. Dependency tracking, redundancy detection, formula consolidation suggestions. 46x faster than openpyxl. Rust-powered, Python API."
 authors = [{ name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com" }]
 maintainers = [{ name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com" }]
 readme = "README.md"
