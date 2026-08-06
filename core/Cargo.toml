@@ -10,7 +10,7 @@ name = "streamxl_core"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-zip = "2"
+zip = "8"
 quick-xml = { version = "0.36", features = ["async-tokio"] }
 pyo3 = { version = "0.23", features = ["extension-module"], optional = true }
 
