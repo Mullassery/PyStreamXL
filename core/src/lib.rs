@@ -9,6 +9,7 @@ pub mod styles;
 pub mod workbook;
 pub mod writer;
 pub mod zip_reader;
+pub mod formula_parser;
 
 pub use comments::CommentCache;
 pub use error_handling::{ErrorKind, ErrorSeverity, ErrorContext};
@@ -16,3 +17,4 @@ pub use sheet_manager::{SheetManager, SheetMetadata};
 pub use sheet_parser::{CellValue, CellMetadata};
 pub use stream::XlsxStream;
 pub use writer::{WriteCell, XlsxWriter};
+pub use formula_parser::{Formula, CellReference, FormulaExtractor, ReferenceMapper};
