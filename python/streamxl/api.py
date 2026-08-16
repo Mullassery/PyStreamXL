@@ -183,7 +183,8 @@ def append(path: str, rows: Iterable[Iterable[Any]], sheet: Optional[str] = None
     Raises:
         SecurityError: If file fails security validation (ZIP bomb protection).
     """
-    import os, tempfile
+    import os
+    from pathlib import Path
 
     # Validate path before attempting to read/write
     validate_read_path(path)
@@ -197,7 +198,11 @@ def append(path: str, rows: Iterable[Iterable[Any]], sheet: Optional[str] = None
         raise ValueError(f"sheet '{target}' not found; available: {sheet_names}")
 
     new_rows = list(rows)
-    tmp = path + ".~tmp"
+    # Keep a real .xlsx/.xls suffix on the temp file (rather than appending
+    # an arbitrary extension) so it still passes the same Excel-file
+    # validation as any other write target.
+    p = Path(path)
+    tmp = str(p.with_name(f"{p.stem}.~tmp{p.suffix}"))
     try:
         with writer(tmp) as w:
             for i, name in enumerate(sheet_names):
