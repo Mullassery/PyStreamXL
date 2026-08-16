@@ -1,6 +1,6 @@
 use crate::comments::CommentCache;
 use crate::shared_strings;
-use crate::sheet_parser::{CellValue, CellMetadata, SheetParser};
+use crate::sheet_parser::{CellMetadata, CellValue, SheetParser};
 use crate::styles::{self, StyleInfo};
 use crate::workbook;
 use crate::zip_reader::XlsxZip;

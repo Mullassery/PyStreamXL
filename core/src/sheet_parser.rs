@@ -16,9 +16,9 @@ pub enum CellValue {
 #[derive(Debug, Clone)]
 pub struct CellMetadata {
     pub value: CellValue,
-    pub formula: Option<String>,      // e.g., "=SUM(A1:A10)"
-    pub formula_type: Option<String>, // "sum", "vlookup", "custom", etc
-    pub comment: Option<String>,      // Cell comment text
+    pub formula: Option<String>,        // e.g., "=SUM(A1:A10)"
+    pub formula_type: Option<String>,   // "sum", "vlookup", "custom", etc
+    pub comment: Option<String>,        // Cell comment text
     pub comment_author: Option<String>, // Comment author
 }
 
@@ -126,7 +126,9 @@ impl<'a> SheetParser<'a> {
         }
     }
 
-    pub fn next_row_with_metadata(&mut self) -> Result<Option<Vec<CellMetadata>>, Box<dyn std::error::Error>> {
+    pub fn next_row_with_metadata(
+        &mut self,
+    ) -> Result<Option<Vec<CellMetadata>>, Box<dyn std::error::Error>> {
         let mut row: Option<Vec<CellMetadata>> = None;
         let mut cell_type = String::new();
         let mut cell_style: usize = 0;

@@ -11,8 +11,8 @@ pub mod writer;
 pub mod zip_reader;
 
 pub use comments::CommentCache;
-pub use error_handling::{ErrorKind, ErrorSeverity, ErrorContext};
+pub use error_handling::{ErrorContext, ErrorKind, ErrorSeverity};
 pub use sheet_manager::{SheetManager, SheetMetadata};
-pub use sheet_parser::{CellValue, CellMetadata};
+pub use sheet_parser::{CellMetadata, CellValue};
 pub use stream::XlsxStream;
 pub use writer::{WriteCell, XlsxWriter};
