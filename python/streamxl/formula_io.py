@@ -12,6 +12,8 @@ import json
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 
+from .security import sanitize_csv_cell
+
 
 class FormulaSerializer:
     """Export and import formulas from Excel files."""
@@ -91,6 +93,14 @@ class FormulaSerializer:
 
         CSV format: row,col,formula,type,value
 
+        SECURITY: Cell values (formula text and evaluated value) are
+        untrusted data that originated from the source .xlsx file. Any
+        string starting with ``=``, ``+``, ``-``, ``@``, TAB, or CR is
+        neutralized (prefixed with ``'``) before being written, to prevent
+        CSV/formula-injection attacks when the exported file is later
+        opened in Excel, LibreOffice, or Google Sheets. See
+        :func:`streamxl.security.sanitize_csv_cell`.
+
         Args:
             rows_with_metadata: Rows from read(with_formulas=True)
             output_path: Path to save CSV file
@@ -113,9 +123,9 @@ class FormulaSerializer:
                             [
                                 row_idx,
                                 col_idx,
-                                cell["formula"],
-                                cell.get("formula_type") or "custom",
-                                cell.get("value"),
+                                sanitize_csv_cell(cell["formula"]),
+                                sanitize_csv_cell(cell.get("formula_type") or "custom"),
+                                sanitize_csv_cell(cell.get("value")),
                             ]
                         )
 

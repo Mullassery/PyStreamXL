@@ -1,6 +1,6 @@
 from .api import read, stream, write, writer, sheets, read_all, append
 from .core import XlsxWriter
-from .security import SecurityError, get_security_limits
+from .security import SecurityError, get_security_limits, sanitize_csv_cell
 
 # Formula support (v1.2.0+)
 from ._formula_support import (
@@ -29,7 +29,7 @@ from .error_recovery import (
 __all__ = [
     "read", "stream", "write", "writer", "sheets", "read_all", "append", "XlsxWriter",
     # Security
-    "SecurityError", "get_security_limits",
+    "SecurityError", "get_security_limits", "sanitize_csv_cell",
     # Formula support (v1.2.0+)
     "FormulaAnalyzer",
     "FormulaPreserver",
@@ -50,4 +50,4 @@ __all__ = [
     "ExcelValidationError",
     "validate_excel_file",
 ]
-__version__ = "2.0.0"  # Formulas + Tools + Comments + Error Recovery (Phases 1,3-5)
+__version__ = "5.1.0"

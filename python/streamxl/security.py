@@ -97,3 +97,49 @@ def get_security_limits() -> dict:
         "max_total_size": MAX_TOTAL_SIZE,
         "max_compression_ratio": MAX_COMPRESSION_RATIO,
     }
+
+
+# Leading characters that Excel, LibreOffice Calc, Google Sheets, and other
+# spreadsheet applications interpret as the start of a formula when a CSV
+# cell is opened/imported. This is the well-known "CSV injection" /
+# "formula injection" vulnerability class (CWE-1236 / OWASP CSV injection):
+# an attacker who controls a cell value (e.g. "=cmd|'/c calc'!A0" or
+# "@SUM(1+1)*cmd|' /c calc'!A0") can achieve formula execution, data
+# exfiltration, or arbitrary command execution in the victim's spreadsheet
+# application once the exported CSV is opened.
+CSV_FORMULA_TRIGGER_CHARS = ("=", "+", "-", "@", "\t", "\r")
+
+
+def sanitize_csv_cell(value):
+    """
+    Neutralize CSV/Excel formula-injection payloads in a single cell value.
+
+    Any *string* value that begins with ``=``, ``+``, ``-``, ``@``, TAB, or
+    CR is prefixed with a single quote (``'``) so spreadsheet applications
+    render the cell as literal text instead of evaluating it as a formula.
+    This is the standard, widely-used mitigation for CSV/formula injection.
+
+    Non-string values (``int``, ``float``, ``bool``, ``None``, dates, ...)
+    are returned unchanged: they are written by the CSV encoder as plain
+    numeric/literal tokens and cannot carry a formula payload.
+
+    Args:
+        value: The raw cell value that will be written to a CSV file.
+
+    Returns:
+        The value, unchanged if safe, or prefixed with ``'`` if it starts
+        with a formula-injection trigger character.
+
+    Examples:
+        >>> sanitize_csv_cell("=cmd|'/c calc'!A0")
+        "'=cmd|'/c calc'!A0"
+        >>> sanitize_csv_cell("Alice")
+        'Alice'
+        >>> sanitize_csv_cell(-42)
+        -42
+    """
+    if not isinstance(value, str):
+        return value
+    if value and value[0] in CSV_FORMULA_TRIGGER_CHARS:
+        return "'" + value
+    return value
