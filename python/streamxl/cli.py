@@ -40,7 +40,7 @@ def main():
     dashboard_parser.add_argument('--config', metavar='PATH', help='Config file path')
     dashboard_parser.set_defaults(func=dashboard_command)
 
-    parser.add_argument('--version', action='version', version='PyStreamXL 1.2.0')
+    parser.add_argument('--version', action='version', version='PyStreamXL 5.1.0')
 
     args = parser.parse_args()
 

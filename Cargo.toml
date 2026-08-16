@@ -3,7 +3,7 @@ members = ["core", "python"]
 resolver = "2"
 
 [workspace.package]
-version = "1.0.0"
+version = "5.1.0"
 edition = "2021"
 authors = ["Georgi Mullassery"]
 license = "Proprietary"
