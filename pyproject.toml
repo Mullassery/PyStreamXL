@@ -57,18 +57,23 @@ classifiers = [
 pystreamxl = "streamxl.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/Mullassery/StreamXL"
-Repository = "https://github.com/Mullassery/StreamXL"
-Documentation = "https://github.com/Mullassery/StreamXL#readme"
-"Bug Tracker" = "https://github.com/Mullassery/StreamXL/issues"
-Changelog = "https://github.com/Mullassery/StreamXL/releases"
-"Source Code" = "https://github.com/Mullassery/StreamXL/tree/main"
-Discussions = "https://github.com/Mullassery/StreamXL/discussions"
+Homepage = "https://github.com/Mullassery/PyStreamXL"
+Repository = "https://github.com/Mullassery/PyStreamXL"
+Documentation = "https://github.com/Mullassery/PyStreamXL#readme"
+"Bug Tracker" = "https://github.com/Mullassery/PyStreamXL/issues"
+Changelog = "https://github.com/Mullassery/PyStreamXL/releases"
+"Source Code" = "https://github.com/Mullassery/PyStreamXL/tree/main"
+Discussions = "https://github.com/Mullassery/PyStreamXL/discussions"
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "flask>=2.0",
+    "openpyxl>=3.0",
+]
+server = [
+    "flask>=2.0",
 ]
 
 [tool.maturin]
