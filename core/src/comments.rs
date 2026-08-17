@@ -29,7 +29,6 @@ impl CommentCache {
         reader.config_mut().trim_text(true);
 
         let mut comments = HashMap::new();
-        let mut in_comment = false;
         let mut in_text = false;
         let mut current_ref = String::new();
         let mut current_author = String::new();
@@ -39,15 +38,12 @@ impl CommentCache {
             match reader.read_event()? {
                 Event::Start(ref e) => match e.name().as_ref() {
                     b"comment" => {
-                        in_comment = true;
                         // Extract ref="A1" attribute
                         for attr in e.attributes().flatten() {
                             if attr.key.as_ref() == b"ref" {
-                                current_ref =
-                                    String::from_utf8_lossy(&attr.value).into_owned();
+                                current_ref = String::from_utf8_lossy(&attr.value).into_owned();
                             } else if attr.key.as_ref() == b"authorId" {
-                                current_author =
-                                    String::from_utf8_lossy(&attr.value).into_owned();
+                                current_author = String::from_utf8_lossy(&attr.value).into_owned();
                             }
                         }
                     }
@@ -80,7 +76,6 @@ impl CommentCache {
                         current_ref.clear();
                         current_author.clear();
                         current_text.clear();
-                        in_comment = false;
                     }
                     _ => {}
                 },

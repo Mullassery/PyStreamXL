@@ -135,16 +135,28 @@ class TextualDashboard:
 
 
 class PyStreamXLDashboard:
+    """
+    NOTE: This dashboard currently renders SAMPLE data, not a live view of
+    real extraction jobs. PyStreamXL does not yet collect operational
+    telemetry (job queues, throughput, error rates) from the streaming
+    engine, so there is no real data source to back this view. The values
+    below are clearly labeled as sample data rather than presented as
+    live metrics, to avoid misleading users. Wiring this up to real
+    telemetry is tracked as a follow-up (see ROADMAP.md).
+    """
+
     def __init__(self, config_path: Optional[str] = None):
+        from . import __version__
+
         self.config_path = config_path or "./pystreamxl.yaml"
-        self.dashboard = get_dashboard_impl("PyStreamXL v1.2.0")
+        self.dashboard = get_dashboard_impl(f"PyStreamXL v{__version__}")
 
     def get_mock_metrics(self) -> DashboardMetrics:
         return DashboardMetrics(
             datetime.now().isoformat(),
-            "PyStreamXL Formula Extraction Dashboard",
+            "PyStreamXL Formula Extraction Dashboard (SAMPLE DATA — not live)",
             {
-                "Status": "🟢 Processing",
+                "Status": "⚠️ SAMPLE DATA (no live telemetry source is wired up yet)",
                 "Uptime": "7 days 2h 30m",
                 "Processing": {
                     "Pending": "23 files (45 MB)",
@@ -170,6 +182,10 @@ class PyStreamXLDashboard:
                 },
             },
             [
+                {
+                    "level": "warning",
+                    "message": "This dashboard shows SAMPLE data — no live telemetry is connected.",
+                },
                 {"level": "info", "message": "Formula extraction running smoothly"},
                 {"level": "warning", "message": "3 files failed to parse (complex formulas)"},
             ],

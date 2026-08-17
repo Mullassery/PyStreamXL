@@ -23,9 +23,16 @@ pub enum ErrorKind {
     /// Invalid cell format
     InvalidCellFormat { cell_ref: String, reason: String },
     /// Formula syntax error
-    FormulaError { cell_ref: String, formula: String, reason: String },
+    FormulaError {
+        cell_ref: String,
+        formula: String,
+        reason: String,
+    },
     /// Circular reference detected
-    CircularReference { cell_ref: String, references: Vec<String> },
+    CircularReference {
+        cell_ref: String,
+        references: Vec<String>,
+    },
     /// Invalid style/format reference
     InvalidStyleReference { style_id: usize },
     /// Invalid shared string reference
@@ -89,11 +96,7 @@ impl fmt::Display for ErrorKind {
                 formula,
                 reason,
             } => {
-                write!(
-                    f,
-                    "Formula error in {}: {} ({})",
-                    cell_ref, formula, reason
-                )
+                write!(f, "Formula error in {}: {} ({})", cell_ref, formula, reason)
             }
             ErrorKind::CircularReference {
                 cell_ref,

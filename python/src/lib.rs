@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateAccess, PyDateTime, PyDict, PyList, PyTimeAccess};
 use streamxl_core::dates;
-use streamxl_core::sheet_parser::{CellValue, CellMetadata};
+use streamxl_core::sheet_parser::{CellMetadata, CellValue};
 use streamxl_core::writer::WriteCell;
 use streamxl_core::{XlsxStream, XlsxWriter};
 
