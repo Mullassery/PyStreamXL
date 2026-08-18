@@ -16,7 +16,7 @@
 pip install streamxl
 ```
 
-Prebuilt wheels are published for common platforms. If you're building from source you'll need a Rust toolchain (see `rust-toolchain.toml`) and [maturin](https://www.maturin.rs/).
+A prebuilt wheel is currently published only for macOS (arm64); other platforms install from the source distribution, which requires a Rust toolchain (see `rust-toolchain.toml`) and [maturin](https://www.maturin.rs/) to build. Every PyPI release to date (1.2.0 through 5.1.0) has shipped exactly one platform wheel plus an sdist — no Linux or Windows wheels have been published yet.
 
 ## Quick start
 
@@ -142,7 +142,7 @@ What's **not** here, so you don't have to find out the hard way:
 - No SQL-style query language — `execute_query()` in the REST API streams rows from a named sheet, it does not parse arbitrary queries.
 - No pandas/Parquet/Arrow export built in. Convert `read()`'s output yourself, or open an issue if this matters to you.
 - No formula *evaluation* — formula text is extracted and classified, not recalculated.
-- The `pystreamxl dashboard` CLI command currently renders sample data, not live telemetry — it's clearly labeled as such in its own output.
+- The `pystreamxl dashboard` CLI command currently renders sample data, not live telemetry. Only `pystreamxl dashboard --static` (and `--alerts`/`--recommendations`/`--export`) labels this clearly, with an explicit "SAMPLE DATA — not live" warning; the bare `pystreamxl dashboard` (default interactive mode) currently prints an unlabeled placeholder (`Status: Active`) with no such disclaimer.
 
 ## Security
 
@@ -165,7 +165,8 @@ Actual numbers depend heavily on your file's structure (shared strings, formulas
 ## CLI
 
 ```bash
-pystreamxl dashboard          # sample extraction dashboard (see note above)
+pystreamxl dashboard          # sample extraction dashboard (unlabeled placeholder, see note above)
+pystreamxl dashboard --static # same sample data, clearly labeled "SAMPLE DATA — not live"
 pystreamxl --version
 ```
 
