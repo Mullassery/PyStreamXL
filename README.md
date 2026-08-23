@@ -150,6 +150,27 @@ What's **not** here, so you don't have to find out the hard way:
 - **ZIP-bomb defenses** — the Rust core enforces a per-entry size limit, a compression-ratio limit, and a total-decompressed-size limit while unpacking a workbook (see `core/src/zip_reader.rs`), tested against real crafted archives in `core/tests/zip_bomb_defense.rs`.
 - **CSV/formula-injection protection** — `streamxl.security.sanitize_csv_cell()` neutralizes any string cell that starts with `=`, `+`, `-`, `@`, TAB, or CR (the standard CSV-injection trigger set) by prefixing it with `'`, so a malicious workbook can't turn a CSV export into an executable formula when reopened in Excel/LibreOffice/Google Sheets. `FormulaSerializer.export_to_csv()` applies this automatically; apply it yourself when writing CSV from `read()` output (see the example above).
 
+**Limits, enforced by default (no configuration needed):**
+
+| Limit | Value |
+|---|---|
+| Max file size | 512 MB |
+| Max size per ZIP entry | 512 MB |
+| Max total decompressed size | 1 GB |
+| Max compression ratio | 30:1 |
+
+Handle malformed or malicious files by catching `SecurityError`:
+
+```python
+from streamxl import SecurityError, read
+
+try:
+    for row in read("data.xlsx"):
+        process(row)
+except SecurityError as e:
+    print(f"Security violation: {e}")
+```
+
 Found a security issue? See [SECURITY.md](SECURITY.md).
 
 ## Performance
