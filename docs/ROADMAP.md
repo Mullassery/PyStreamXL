@@ -30,6 +30,7 @@ None - v2.0.0 production-ready
 - [ ] Caching strategy for repeated queries
 - [ ] Memory optimization (target <200MB)
 - [ ] Connection pooling
+- [ ] Reactive backpressure for row streaming — `RowIter`/`RowIterMetadata` (`core/src/stream.rs`) are plain synchronous iterators with no flow-control (no bounded channel/semaphore); nothing regulates delivery rate to Python consumers under sustained concurrent multi-million-row conversions, independent of the existing static size/ratio caps
 
 ### 🟡 MEDIUM (Q3-Q4 2026)
 
@@ -38,6 +39,7 @@ None - v2.0.0 production-ready
 - [ ] Retry logic with exponential backoff
 - [ ] Graceful degradation
 - [ ] Fallback mechanisms
+- [ ] Conditional formatting rule parsing — no support at all currently (`conditionalFormatting`/`dxf` XML unhandled); note cached formula values (`<v>`) are already resolved correctly via `resolve_cell`/`CellMetadata::with_formula`, so this is scoped to conditional formatting only
 
 #### Architecture
 - [ ] Code refactoring (simplify hot paths)
