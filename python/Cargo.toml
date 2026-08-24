@@ -9,4 +9,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.23", features = ["extension-module"] }
+self_cell = "1.3.0"
 streamxl-core = { path = "../core" }

@@ -1,7 +1,9 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateAccess, PyDateTime, PyDict, PyList, PyTimeAccess};
+use self_cell::self_cell;
 use streamxl_core::dates;
 use streamxl_core::sheet_parser::{CellMetadata, CellValue};
+use streamxl_core::stream::{RowIter, RowIterMetadata};
 use streamxl_core::writer::WriteCell;
 use streamxl_core::{XlsxStream, XlsxWriter};
 
@@ -112,6 +114,162 @@ fn read_with_metadata(py: Python<'_>, path: &str, sheet: Option<&str>) -> PyResu
 fn sheets(path: &str) -> PyResult<Vec<String>> {
     XlsxStream::sheet_names(path)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))
+}
+
+fn dxf_to_pydict(py: Python<'_>, dxf: &streamxl_core::DxfFormat) -> PyResult<Py<PyDict>> {
+    let d = PyDict::new(py);
+    d.set_item("font_color", &dxf.font_color)?;
+    d.set_item("font_bold", dxf.font_bold)?;
+    d.set_item("font_italic", dxf.font_italic)?;
+    d.set_item("fill_bg_color", &dxf.fill_bg_color)?;
+    d.set_item("fill_fg_color", &dxf.fill_fg_color)?;
+    Ok(d.into())
+}
+
+#[pyfunction]
+#[pyo3(signature = (path, sheet = None))]
+fn conditional_formats(py: Python<'_>, path: &str, sheet: Option<&str>) -> PyResult<Py<PyList>> {
+    let stream = XlsxStream::open(path, sheet)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
+
+    let result = PyList::empty(py);
+    for rule in stream.conditional_formats() {
+        let d = PyDict::new(py);
+        d.set_item("sqref", &rule.sqref)?;
+        d.set_item("type", &rule.rule_type)?;
+        d.set_item("operator", &rule.operator)?;
+        d.set_item("formulas", &rule.formulas)?;
+        d.set_item("priority", rule.priority)?;
+        d.set_item("stop_if_true", rule.stop_if_true)?;
+        match &rule.format {
+            Some(dxf) => d.set_item("format", dxf_to_pydict(py, dxf)?)?,
+            None => d.set_item("format", py.None())?,
+        }
+        result.append(d)?;
+    }
+    Ok(result.into())
+}
+
+// ── Streaming (real backpressure) ────────────────────────────────────────────
+//
+// `read()`/`read_with_metadata()` above eagerly materialize an entire sheet
+// into a Python list before returning -- for a "streams large Excel files
+// with constant memory" library, that meant there was no way to actually get
+// constant memory from Python: the Rust-level `RowIter`/`RowIterMetadata`
+// (core/src/stream.rs) already stream with O(1) memory per row, but nothing
+// exposed that to Python, so every caller paid for the whole sheet in memory
+// regardless of how they intended to consume it.
+//
+// `PyRowIter`/`PyRowIterMetadata` below expose those iterators directly as
+// real Python iterators (`__iter__`/`__next__`). A Python `for row in
+// stream_rows(path):` loop only pulls one row into Python memory at a time --
+// the Rust parser doesn't produce the next row until Python's for-loop
+// actually asks for it. That's real (pull-based) backpressure: the consumer
+// controls the pace, and a slow consumer never causes rows to pile up in
+// memory waiting to be consumed, unlike `read()`'s all-at-once list.
+//
+// `RowIter<'a>`/`RowIterMetadata<'a>` borrow from the `XlsxStream` that
+// creates them, but a `#[pyclass]` needs to own everything it holds (no
+// lifetime parameters). `self_cell` builds a safe self-referential struct
+// pairing the owned `XlsxStream` with the borrowed iterator over it, without
+// unsafe code in this crate.
+
+self_cell!(
+    struct OwnedRowIter {
+        owner: Box<XlsxStream>,
+
+        #[covariant]
+        dependent: RowIter,
+    }
+);
+
+self_cell!(
+    struct OwnedRowIterMetadata {
+        owner: Box<XlsxStream>,
+
+        #[covariant]
+        dependent: RowIterMetadata,
+    }
+);
+
+/// Real streaming row iterator: `for row in stream_rows(path):` holds only
+/// one row in Python memory at a time.
+#[pyclass(unsendable)]
+struct PyRowIter {
+    inner: OwnedRowIter,
+}
+
+#[pymethods]
+impl PyRowIter {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __next__(mut slf: PyRefMut<'_, Self>, py: Python<'_>) -> PyResult<Option<Py<PyList>>> {
+        let next_row = slf.inner.with_dependent_mut(|_owner, iter| iter.next());
+        match next_row {
+            None => Ok(None),
+            Some(Err(e)) => Err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                e.to_string(),
+            )),
+            Some(Ok(row)) => {
+                let py_row = PyList::empty(py);
+                for cell in &row {
+                    py_row.append(cell_to_pyobject(py, cell)?)?;
+                }
+                Ok(Some(py_row.into()))
+            }
+        }
+    }
+}
+
+/// Real streaming row+metadata iterator (formulas, comments, etc.) -- same
+/// one-row-at-a-time backpressure as `PyRowIter`.
+#[pyclass(unsendable)]
+struct PyRowIterMetadata {
+    inner: OwnedRowIterMetadata,
+}
+
+#[pymethods]
+impl PyRowIterMetadata {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __next__(mut slf: PyRefMut<'_, Self>, py: Python<'_>) -> PyResult<Option<Py<PyList>>> {
+        let next_row = slf.inner.with_dependent_mut(|_owner, iter| iter.next());
+        match next_row {
+            None => Ok(None),
+            Some(Err(e)) => Err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                e.to_string(),
+            )),
+            Some(Ok(row)) => {
+                let py_row = PyList::empty(py);
+                for cell in &row {
+                    py_row.append(metadata_to_pydict(py, cell)?)?;
+                }
+                Ok(Some(py_row.into()))
+            }
+        }
+    }
+}
+
+#[pyfunction]
+#[pyo3(signature = (path, sheet = None))]
+fn stream_rows(path: &str, sheet: Option<&str>) -> PyResult<PyRowIter> {
+    let stream = XlsxStream::open(path, sheet)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
+    let inner = OwnedRowIter::new(Box::new(stream), |owner| owner.rows());
+    Ok(PyRowIter { inner })
+}
+
+#[pyfunction]
+#[pyo3(signature = (path, sheet = None))]
+fn stream_rows_with_metadata(path: &str, sheet: Option<&str>) -> PyResult<PyRowIterMetadata> {
+    let stream = XlsxStream::open(path, sheet)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
+    let inner = OwnedRowIterMetadata::new(Box::new(stream), |owner| owner.rows_with_metadata());
+    Ok(PyRowIterMetadata { inner })
 }
 
 // ── Writing ───────────────────────────────────────────────────────────────────
@@ -248,8 +406,13 @@ impl PyXlsxWriter {
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(read, m)?)?;
     m.add_function(wrap_pyfunction!(read_with_metadata, m)?)?;
+    m.add_function(wrap_pyfunction!(stream_rows, m)?)?;
+    m.add_function(wrap_pyfunction!(stream_rows_with_metadata, m)?)?;
     m.add_function(wrap_pyfunction!(write, m)?)?;
     m.add_function(wrap_pyfunction!(sheets, m)?)?;
+    m.add_function(wrap_pyfunction!(conditional_formats, m)?)?;
     m.add_class::<PyXlsxWriter>()?;
+    m.add_class::<PyRowIter>()?;
+    m.add_class::<PyRowIterMetadata>()?;
     Ok(())
 }

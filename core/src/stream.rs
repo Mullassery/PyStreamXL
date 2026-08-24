@@ -1,4 +1,6 @@
 use crate::comments::CommentCache;
+use crate::conditional_formatting::{self, ConditionalFormatRule};
+use crate::dxf;
 use crate::shared_strings;
 use crate::sheet_parser::{CellMetadata, CellValue, SheetParser};
 use crate::styles::{self, StyleInfo};
@@ -12,6 +14,7 @@ pub struct XlsxStream {
     sst: Vec<String>,
     style_info: StyleInfo,
     comments: CommentCache,
+    conditional_formats: Vec<ConditionalFormatRule>,
 }
 
 impl XlsxStream {
@@ -30,11 +33,13 @@ impl XlsxStream {
             Vec::new()
         };
 
-        let style_info = if zip.has_entry("xl/styles.xml") {
+        let (style_info, dxfs) = if zip.has_entry("xl/styles.xml") {
             let raw = zip.read_entry("xl/styles.xml")?;
-            styles::parse(&raw).unwrap_or_default()
+            let style_info = styles::parse(&raw).unwrap_or_default();
+            let dxfs = dxf::parse_dxfs(&raw).unwrap_or_default();
+            (style_info, dxfs)
         } else {
-            StyleInfo::default()
+            (StyleInfo::default(), Vec::new())
         };
 
         // Load comments (typically from xl/comments1.xml for first sheet)
@@ -47,13 +52,23 @@ impl XlsxStream {
 
         let sheet_path = resolve_sheet_path(&mut zip, sheet)?;
         let sheet_xml = zip.read_entry(&sheet_path)?;
+        let conditional_formats =
+            conditional_formatting::parse(&sheet_xml, &dxfs).unwrap_or_default();
 
         Ok(Self {
             sheet_xml,
             sst,
             style_info,
             comments,
+            conditional_formats,
         })
+    }
+
+    /// Conditional formatting rules (`<conditionalFormatting>`/`<cfRule>`) for
+    /// the sheet this stream was opened on, with each rule's `dxfId` already
+    /// resolved against `xl/styles.xml`'s `<dxfs>`.
+    pub fn conditional_formats(&self) -> &[ConditionalFormatRule] {
+        &self.conditional_formats
     }
 
     /// Return all sheet names from the workbook.

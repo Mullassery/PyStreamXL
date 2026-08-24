@@ -30,7 +30,7 @@ None - v2.0.0 production-ready
 - [ ] Caching strategy for repeated queries
 - [ ] Memory optimization (target <200MB)
 - [ ] Connection pooling
-- [ ] Reactive backpressure for row streaming — `RowIter`/`RowIterMetadata` (`core/src/stream.rs`) are plain synchronous iterators with no flow-control (no bounded channel/semaphore); nothing regulates delivery rate to Python consumers under sustained concurrent multi-million-row conversions, independent of the existing static size/ratio caps
+- [x] Reactive backpressure for row streaming — **Done (v5.2.0).** `read()`/`stream()` previously called the eager `_core.read()` binding, materializing the entire sheet into a Python list before yielding row 0 at all — "streaming" in name only, worse than the originally-described gap. Fixed with a real `__iter__`/`__next__` Python iterator (`PyRowIter`/`PyRowIterMetadata` in `python/src/lib.rs`, built on `self_cell` to safely pair the owned `XlsxStream` with a borrowed `RowIter`) that pulls exactly one row per `next()` call from the already-correct Rust-level `RowIter`/`RowIterMetadata`. The old eager behavior is preserved under explicit `read_rows_all_at_once()`/`read_rows_with_metadata_all_at_once()` names for callers that need random access or repeated iteration. Regression-tested in `tests/test_streaming.py` via a wall-clock timing ratio (time-to-first-row vs. total time), since `tracemalloc` doesn't reliably track PyO3/Rust-native allocations.
 
 ### 🟡 MEDIUM (Q3-Q4 2026)
 
@@ -39,7 +39,7 @@ None - v2.0.0 production-ready
 - [ ] Retry logic with exponential backoff
 - [ ] Graceful degradation
 - [ ] Fallback mechanisms
-- [ ] Conditional formatting rule parsing — no support at all currently (`conditionalFormatting`/`dxf` XML unhandled); note cached formula values (`<v>`) are already resolved correctly via `resolve_cell`/`CellMetadata::with_formula`, so this is scoped to conditional formatting only
+- [x] Conditional formatting rule parsing — **Done (v5.2.0).** New `core/src/conditional_formatting.rs` parses every `<conditionalFormatting>`/`<cfRule>` block in worksheet XML (type, operator, formula(s), priority, `stopIfTrue`) and `core/src/dxf.rs` parses `xl/styles.xml`'s `<dxfs>`; each rule's `dxfId` is resolved into the differential format's font color/bold/italic and fill colors. Exposed as `streamxl.conditional_formats(path, sheet=None)`. `colorScale`/`dataBar`/`iconSet` rules are captured (type, sqref, priority) but their inline color-stop/threshold children aren't modeled — those rule types don't reference `dxfId` at all, so this is a distinct, larger scope than closing the "no parsing at all" gap.
 
 #### Architecture
 - [ ] Code refactoring (simplify hot paths)

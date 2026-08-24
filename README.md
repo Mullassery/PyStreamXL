@@ -16,7 +16,7 @@
 pip install streamxl
 ```
 
-A prebuilt wheel is currently published only for macOS (arm64); other platforms install from the source distribution, which requires a Rust toolchain (see `rust-toolchain.toml`) and [maturin](https://www.maturin.rs/) to build. Every PyPI release to date (1.2.0 through 5.1.0) has shipped exactly one platform wheel plus an sdist — no Linux or Windows wheels have been published yet.
+A prebuilt wheel is currently published only for macOS (arm64); other platforms install from the source distribution, which requires a Rust toolchain (see `rust-toolchain.toml`) and [maturin](https://www.maturin.rs/) to build. Every PyPI release to date (1.2.0 through 5.2.0) has shipped exactly one platform wheel plus an sdist — no Linux or Windows wheels have been published yet.
 
 ## Quick start
 
@@ -127,11 +127,12 @@ More runnable examples live in [`examples/`](examples/).
 
 What's here and real, backed by the Rust core and covered by the test suite:
 
-- **Streaming reads** — `read()` / `stream()`: O(1) memory per row, regardless of file size.
+- **Streaming reads** — `read()` / `stream()`: real, pull-based streaming backed by a Rust `__iter__`/`__next__` iterator over the sheet, not a full-sheet materialization dressed up as a generator — O(1) memory per row, regardless of file size. `read_rows_all_at_once()`/`read_rows_with_metadata_all_at_once()` remain available as an explicit escape hatch for callers that need random access or to iterate the result more than once.
 - **Multi-sheet support** — `sheets()`, `read_all()`, and `writer().add_sheet()`.
 - **Streaming writes** — `write()`, `writer()`, `append()`, all producing real `.xlsx` files.
 - **Formula extraction** — read formula text and a best-effort formula-type classification (`with_formulas=True`), plus `FormulaReferenceMapper` for shifting/rewriting cell references and `FormulaSerializer` for exporting/importing formulas as JSON or CSV.
 - **Comment extraction** — cell comments and authors, via `with_formulas=True`.
+- **Conditional formatting rules** — `conditional_formats()` reads every `<conditionalFormatting>`/`<cfRule>` in a sheet (type, operator, formulas, priority, `stopIfTrue`) and resolves each rule's `dxfId` against `xl/styles.xml`'s `<dxfs>` into concrete font color/bold/italic and fill colors. `colorScale`/`dataBar`/`iconSet` rules are captured (type, sqref, priority) but their inline color-stop/threshold definitions aren't modeled — those rule types don't use `dxfId` in the first place.
 - **Type-aware cells** — strings, numbers, booleans, dates, datetimes, and empty cells round-trip correctly.
 - **Error recovery & validation** — `validate_excel_file()` and `ErrorRecoveryHandler` classify and (optionally) recover from malformed cells instead of hard-failing on the whole file.
 - **Security hardening** — path validation, file-size limits, and ZIP-bomb defenses (entry-size, compression-ratio, and total-decompressed-size limits) enforced before/while a file is opened. CSV export is sanitized against formula-injection (see below).

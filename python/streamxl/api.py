@@ -1,5 +1,12 @@
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Union
-from .core import list_sheets, read_rows, read_rows_with_metadata, write_rows, XlsxWriter as _XlsxWriter
+from .core import (
+    get_conditional_formats,
+    list_sheets,
+    read_rows,
+    read_rows_with_metadata,
+    write_rows,
+    XlsxWriter as _XlsxWriter,
+)
 from .security import validate_read_path, validate_write_path, SecurityError
 
 
@@ -135,6 +142,39 @@ def sheets(path: str) -> List[str]:
     """
     validate_read_path(path)
     return list_sheets(path)
+
+
+def conditional_formats(path: str, sheet: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    Return conditional formatting rules for a sheet.
+
+    Each rule is a dict::
+
+        {
+            "sqref": "B2:B10",
+            "type": "cellIs",
+            "operator": "greaterThan",
+            "formulas": ["100"],
+            "priority": 1,
+            "stop_if_true": False,
+            "format": {
+                "font_color": "FFFF0000",
+                "font_bold": True,
+                "font_italic": None,
+                "fill_bg_color": "FFFFFF00",
+                "fill_fg_color": None,
+            },
+        }
+
+    `format` is None for rule types that don't reference a differential
+    format via dxfId (e.g. colorScale, dataBar, iconSet) or whose dxfId
+    isn't present in `xl/styles.xml`.
+
+    Raises:
+        SecurityError: If file fails security validation (ZIP bomb protection).
+    """
+    validate_read_path(path)
+    return get_conditional_formats(path, sheet)
 
 
 def read_all(

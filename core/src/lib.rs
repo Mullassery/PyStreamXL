@@ -1,5 +1,7 @@
 pub mod comments;
+pub mod conditional_formatting;
 pub mod dates;
+pub mod dxf;
 pub mod error_handling;
 pub mod shared_strings;
 pub mod sheet_manager;
@@ -15,6 +17,8 @@ pub mod collaboration_detection;
 pub mod cross_sheet_analysis;
 
 pub use comments::CommentCache;
+pub use conditional_formatting::ConditionalFormatRule;
+pub use dxf::DxfFormat;
 pub use error_handling::{ErrorContext, ErrorKind, ErrorSeverity};
 pub use sheet_manager::{SheetManager, SheetMetadata};
 pub use sheet_parser::{CellMetadata, CellValue};
