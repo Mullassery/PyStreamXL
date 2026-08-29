@@ -320,7 +320,8 @@ fn pyobject_to_writecell(py: Python<'_>, obj: &PyObject) -> PyResult<WriteCell> 
 
 #[pyfunction]
 fn write(py: Python<'_>, path: &str, rows: PyObject) -> PyResult<()> {
-    let mut writer = XlsxWriter::new(path);
+    let mut writer = XlsxWriter::new(path)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
     for row_obj in rows.bind(py).try_iter()? {
         let row_obj = row_obj?;
         let mut cells: Vec<WriteCell> = Vec::new();
@@ -328,7 +329,9 @@ fn write(py: Python<'_>, path: &str, rows: PyObject) -> PyResult<()> {
             let cell = cell_obj?.unbind();
             cells.push(pyobject_to_writecell(py, &cell)?);
         }
-        writer.write_row(&cells, false);
+        writer
+            .write_row(&cells, false)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
     }
     writer
         .finish()
@@ -349,10 +352,10 @@ struct PyXlsxWriter {
 #[pymethods]
 impl PyXlsxWriter {
     #[new]
-    fn new(path: &str) -> Self {
-        Self {
-            inner: Some(XlsxWriter::new(path)),
-        }
+    fn new(path: &str) -> PyResult<Self> {
+        let inner = XlsxWriter::new(path)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
+        Ok(Self { inner: Some(inner) })
     }
 
     #[pyo3(signature = (row, bold = false))]
@@ -365,16 +368,18 @@ impl PyXlsxWriter {
             let cell = item?.unbind();
             cells.push(pyobject_to_writecell(py, &cell)?);
         }
-        writer.write_row(&cells, bold);
-        Ok(())
+        writer
+            .write_row(&cells, bold)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))
     }
 
     fn add_sheet(&mut self, name: &str) -> PyResult<()> {
         let writer = self.inner.as_mut().ok_or_else(|| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("writer already closed")
         })?;
-        writer.add_sheet(name);
-        Ok(())
+        writer
+            .add_sheet(name)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))
     }
 
     fn close(&mut self) -> PyResult<()> {

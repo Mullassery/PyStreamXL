@@ -1,9 +1,89 @@
 use std::collections::HashMap;
+use std::fmt;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
+
+// SECURITY: Limits to bound memory/disk growth on the write path, mirroring
+// the read-side protections in `zip_reader.rs` (MAX_ENTRY_SIZE / MAX_TOTAL_SIZE).
+//
+// Without these, a caller feeding an unbounded row iterator (or a hostile
+// caller deliberately trying to exhaust memory/disk) could grow a single
+// worksheet's XML buffer, or the workbook as a whole, without limit before
+// `finish()` is ever reached.
+
+/// Bytes of buffered worksheet XML we accumulate in memory before flushing
+/// to the underlying ZIP stream. Keeps peak memory roughly constant instead
+/// of growing linearly with the number of rows written.
+pub const FLUSH_THRESHOLD: usize = 4 * 1024 * 1024; // 4MB
+
+/// Maximum uncompressed size of a single worksheet's XML. Mirrors
+/// `zip_reader::MAX_ENTRY_SIZE` so nothing we write here would be rejected
+/// as an oversized entry if it were read back.
+pub const MAX_ENTRY_SIZE: u64 = 512 * 1024 * 1024; // 512MB per sheet
+
+/// Maximum cumulative uncompressed size of worksheet XML across the whole
+/// workbook. Mirrors `zip_reader::MAX_TOTAL_SIZE`.
+pub const MAX_TOTAL_SIZE: u64 = 1024 * 1024 * 1024; // 1GB total
+
+/// Errors that can occur while writing an XLSX file.
+#[derive(Debug)]
+pub enum WriterError {
+    /// A single worksheet's XML grew beyond [`MAX_ENTRY_SIZE`].
+    EntryTooLarge {
+        sheet: String,
+        size: u64,
+        limit: u64,
+    },
+    /// Cumulative worksheet XML size across the workbook would exceed
+    /// [`MAX_TOTAL_SIZE`].
+    TotalTooLarge { size: u64, limit: u64 },
+    /// Underlying I/O error (disk full, permission denied, etc).
+    Io(std::io::Error),
+    /// Underlying ZIP-format error.
+    Zip(zip::result::ZipError),
+}
+
+impl fmt::Display for WriterError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            WriterError::EntryTooLarge { sheet, size, limit } => write!(
+                f,
+                "worksheet '{sheet}' XML exceeds size limit: {size} > {limit} bytes"
+            ),
+            WriterError::TotalTooLarge { size, limit } => write!(
+                f,
+                "total worksheet XML size would exceed limit: {size} > {limit} bytes"
+            ),
+            WriterError::Io(e) => write!(f, "I/O error writing XLSX: {e}"),
+            WriterError::Zip(e) => write!(f, "ZIP error writing XLSX: {e}"),
+        }
+    }
+}
+
+impl std::error::Error for WriterError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            WriterError::Io(e) => Some(e),
+            WriterError::Zip(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+impl From<std::io::Error> for WriterError {
+    fn from(e: std::io::Error) -> Self {
+        WriterError::Io(e)
+    }
+}
+
+impl From<zip::result::ZipError> for WriterError {
+    fn from(e: zip::result::ZipError) -> Self {
+        WriterError::Zip(e)
+    }
+}
 
 pub enum WriteCell {
     Str(String),
@@ -14,13 +94,31 @@ pub enum WriteCell {
     Empty,
 }
 
+/// Streaming XLSX writer.
+///
+/// Worksheet XML is written directly to the underlying ZIP stream in
+/// bounded-size chunks (see [`FLUSH_THRESHOLD`]) as rows come in, rather
+/// than being buffered in full and written once in [`XlsxWriter::finish`].
+/// This keeps peak memory roughly constant relative to sheet size. Size
+/// limits (mirroring the read-side ZIP-bomb defenses in `zip_reader.rs`)
+/// are enforced as data is flushed so a runaway caller fails fast with a
+/// clear error instead of exhausting memory or disk.
 pub struct XlsxWriter {
+    zip: ZipWriter<File>,
+    opts: SimpleFileOptions,
     output_path: PathBuf,
-    // Completed sheets: (name, finalized XML bytes)
-    sheets: Vec<(String, Vec<u8>)>,
-    // Current sheet being written
-    current_name: String,
+    // Names of all sheets started so far, in order (including the current one).
+    sheet_names: Vec<String>,
+    // XML buffered for the sheet currently being written, not yet flushed.
     current_buf: Vec<u8>,
+    // Uncompressed bytes already flushed to the ZIP stream for the current sheet.
+    current_sheet_flushed: u64,
+    // Uncompressed bytes already flushed to the ZIP stream across all sheets.
+    total_flushed: u64,
+    // Number of times `current_buf` has been flushed. Exposed for tests /
+    // diagnostics to confirm streaming (bounded-memory) behavior rather than
+    // a single flush-everything-at-finish() pattern.
+    flush_count: usize,
     // Shared string table across all sheets
     sst: Vec<String>,
     sst_index: HashMap<String, usize>,
@@ -37,28 +135,107 @@ fn sheet_header() -> Vec<u8> {
 }
 
 impl XlsxWriter {
-    pub fn new(path: impl AsRef<Path>) -> Self {
-        Self {
-            output_path: path.as_ref().to_path_buf(),
-            sheets: Vec::new(),
-            current_name: "Sheet1".to_string(),
+    pub fn new(path: impl AsRef<Path>) -> Result<Self, WriterError> {
+        let output_path = path.as_ref().to_path_buf();
+        let file = File::create(&output_path)?;
+        let mut zip = ZipWriter::new(file);
+        let opts =
+            SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+
+        // Open the first worksheet entry immediately so rows can stream
+        // straight into it instead of accumulating in memory.
+        zip.start_file("xl/worksheets/sheet1.xml", opts)?;
+
+        Ok(Self {
+            zip,
+            opts,
+            output_path,
+            sheet_names: vec!["Sheet1".to_string()],
             current_buf: sheet_header(),
+            current_sheet_flushed: 0,
+            total_flushed: 0,
+            flush_count: 0,
             sst: Vec::new(),
             sst_index: HashMap::new(),
+        })
+    }
+
+    /// Number of times the internal buffer has been flushed to the ZIP
+    /// stream so far. Useful for tests/diagnostics confirming that memory
+    /// use is bounded rather than growing until `finish()`.
+    pub fn flush_count(&self) -> usize {
+        self.flush_count
+    }
+
+    /// Current size (bytes) of the not-yet-flushed XML buffer for the
+    /// in-progress sheet. Exposed for tests/diagnostics: this should stay
+    /// bounded around [`FLUSH_THRESHOLD`] no matter how many rows have been
+    /// written, proving memory use doesn't grow linearly with row count.
+    pub fn buffered_len(&self) -> usize {
+        self.current_buf.len()
+    }
+
+    /// Flush any buffered XML for the current sheet to the underlying ZIP
+    /// stream, enforcing the entry/total size limits as we go.
+    fn flush_current(&mut self) -> Result<(), WriterError> {
+        if self.current_buf.is_empty() {
+            return Ok(());
         }
+        let len = self.current_buf.len() as u64;
+
+        let new_sheet_total = self.current_sheet_flushed.saturating_add(len);
+        if new_sheet_total > MAX_ENTRY_SIZE {
+            return Err(WriterError::EntryTooLarge {
+                sheet: self
+                    .sheet_names
+                    .last()
+                    .cloned()
+                    .unwrap_or_else(|| "<unknown>".to_string()),
+                size: new_sheet_total,
+                limit: MAX_ENTRY_SIZE,
+            });
+        }
+
+        let new_total = self.total_flushed.saturating_add(len);
+        if new_total > MAX_TOTAL_SIZE {
+            return Err(WriterError::TotalTooLarge {
+                size: new_total,
+                limit: MAX_TOTAL_SIZE,
+            });
+        }
+
+        self.zip.write_all(&self.current_buf)?;
+        self.current_buf.clear();
+        self.current_sheet_flushed = new_sheet_total;
+        self.total_flushed = new_total;
+        self.flush_count += 1;
+        Ok(())
     }
 
     /// Finalise the current sheet and start a new one with the given name.
-    pub fn add_sheet(&mut self, name: &str) {
-        let mut buf = std::mem::take(&mut self.current_buf);
-        buf.extend_from_slice(b"</sheetData>\n</worksheet>");
-        let old_name = std::mem::replace(&mut self.current_name, name.to_string());
-        self.sheets.push((old_name, buf));
+    pub fn add_sheet(&mut self, name: &str) -> Result<(), WriterError> {
+        self.current_buf
+            .extend_from_slice(b"</sheetData>\n</worksheet>");
+        self.flush_current()?;
+
+        let next_index = self.sheet_names.len() + 1;
+        self.zip
+            .start_file(format!("xl/worksheets/sheet{next_index}.xml"), self.opts)?;
+
+        self.sheet_names.push(name.to_string());
         self.current_buf = sheet_header();
+        self.current_sheet_flushed = 0;
+        Ok(())
     }
 
     /// Write a row. `bold=true` applies bold font to every cell in the row.
-    pub fn write_row(&mut self, cells: &[WriteCell], bold: bool) {
+    ///
+    /// Flushes the buffered XML to the underlying ZIP stream whenever it
+    /// grows past [`FLUSH_THRESHOLD`], so memory use stays roughly constant
+    /// no matter how many rows are written. Returns an error (without
+    /// panicking or silently truncating) if the configured size limits
+    /// would be exceeded.
+    pub fn write_row(&mut self, cells: &[WriteCell], bold: bool) -> Result<(), WriterError> {
         self.current_buf.extend_from_slice(b"<row>");
         for cell in cells {
             // xf index: 0=default, 1=date, 2=datetime, 3=bold, 4=bold-date, 5=bold-datetime
@@ -107,49 +284,55 @@ impl XlsxWriter {
             }
         }
         self.current_buf.extend_from_slice(b"</row>\n");
+
+        if self.current_buf.len() >= FLUSH_THRESHOLD {
+            self.flush_current()?;
+        }
+        Ok(())
     }
 
-    pub fn finish(mut self) -> Result<(), Box<dyn std::error::Error>> {
-        // Finalise the last sheet
+    pub fn finish(mut self) -> Result<(), WriterError> {
+        // Finalise and flush the last sheet.
         self.current_buf
             .extend_from_slice(b"</sheetData>\n</worksheet>");
-        self.sheets.push((self.current_name, self.current_buf));
+        self.flush_current()?;
 
-        let n_sheets = self.sheets.len();
+        let n_sheets = self.sheet_names.len();
         let has_sst = !self.sst.is_empty();
+        let opts = self.opts;
 
-        let file = File::create(&self.output_path)?;
-        let mut zip = ZipWriter::new(file);
-        let opts =
-            SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        // Starting a new entry implicitly finishes the previously-open
+        // worksheet entry, so this safely closes out the last sheet.
+        self.zip.start_file("[Content_Types].xml", opts)?;
+        self.zip
+            .write_all(build_content_types(n_sheets, has_sst).as_bytes())?;
 
-        zip.start_file("[Content_Types].xml", opts)?;
-        zip.write_all(build_content_types(n_sheets, has_sst).as_bytes())?;
+        self.zip.start_file("_rels/.rels", opts)?;
+        self.zip.write_all(RELS_XML)?;
 
-        zip.start_file("_rels/.rels", opts)?;
-        zip.write_all(RELS_XML)?;
+        self.zip.start_file("xl/workbook.xml", opts)?;
+        self.zip
+            .write_all(build_workbook_xml(&self.sheet_names).as_bytes())?;
 
-        zip.start_file("xl/workbook.xml", opts)?;
-        zip.write_all(build_workbook_xml(&self.sheets).as_bytes())?;
+        self.zip.start_file("xl/_rels/workbook.xml.rels", opts)?;
+        self.zip
+            .write_all(build_workbook_rels(n_sheets, has_sst).as_bytes())?;
 
-        zip.start_file("xl/_rels/workbook.xml.rels", opts)?;
-        zip.write_all(build_workbook_rels(n_sheets, has_sst).as_bytes())?;
-
-        zip.start_file("xl/styles.xml", opts)?;
-        zip.write_all(STYLES_XML)?;
+        self.zip.start_file("xl/styles.xml", opts)?;
+        self.zip.write_all(STYLES_XML)?;
 
         if has_sst {
-            zip.start_file("xl/sharedStrings.xml", opts)?;
-            zip.write_all(build_sst(&self.sst).as_bytes())?;
+            self.zip.start_file("xl/sharedStrings.xml", opts)?;
+            self.zip.write_all(build_sst(&self.sst).as_bytes())?;
         }
 
-        for (i, (_, sheet_xml)) in self.sheets.iter().enumerate() {
-            zip.start_file(format!("xl/worksheets/sheet{}.xml", i + 1), opts)?;
-            zip.write_all(sheet_xml)?;
-        }
-
-        zip.finish()?;
+        self.zip.finish()?;
         Ok(())
+    }
+
+    /// Path this writer will produce output at. Exposed mainly for tests.
+    pub fn output_path(&self) -> &Path {
+        &self.output_path
     }
 }
 
@@ -184,14 +367,14 @@ ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.shared
     xml
 }
 
-fn build_workbook_xml(sheets: &[(String, Vec<u8>)]) -> String {
+fn build_workbook_xml(sheet_names: &[String]) -> String {
     let mut xml = String::from(
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\
 \n<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" \
 xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\
 \n<sheets>\n",
     );
-    for (i, (name, _)) in sheets.iter().enumerate() {
+    for (i, name) in sheet_names.iter().enumerate() {
         let escaped = name
             .replace('&', "&amp;")
             .replace('<', "&lt;")

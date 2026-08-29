@@ -64,6 +64,30 @@ MAX_TOTAL_SIZE = 1 GB         # Total decompressed
 - Parent directory must exist (for write operations)
 - File must not be empty (0 bytes)
 
+### 5. Write-Side Memory & Size Limits (added v5.3.0)
+
+**What it protects against:** Prior to v5.3.0, the write path had no
+counterpart to the read-side protections above — `XlsxWriter` buffered an
+entire worksheet's XML in memory (`Vec<u8>`) and only flushed to the ZIP
+archive once, in `finish()`, so peak memory scaled linearly with rows
+written and there was no cap on how large a single sheet or workbook could
+grow.
+
+**PyStreamXL Protection (`core/src/writer.rs`):**
+```rust
+FLUSH_THRESHOLD = 4 MB    // buffered XML flushed to the ZIP stream once this is exceeded
+MAX_ENTRY_SIZE  = 512 MB  // per worksheet, mirrors the read-side limit
+MAX_TOTAL_SIZE  = 1 GB    // across the whole workbook, mirrors the read-side limit
+```
+
+**How it works:**
+1. Worksheet XML is flushed to the underlying ZIP stream every `FLUSH_THRESHOLD`
+   bytes instead of only at `finish()`, keeping peak memory roughly constant
+   relative to sheet size rather than linear in row count.
+2. Per-sheet and total-workbook size are checked as data is flushed —
+   writing fails fast with a clear error the moment either limit would be
+   exceeded, instead of allowing unbounded growth.
+
 ---
 
 ## API Reference

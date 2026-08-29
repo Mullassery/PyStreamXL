@@ -23,7 +23,7 @@ pub use error_handling::{ErrorContext, ErrorKind, ErrorSeverity};
 pub use sheet_manager::{SheetManager, SheetMetadata};
 pub use sheet_parser::{CellMetadata, CellValue};
 pub use stream::XlsxStream;
-pub use writer::{WriteCell, XlsxWriter};
+pub use writer::{WriteCell, WriterError, XlsxWriter};
 pub use formula_parser::{Formula, CellReference, FormulaExtractor, ReferenceMapper};
 pub use incremental_recalculation::{RecalcNode, IncrementalRecalculator, RecalcChange, RecalcOptimizer};
 pub use collaboration_detection::{CollaborationDetector, CellCollaborationGroup, OptimizationOpportunity};
