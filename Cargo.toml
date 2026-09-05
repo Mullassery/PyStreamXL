@@ -6,4 +6,4 @@ resolver = "2"
 version = "5.3.0"
 edition = "2021"
 authors = ["Georgi Mullassery"]
-license = "Proprietary"
+license = "Apache-2.0"

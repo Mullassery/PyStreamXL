@@ -9,7 +9,7 @@ description = "High-performance .xlsx file reader with formula extraction, comme
 authors = [{ name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com" }]
 maintainers = [{ name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com" }]
 readme = "README.md"
-license = { text = "Proprietary" }
+license = "Apache-2.0"
 requires-python = ">=3.8"
 dependencies = ["rich>=13.0"]
 keywords = [
@@ -38,7 +38,7 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Financial and Insurance Industry",
-    "License :: Other/Proprietary License",
+    "License :: OSI Approved :: Apache Software License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
