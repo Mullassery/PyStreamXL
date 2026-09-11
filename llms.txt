@@ -6,9 +6,8 @@
 
 streamxl reads `.xlsx` files row-by-row without loading the entire file into memory. It is designed for ETL pipelines, data engineering, and large-file processing where openpyxl runs out of memory or is too slow.
 
-- 4–5× faster than openpyxl across all file sizes tested
-- ~27,000 rows/sec throughput on Apple Silicon
-- Peak memory stays proportional to the shared string table, not the file size
+- Peak memory stays proportional to the shared string table, not the file size, not the number of rows
+- Throughput/speed-vs-openpyxl figures are not published as a checked-in, reproducible benchmark result in this repo — see `benchmarks/` and `examples/memory_benchmark.py` to measure against your own files rather than relying on a fixed number
 
 ## Install
 
@@ -59,4 +58,4 @@ https://github.com/Mullassery/StreamXL
 
 ## License
 
-MIT © Georgi Mullassery
+Apache License 2.0 © Georgi Mullassery

@@ -1,12 +1,35 @@
 # StreamXL
 
+## Problem
+
+`openpyxl` and similar pure-Python Excel readers load the whole workbook
+into memory before you can touch a single row — fine for small files, a
+real ceiling for ETL pipelines and data engineering workloads working
+against large `.xlsx` exports.
+
+## Solution
+
 **Stream large `.xlsx` files row-by-row in constant memory, powered by a Rust core with no `unsafe` code.**
 
 `pip install`s as `streamxl`, `import streamxl`. Read multi-sheet Excel workbooks without loading them fully into memory, extract formulas and comments, write new `.xlsx` files, and append to existing ones — all through a small, plain Python API backed by a Rust engine.
 
 [![PyPI](https://img.shields.io/pypi/v/streamxl)](https://pypi.org/project/streamxl/)
+[![CI](https://github.com/Mullassery/PyStreamXL/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyStreamXL/actions/workflows/ci.yml)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
+
+## Use cases
+
+- **ETL against large Excel exports** that don't fit comfortably in memory
+  with `openpyxl` — `read()` keeps memory flat regardless of file size.
+- **Extracting formulas/comments for audit or migration tooling**, not
+  just cell values.
+- **Appending to a growing log-style `.xlsx` file** without rewriting the
+  whole workbook or losing other sheets.
+- **Not yet a good fit for:** SQL-style querying across sheets, formula
+  *evaluation* (only extraction/classification), or pandas/Parquet/Arrow
+  export built in — see [Honest feature list](#honest-feature-list) for
+  the full "what's not here" list.
 
 ---
 
