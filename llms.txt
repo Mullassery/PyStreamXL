@@ -16,7 +16,7 @@ pip install streamxl
 # or
 uv add streamxl
 # or one-liner (auto-detects uv/pip, falls back to source build)
-curl -sSf https://raw.githubusercontent.com/Mullassery/StreamXL/main/scripts/install.sh | sh
+curl -sSf https://raw.githubusercontent.com/Mullassery/PyStreamXL/main/scripts/install.sh | sh
 ```
 
 ## Usage
@@ -54,7 +54,7 @@ The shared string table (SST) is loaded once into memory. Sheet XML is event-str
 
 ## Source
 
-https://github.com/Mullassery/StreamXL
+https://github.com/Mullassery/PyStreamXL
 
 ## License
 

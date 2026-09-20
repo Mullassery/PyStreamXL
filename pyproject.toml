@@ -70,6 +70,8 @@ dev = [
     "pytest-cov>=4.0",
     "flask>=2.0",
     "openpyxl>=3.0",
+    "ruff>=0.2.0",
+    "black>=24.1.0",
 ]
 server = [
     "flask>=2.0",

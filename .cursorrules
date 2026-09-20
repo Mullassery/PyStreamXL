@@ -24,7 +24,7 @@ Never run `cargo build --workspace` — `python/` has its own `[workspace]` and 
 
 4. **PyO3 0.23 bool conversion** — use `.as_any().clone().unbind()` for `bool`, not `.into_any().unbind()`.
 
-5. **Only `sheet1.xml` is supported** — multi-sheet support is not yet implemented.
+5. **Multi-sheet support is implemented** via `core/src/sheet_manager.rs` (maps `xl/workbook.xml` sheet names to worksheet paths). `stream.rs`'s hardcoded `xl/worksheets/sheet1.xml` fallback is only used when no `sheet=` is given; `sheets()`/`read_all()`/`writer().add_sheet()` all go through `sheet_manager.rs`.
 
 ## File map
 

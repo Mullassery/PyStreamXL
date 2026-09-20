@@ -1,6 +1,8 @@
 # Rust
 target/
-Cargo.lock
+# Cargo.lock is intentionally committed: this ships a Python extension
+# module (PyO3/maturin), and a reproducible dependency graph matters for
+# wheel builds.
 
 # Python
 __pycache__/

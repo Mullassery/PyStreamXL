@@ -142,7 +142,7 @@ class PyStreamXLDashboard:
     engine, so there is no real data source to back this view. The values
     below are clearly labeled as sample data rather than presented as
     live metrics, to avoid misleading users. Wiring this up to real
-    telemetry is tracked as a follow-up (see ROADMAP.md).
+    telemetry is tracked as a follow-up (see ROADMAP_HONEST.md).
     """
 
     def __init__(self, config_path: Optional[str] = None):

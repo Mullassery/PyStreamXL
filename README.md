@@ -218,12 +218,24 @@ pystreamxl --version
 ## Development
 
 ```bash
-git clone https://github.com/Mullassery/StreamXL.git
-cd StreamXL
+git clone https://github.com/Mullassery/PyStreamXL.git
+cd PyStreamXL
 pip install -e ".[dev]"       # builds the Rust extension via maturin and installs test deps
 pytest tests/ -v
-cargo test --all-features     # Rust unit + integration tests
+cargo test --release --all-features     # Rust unit + integration tests (both core and python crates)
 ```
+
+On macOS you may need `RUSTFLAGS="-C link-args=-undefined -C link-args=dynamic_lookup"` before `cargo build`/`cargo test` for the PyO3 extension crate to link outside of `maturin`/`pip install`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
+
+## Docs
+
+- [`docs/architecture/README.md`](docs/architecture/README.md) — how the Rust engine and Python API fit together, including known dead code
+- [`docs/xlsx_format.md`](docs/xlsx_format.md) — XLSX/ZIP/XML format notes
+- [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) — unvarnished list of what's missing, broken, or technical debt
+- [`CHANGELOG.md`](CHANGELOG.md) — release history
+- [`SECURITY.md`](SECURITY.md) — security model, limits, and what it does *not* protect against
 
 ## License
 

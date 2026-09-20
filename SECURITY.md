@@ -1,18 +1,20 @@
 # PyStreamXL Security & Hardening Guide
 
-**Version:** 1.1.0 (Security Hardening Release)  
-**Date:** 2026-07-17  
-**Status:** ✅ PRODUCTION READY
-
----
+This document describes the security-relevant behavior of the current
+codebase (last checked against v5.3.0). It is not versioned separately
+from the package — read it against whatever version you have installed,
+and verify against `python/streamxl/security.py` and
+`core/src/zip_reader.rs` if it matters for your use case.
 
 ## Executive Summary
 
-PyStreamXL v1.1.0 includes comprehensive security hardening against:
+PyStreamXL includes hardening against:
 - **ZIP bomb attacks** (decompression bombs)
-- **Denial-of-service (DOS) attacks** via resource exhaustion
-- **Path traversal exploits**
+- **Denial-of-service (DOS) attacks** via resource exhaustion (oversized files/entries)
 - **File format violations**
+
+It does **not** provide path-traversal/base-directory confinement — see
+"Path Handling" below.
 
 All security checks are enabled by default. No configuration needed.
 
@@ -49,12 +51,31 @@ MAX_TOTAL_SIZE = 1 GB         # Total decompressed
 2. During reading — Entries checked (Rust)
 3. Cumulative — Total decompressed checked (Rust)
 
-### 3. Path Traversal Prevention
+### 3. Path Handling — NOT a traversal sandbox
 
-**Protection:**
-- Rejects paths containing ".." (directory traversal)
-- Validates file extensions (.xlsx, .xls only)
-- Uses `Path.resolve()` to normalize paths
+**What actually happens (`python/streamxl/security.py:19-42`):** the path is
+resolved with `Path(path).resolve()` *before* the `".."` substring check
+runs. `resolve()` collapses `..` segments as part of normalizing the path,
+so by the time the check executes, a traversal input like
+`"../../../etc/passwd.xlsx"` has already become an absolute path
+(`/etc/passwd.xlsx`) with no literal `".."` left in it — **the `if '..' in
+str(path)` check can never fire on a real traversal attempt and is dead
+code.** In practice, a call like `read("../../../etc/passwd.xlsx")` still
+raises `SecurityError`, but only because `/etc/passwd.xlsx` doesn't exist
+or isn't a `.xlsx`/`.xls` file — not because traversal was detected. If a
+caller passes a path that resolves to some other real, extension-matching
+file outside an intended base directory, nothing here stops it.
+
+**What this library does *not* provide:** any actual confinement to a
+base/allowed directory (a "jail"). If you're embedding this in a service
+that accepts user-supplied paths (e.g. a multi-tenant upload handler),
+you must enforce your own allowlist/base-directory check before calling
+`streamxl.read()`/`write()` — do not rely on the library for this.
+
+**What is real:**
+- File extension is validated (`.xlsx`/`.xls` only)
+- The path is normalized via `Path.resolve()`
+- The resolved file must exist and actually be a file (for reads)
 
 ### 4. File Format Validation
 
@@ -97,7 +118,7 @@ MAX_TOTAL_SIZE  = 1 GB    // across the whole workbook, mirrors the read-side li
 Raised when file fails security validation.
 
 ```python
-from pystreamxl import SecurityError, read
+from streamxl import SecurityError, read
 
 try:
     for row in read("data.xlsx"):
@@ -111,7 +132,7 @@ except SecurityError as e:
 Returns current security configuration.
 
 ```python
-from pystreamxl import get_security_limits
+from streamxl import get_security_limits
 
 limits = get_security_limits()
 # {
@@ -140,31 +161,33 @@ limits = get_security_limits()
 
 ---
 
-## Production Deployment Checklist
+## Deployment Checklist
 
-For **production use**, verify:
+Before relying on this in a service that accepts file paths or uploads
+from outside callers, verify:
 
-- [ ] PyStreamXL version ≥ 1.1.0 (security hardening)
 - [ ] File size limits appropriate for use case
 - [ ] Error handling catches `SecurityError`
 - [ ] Logging captures security violations
 - [ ] No silent exception suppression
 - [ ] Files read from trusted sources only
-- [ ] File uploads validated server-side
+- [ ] File uploads validated server-side, **including your own
+      base-directory confinement** — see the "Path Handling" note above;
+      this library does not provide that
 - [ ] Monitoring alerts on violations
 
-**Example production code:**
+**Example code:**
 ```python
-import pystreamxl
+import streamxl
 import logging
 
 logger = logging.getLogger(__name__)
 
 def process_excel(filepath: str):
     try:
-        for row in pystreamxl.read(filepath):
+        for row in streamxl.read(filepath):
             yield row
-    except pystreamxl.SecurityError as e:
+    except streamxl.SecurityError as e:
         logger.error(f"Security violation in {filepath}: {e}")
         raise  # Don't silently fail
 ```
@@ -179,20 +202,20 @@ def process_excel(filepath: str):
 ```python
 # data_part1.xlsx (400 MB)
 # data_part2.xlsx (300 MB)
-for row in pystreamxl.read("data_part1.xlsx"):
+for row in streamxl.read("data_part1.xlsx"):
     process(row)
-for row in pystreamxl.read("data_part2.xlsx"):
+for row in streamxl.read("data_part2.xlsx"):
     process(row)
 ```
 
 **Option 2: Append incrementally**
 ```python
-with pystreamxl.writer("log.xlsx") as w:
+with streamxl.writer("log.xlsx") as w:
     w.write_row(["Date", "Event"])
 
 # Append in smaller batches
 for event in events:
-    pystreamxl.append("log.xlsx", [[event.date, event.msg]])
+    streamxl.append("log.xlsx", [[event.date, event.msg]])
 ```
 
 **Option 3: Custom build**
@@ -203,25 +226,27 @@ Open an issue with business justification for custom limits.
 ## Testing Security
 
 ```python
-import pystreamxl
+import streamxl
 import tempfile
 import pytest
 
 def test_zip_bomb_protection():
     """Verify ZIP bomb protection."""
-    with pytest.raises(pystreamxl.SecurityError):
-        pystreamxl.read("fake_huge_file.xlsx")
+    with pytest.raises(streamxl.SecurityError):
+        streamxl.read("fake_huge_file.xlsx")
 
-def test_path_traversal_protection():
-    """Verify path traversal is blocked."""
-    with pytest.raises(pystreamxl.SecurityError):
-        pystreamxl.read("../../../etc/passwd.xlsx")
+def test_nonexistent_or_wrong_extension_path_raises():
+    """A path that doesn't resolve to a real .xlsx/.xls file raises
+    SecurityError — but note this is existence/extension validation,
+    not path-traversal confinement (see "Path Handling" above)."""
+    with pytest.raises(streamxl.SecurityError):
+        streamxl.read("../../../etc/passwd.xlsx")
 
 def test_empty_file_rejection():
     """Verify empty files are rejected."""
     with tempfile.NamedTemporaryFile(suffix=".xlsx") as f:
-        with pytest.raises(pystreamxl.SecurityError):
-            pystreamxl.read(f.name)
+        with pytest.raises(streamxl.SecurityError):
+            streamxl.read(f.name)
 ```
 
 ---
@@ -245,25 +270,10 @@ Report privately:
 
 ## Changelog
 
-### v1.1.0 (2026-07-17) — Security Hardening ✅
-
-**New:**
-- ZIP bomb detection (compression ratio checking)
-- File size validation (512 MB limit)
-- SecurityError exception
-- get_security_limits() function
-
-**Changes:**
-- Tightened ZIP limits (2GB → 512MB per entry)
-- Added Python-level file size checking
-- Enhanced error messages
-
-**Security:**
-✅ ZIP bomb protection (30:1 ratio limit)  
-✅ DOS prevention (512 MB file size limit)  
-✅ Path traversal prevention  
-✅ File format validation  
-✅ Empty file rejection  
+Security-relevant changes are tracked in `CHANGELOG.md`. As of this
+writing: ZIP-bomb defenses and file-size limits are read-side (present
+since early releases); write-side bounded buffering/size caps were added
+in v5.3.0 (see the "Write-Side Memory & Size Limits" section above).
 
 ---
 
@@ -279,17 +289,21 @@ A: Most Excel files are < 50 MB. 512 MB is safe margin.
 A: Extremely unlikely. If rejected, file is probably malicious.
 
 **Q: What if I need to process larger files?**  
-A: Split into smaller files or contact support.
+A: Split into smaller files, or open an issue describing your use case.
 
 ---
 
 ## Summary
 
-PyStreamXL v1.1.0 provides **production-grade security**:
+What's real and enabled by default, no configuration needed:
 
-✅ ZIP bombs blocked via compression ratio limits  
-✅ DOS attacks prevented via file size validation  
-✅ Path traversal blocked via path normalization  
-✅ Format violations detected via extension/header checks  
+- ZIP bombs blocked via compression-ratio, per-entry, and total-decompressed-size limits (read and write)
+- Oversized files rejected via a file-size check before parsing
+- File extension and basic format validated
+- Empty files rejected
+- CSV/formula-injection sanitization available via `streamxl.security.sanitize_csv_cell()` (opt-in for your own CSV writes; automatic in `FormulaSerializer.export_to_csv()`)
 
-**All protections enabled by default. No configuration needed.**
+What's **not** real, despite being implied by earlier drafts of this
+document: this library does not sandbox/confine file paths to a base
+directory (see "Path Handling" above) — that responsibility is the
+caller's if paths come from an untrusted source.
