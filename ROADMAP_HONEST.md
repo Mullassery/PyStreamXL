@@ -9,26 +9,28 @@ Validated by actually running: `cargo test --release --all-features`
 (61 tests, all pass), `pytest tests/ -v` (160 tests, all pass),
 `cargo clippy --release --all-features`, `cargo fmt --check`.
 
+Updated 2026-09-22 after a quick-fix pass (items #1 and #2 below fixed,
+adding 8 tests in `tests/test_security.py`; 61 Rust / 168 Python tests
+pass; clippy/fmt findings unchanged since #4-#9 below were explicitly out
+of scope for that pass).
+
 ## Bugs / security gaps
 
-1. **Path-traversal check is dead code.**
-   `python/streamxl/security.py:39` — `if '..' in str(path): raise
-   SecurityError(...)` runs *after* `path = Path(path).resolve()` on the
-   line above. `resolve()` collapses `..` segments before the check ever
-   runs, so the check can never fire on a real traversal input. A call
-   like `read("../../../etc/passwd.xlsx")` does raise `SecurityError`
-   today, but only because the resolved path doesn't exist or isn't
-   `.xlsx`/`.xls` — not because traversal was detected. There is no real
-   base-directory confinement in this library. Fixing this properly
-   means deciding what "confinement" should even mean for a library
-   (vs. a service using it) — not a one-line patch. Documented in
-   `SECURITY.md`; not fixed in this pass.
+1. ~~**Path-traversal check is dead code.**~~ **FIXED (2026-09-22).**
+   `python/streamxl/security.py` — the old `if '..' in str(path)` check
+   ran after `Path.resolve()` had already collapsed `..` segments and
+   could never fire. `validate_xlsx_path()`/`validate_read_path()`/
+   `validate_write_path()` now accept an optional `base_dir`; when passed,
+   the resolved path is checked against it with `os.path.commonpath()`
+   after resolution, so it actually catches traversal. Opt-in (default
+   `base_dir=None` preserves the library's existing arbitrary-path
+   behavior — forcing confinement on every call would break legitimate
+   uses like `api.py`/`server.py` that read absolute paths anywhere on
+   disk). See `tests/test_security.py` and `SECURITY.md` "Path Handling".
 
-2. **`validate_write_path()` uses `print()` for overwrite warnings**
-   (`python/streamxl/security.py:87`) instead of the `logging` module or
-   raising/returning a signal the caller can act on. A library
-   shouldn't write to stdout unconditionally. Small fix, deferred to
-   keep this pass documentation-focused.
+2. ~~**`validate_write_path()` uses `print()` for overwrite warnings**~~
+   **FIXED (2026-09-22).** `python/streamxl/security.py` now logs via
+   `logging.getLogger(__name__).warning(...)` instead of `print()`.
 
 3. **No dependency-audit CI job.** Neither `cargo audit`/`cargo deny`
    nor `pip-audit` run in CI. `.github/workflows/ci.yml` only builds and

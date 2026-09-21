@@ -10,7 +10,26 @@ time — see `git log` and GitHub Releases for that history.
 
 ## [Unreleased]
 
+### Security
+- Fixed dead path-traversal check in `python/streamxl/security.py`. The
+  `".." in str(path)` check ran *after* `Path.resolve()` had already
+  collapsed any `..` segments, so it could structurally never fire on a
+  real traversal attempt. `validate_xlsx_path()`, `validate_read_path()`,
+  and `validate_write_path()` now accept an optional `base_dir` argument;
+  when passed, the resolved path is verified to actually be inside
+  `base_dir` via `os.path.commonpath()`, performed after resolution rather
+  than before it. This is opt-in (omitting `base_dir` preserves prior
+  behavior — no confinement, matching the library's existing arbitrary-path
+  use case) since a general-purpose file API and a service with a real
+  trust boundary have different confinement contracts. See
+  `tests/test_security.py` for tests exercising real traversal attempts
+  and legitimate in-bounds paths.
+
 ### Fixed
+- `validate_write_path()` (`python/streamxl/security.py:87`) used `print()`
+  for overwrite warnings instead of the `logging` module. Now uses
+  `logging.getLogger(__name__).warning(...)`, consistent with
+  `_formula_support.py`/`integrity.py`/`error_recovery.py`.
 - `Cargo.lock` was gitignored and not committed despite this repo
   shipping a compiled Python extension (PyO3/maturin) — it is now
   tracked for reproducible builds.

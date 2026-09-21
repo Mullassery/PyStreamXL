@@ -13,8 +13,9 @@ PyStreamXL includes hardening against:
 - **Denial-of-service (DOS) attacks** via resource exhaustion (oversized files/entries)
 - **File format violations**
 
-It does **not** provide path-traversal/base-directory confinement — see
-"Path Handling" below.
+Path-traversal confinement is available but **opt-in** — see "Path
+Handling" below; by default (no `base_dir` passed) any resolved path is
+still accepted, same as always.
 
 All security checks are enabled by default. No configuration needed.
 
@@ -51,31 +52,57 @@ MAX_TOTAL_SIZE = 1 GB         # Total decompressed
 2. During reading — Entries checked (Rust)
 3. Cumulative — Total decompressed checked (Rust)
 
-### 3. Path Handling — NOT a traversal sandbox
+### 3. Path Handling — confinement is real, but opt-in via `base_dir`
 
-**What actually happens (`python/streamxl/security.py:19-42`):** the path is
-resolved with `Path(path).resolve()` *before* the `".."` substring check
-runs. `resolve()` collapses `..` segments as part of normalizing the path,
-so by the time the check executes, a traversal input like
-`"../../../etc/passwd.xlsx"` has already become an absolute path
-(`/etc/passwd.xlsx`) with no literal `".."` left in it — **the `if '..' in
-str(path)` check can never fire on a real traversal attempt and is dead
-code.** In practice, a call like `read("../../../etc/passwd.xlsx")` still
-raises `SecurityError`, but only because `/etc/passwd.xlsx` doesn't exist
-or isn't a `.xlsx`/`.xls` file — not because traversal was detected. If a
-caller passes a path that resolves to some other real, extension-matching
-file outside an intended base directory, nothing here stops it.
+**History:** until this fix, `validate_xlsx_path()` resolved the path with
+`Path(path).resolve()` and *then* checked for the literal substring `".."`.
+`resolve()` collapses `..` segments as part of normalizing the path, so by
+the time the check ran, a traversal input like `"../../../etc/passwd.xlsx"`
+had already become an absolute path (`/etc/passwd.xlsx`) with no literal
+`".."` left in it — the check could never fire on a real traversal attempt
+and was dead code. A call like `read("../../../etc/passwd.xlsx")` still
+raised `SecurityError`, but only because `/etc/passwd.xlsx` didn't exist or
+wasn't a `.xlsx`/`.xls` file — not because traversal was detected.
 
-**What this library does *not* provide:** any actual confinement to a
-base/allowed directory (a "jail"). If you're embedding this in a service
-that accepts user-supplied paths (e.g. a multi-tenant upload handler),
-you must enforce your own allowlist/base-directory check before calling
-`streamxl.read()`/`write()` — do not rely on the library for this.
+**What's fixed now (`python/streamxl/security.py`):**
+`validate_xlsx_path()`, `validate_read_path()`, and `validate_write_path()`
+all accept an optional `base_dir` argument. When passed, the path is
+resolved (`Path(path).resolve()`, which also collapses `..` and symlinks)
+and then the *resolved* path is checked with `os.path.commonpath([path,
+base_dir]) == base_dir` — a real, working confinement check performed
+after normalization instead of a dead substring check performed too late
+to matter:
+
+```python
+from streamxl.security import validate_read_path, SecurityError
+
+try:
+    validate_read_path(user_supplied_path, base_dir="/var/app/uploads")
+except SecurityError:
+    ...  # traversal attempt or path outside the allowed directory
+```
+
+**This is opt-in, not automatic:** when `base_dir` is omitted (the
+default), no confinement is enforced and any resolved path is accepted —
+same behavior as every prior release. This library is used both as a
+general-purpose file-path API (arbitrary absolute paths anywhere on disk
+are a legitimate, existing use case — see `python/streamxl/api.py`) and
+potentially embedded in services with a real trust boundary (e.g. a
+multi-tenant upload handler). Those are different confinement contracts,
+so the check is available but must be deliberately opted into by callers
+that have an actual base directory to enforce; `streamxl.read()`/`write()`
+and the bundled `StreamXLServer` do not pass `base_dir` today. If you're
+embedding this in a service that accepts user-supplied paths, call
+`validate_read_path()`/`validate_write_path()` yourself with `base_dir` set
+to your trust boundary before opening the file.
 
 **What is real:**
 - File extension is validated (`.xlsx`/`.xls` only)
 - The path is normalized via `Path.resolve()`
 - The resolved file must exist and actually be a file (for reads)
+- With `base_dir` passed, the resolved path is verified to actually be
+  inside that directory (see above); see `tests/test_security.py` for
+  tests that perform real traversal attempts and confirm rejection.
 
 ### 4. File Format Validation
 
