@@ -10,6 +10,8 @@ time — see `git log` and GitHub Releases for that history.
 
 ## [Unreleased]
 
+## [5.3.1] - 2026-09-22
+
 ### Security
 - Fixed dead path-traversal check in `python/streamxl/security.py`. The
   `".." in str(path)` check ran *after* `Path.resolve()` had already

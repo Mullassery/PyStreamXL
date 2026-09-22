@@ -665,7 +665,7 @@ checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
 
 [[package]]
 name = "streamxl-core"
-version = "5.3.0"
+version = "5.3.1"
 dependencies = [
  "pyo3",
  "quick-xml",
@@ -677,7 +677,7 @@ dependencies = [
 
 [[package]]
 name = "streamxl-python"
-version = "5.3.0"
+version = "5.3.1"
 dependencies = [
  "pyo3",
  "self_cell",
