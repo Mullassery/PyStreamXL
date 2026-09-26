@@ -50,4 +50,4 @@ __all__ = [
     "ExcelValidationError",
     "validate_excel_file",
 ]
-__version__ = "5.3.1"
+__version__ = "5.3.2"

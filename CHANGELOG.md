@@ -10,6 +10,8 @@ time — see `git log` and GitHub Releases for that history.
 
 ## [Unreleased]
 
+## [5.3.2] - 2026-09-27
+
 ### Added
 - `.github/workflows/release.yml`: builds wheels for Linux (x86_64,
   aarch64), macOS (x86_64, aarch64), and Windows on Python 3.10-3.12 via
