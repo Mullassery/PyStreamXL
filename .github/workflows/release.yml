@@ -62,7 +62,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist -i 3.10 -i 3.11 -i 3.12
+          args: --release --auditwheel=repair --out dist -i 3.10 -i 3.11 -i 3.12
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-macos-${{ matrix.target }}
