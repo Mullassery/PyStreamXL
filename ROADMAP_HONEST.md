@@ -134,10 +134,6 @@ of scope for that pass).
 - `colorScale`/`dataBar`/`iconSet` conditional-formatting rules are
   captured at the type/sqref/priority level only; their inline
   color-stop/threshold definitions aren't modeled.
-- The bare `pystreamxl dashboard` (interactive mode) prints an
-  unlabeled `Status: Active` placeholder with no "sample data" warning;
-  only `--static`/`--alerts`/`--recommendations`/`--export` are clearly
-  labeled `SAMPLE DATA — not live`.
 
 ## Debatable, not changed in this pass
 

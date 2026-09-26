@@ -166,7 +166,7 @@ What's **not** here, so you don't have to find out the hard way:
 - No SQL-style query language — `execute_query()` in the REST API streams rows from a named sheet, it does not parse arbitrary queries.
 - No pandas/Parquet/Arrow export built in. Convert `read()`'s output yourself, or open an issue if this matters to you.
 - No formula *evaluation* — formula text is extracted and classified, not recalculated.
-- The `pystreamxl dashboard` CLI command currently renders sample data, not live telemetry. Only `pystreamxl dashboard --static` (and `--alerts`/`--recommendations`/`--export`) labels this clearly, with an explicit "SAMPLE DATA — not live" warning; the bare `pystreamxl dashboard` (default interactive mode) currently prints an unlabeled placeholder (`Status: Active`) with no such disclaimer.
+- The `pystreamxl dashboard` CLI command renders sample data, not live telemetry — every mode (bare, `--static`, `--alerts`, `--recommendations`, `--export`) shows the same explicit "SAMPLE DATA — not live" warning.
 
 ## Security
 

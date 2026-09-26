@@ -10,6 +10,41 @@ time — see `git log` and GitHub Releases for that history.
 
 ## [Unreleased]
 
+### Added
+- `.github/workflows/release.yml`: builds wheels for Linux (x86_64,
+  aarch64), macOS (x86_64, aarch64), and Windows on Python 3.10-3.12 via
+  `PyO3/maturin-action`, plus an sdist, on a version-tag push. Every
+  release to date (1.2.0 through 5.3.1) was built by hand with local
+  `maturin build`, which produced exactly one wheel per release —
+  always `macosx_11_0_arm64`, with the interpreter tag drifting between
+  releases based on whichever Python happened to be active locally
+  (`cp313` for 1.2.0-5.0.0, `cp39` for 5.1.0, `cp311` for 5.2.0-5.3.0,
+  `cp39` again for 5.3.1) — so no Linux/Windows install has ever
+  resolved a prebuilt wheel, and even macOS installs on an interpreter
+  other than that release's one supported version had to build the
+  sdist from source. The workflow's `publish` job (PyPI Trusted
+  Publishing) hasn't been exercised end-to-end; it needs a Trusted
+  Publisher added on the `streamxl` PyPI project before it will work.
+
+### Fixed
+- `pystreamxl --version` (`python/streamxl/cli.py`) was hardcoded to
+  `PyStreamXL 5.2.0`, one release behind the actual package version. It
+  now reads `streamxl.__version__`.
+- The bare `pystreamxl dashboard` (interactive mode) rendered a
+  different, unlabeled `Status: Active` placeholder instead of the
+  `SAMPLE DATA — not live` metrics shown by `--static`/`--alerts`/
+  `--recommendations`/`--export` — despite there being no actual live
+  update loop behind "interactive" mode to justify the different
+  output. All modes now render the same labeled sample data.
+
+### Removed
+- `python/streamxl/scripts/post_install.py`: dead code (nothing
+  imported or invoked it — no build hook, no console script) that
+  printed fabricated install-time stats (`45,234 formulas extracted`,
+  `46x faster than openpyxl` — contradicting the `3.8-5.6x` figure in
+  this repo's own benchmarks) and a stale `v1.2.0` banner, as if they
+  were real output from the user's own install.
+
 ## [5.3.1] - 2026-09-22
 
 ### Security
