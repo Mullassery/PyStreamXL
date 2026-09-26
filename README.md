@@ -150,7 +150,7 @@ More runnable examples live in [`examples/`](examples/).
 
 What's here and real, backed by the Rust core and covered by the test suite:
 
-- **Streaming reads** — `read()` / `stream()`: real, pull-based streaming backed by a Rust `__iter__`/`__next__` iterator over the sheet, not a full-sheet materialization dressed up as a generator — O(1) memory per row, regardless of file size. `read_rows_all_at_once()`/`read_rows_with_metadata_all_at_once()` remain available as an explicit escape hatch for callers that need random access or to iterate the result more than once.
+- **Streaming reads** — `read()` / `stream()`: a real Rust `__iter__`/`__next__` iterator over the sheet — you get rows one at a time, not a pre-built Python list. **Correction (2026-09-22 benchmark):** this is *not* O(1) memory as previously claimed here. `XlsxStream::open()` decompresses the whole sheet XML into memory before iteration starts, so peak RSS scales with sheet size (measured ~1.3MB of RSS per 1MB of `.xlsx`, real data — see [`benchmarks/results.md`](benchmarks/results.md)). It's still far below `openpyxl`'s full-load mode and the API shape (a lazy iterator) is real, but memory is not flat regardless of file size — tracked as gap #10 in [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md). `read_rows_all_at_once()`/`read_rows_with_metadata_all_at_once()` remain available as an explicit escape hatch for callers that need random access or to iterate the result more than once.
 - **Multi-sheet support** — `sheets()`, `read_all()`, and `writer().add_sheet()`.
 - **Streaming writes** — `write()`, `writer()`, `append()`, all producing real `.xlsx` files.
 - **Formula extraction** — read formula text and a best-effort formula-type classification (`with_formulas=True`), plus `FormulaReferenceMapper` for shifting/rewriting cell references and `FormulaSerializer` for exporting/importing formulas as JSON or CSV.
@@ -199,13 +199,41 @@ Found a security issue? See [SECURITY.md](SECURITY.md).
 
 ## Performance
 
-Streaming keeps memory flat regardless of file size, since rows are parsed and yielded one at a time instead of materializing the whole workbook. See [`benchmarks/`](benchmarks/) for the scripts used to compare against `openpyxl`, and [`examples/memory_benchmark.py`](examples/memory_benchmark.py) to measure it yourself against your own files:
+Rows are parsed and yielded one at a time rather than being collected into a Python list up front, and it's consistently faster than `openpyxl` on both reads and writes. Memory use is lower than `openpyxl`'s full-load mode but currently scales with sheet size rather than staying flat — see the correction under "Honest feature list" above and [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) gap #10. See [`benchmarks/`](benchmarks/) for the scripts used to compare against `openpyxl`, and [`examples/memory_benchmark.py`](examples/memory_benchmark.py) to measure it yourself against your own files:
 
 ```bash
 python examples/memory_benchmark.py your_file.xlsx
 ```
 
 Actual numbers depend heavily on your file's structure (shared strings, formulas, formatting) — measure on your own workloads rather than trusting a generic table.
+
+### vs openpyxl, on real data
+
+Methodology: 150,000 real, live NYC 311 Service Request rows pulled from
+NYC Open Data's Socrata API (`data.cityofnewyork.us/resource/erm2-nwe9`,
+current as of 2026-09-22 — not synthetic/fabricated rows), 14 columns,
+written to a real 2-sheet `.xlsx` workbook (75k rows/sheet, 19MB) via
+`openpyxl`. Both libraries iterated every row of every sheet; row counts
+and a positional checksum matched exactly across all three methods
+(correctness verified, not just speed). 3 runs each, median reported,
+single-process wall-clock via `time.perf_counter()`, peak RSS via
+`resource.getrusage(...).ru_maxrss` on macOS/arm64, Python 3.13.
+
+| Rows | streamxl `read()` | openpyxl `read_only=True` | openpyxl full load |
+|------|---|---|---|
+| 10,000  | 0.07s · 28MB peak RSS | 0.61s · 31MB peak RSS | — |
+| 30,000  | 0.19s · 52MB peak RSS | 1.89s · 32MB peak RSS | — |
+| 75,000  | 0.48s · 103MB peak RSS | 4.72s · 36MB peak RSS | — |
+| 150,000 (2 sheets) | 0.96s · 192MB peak RSS | 9.27s · 43MB peak RSS | 13.5s · 1,040MB peak RSS |
+
+**streamxl is ~9.7x faster than `openpyxl(read_only=True)` and ~14x
+faster than `openpyxl()` full-load** at 150k rows — but at that size it
+uses **~4.5x more peak memory than `openpyxl(read_only=True)`** (192MB
+vs 43MB), because `read()` isn't actually O(1) yet (see above). If your
+bottleneck is wall-clock time, streamxl wins clearly. If your bottleneck
+is memory on a very large file and you don't need every column loaded at
+once, `openpyxl(read_only=True)` currently uses less RAM. Reproduce with
+`benchmarks/openpyxl_vs_streamxl.py` against any real `.xlsx` file.
 
 ## CLI
 

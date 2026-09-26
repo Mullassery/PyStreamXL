@@ -104,6 +104,27 @@ of scope for that pass).
    allowing failures temporarily, which is a real decision, not a
    drive-by fix.
 
+10. **`read()`/`stream()` are NOT O(1) memory — the README's "Honest
+    feature list" claim is false.** `core/src/stream.rs`,
+    `XlsxStream::open()`: `zip.read_entry(&sheet_path)?` decompresses the
+    *entire* sheet XML into a `Vec<u8>` before any row is yielded, and
+    `SheetParser` (`core/src/sheet_parser.rs`) holds a `quick_xml::Reader`
+    borrowed over that whole buffer — the exact "full-sheet materialization
+    dressed up as a generator" pattern the README explicitly disclaims.
+    Confirmed empirically (2026-09-22 benchmark, `benchmarks/`, real NYC
+    311 data at 10k/30k/75k/150k rows): peak RSS scaled ~linearly with
+    sheet size (28MB → 52MB → 103MB → 192MB), tracking the underlying
+    `.xlsx` size (1.1MB → 19MB), not flat like `openpyxl(read_only=True)`
+    (31MB → 43MB) over the same range. Memory is still far below
+    `openpyxl`'s full-load mode (1.04GB at 150k rows) and runtime is
+    ~9-14x faster than either openpyxl mode, so the speed/memory-vs-full-load
+    claims hold — only the *O(1)/"constant regardless of file size"*
+    framing is wrong. A real fix means making `SheetParser` generic over
+    an incremental `Read`/`BufRead` source (streaming the zip entry
+    instead of buffering it via `XlsxZip::read_entry` -> `Vec<u8>`) and
+    re-validating against the existing 61 Rust / 168 Python tests — out
+    of scope for a drive-by patch, not attempted here.
+
 ## Feature gaps (already honestly disclosed in README, listed here for completeness)
 
 - No SQL-style query language (`execute_query()` in the REST API streams
