@@ -1,5 +1,5 @@
 """
-Benchmark: streamxl.write() vs openpyxl write
+Benchmark: pystreamxl.write() vs openpyxl write
 
 Usage:
     python benchmarks/openpyxl_vs_streamxl_write.py
@@ -19,9 +19,9 @@ def make_rows(n):
 
 
 def bench_streamxl_write(rows, path):
-    import streamxl
+    import pystreamxl
     t0 = time.perf_counter()
-    streamxl.write(path, rows)
+    pystreamxl.write(path, rows)
     return time.perf_counter() - t0
 
 
@@ -45,7 +45,7 @@ def file_mb(path):
 
 
 def run(row_sizes):
-    print(f"\n{'Rows':>10}  {'streamxl':>12}  {'openpyxl (write_only)':>22}  {'Speedup':>8}")
+    print(f"\n{'Rows':>10}  {'pystreamxl':>12}  {'openpyxl (write_only)':>22}  {'Speedup':>8}")
     print("-" * 62)
 
     with tempfile.TemporaryDirectory() as tmp:

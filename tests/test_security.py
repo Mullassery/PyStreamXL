@@ -1,4 +1,4 @@
-"""Tests for streamxl.security path-traversal confinement.
+"""Tests for pystreamxl.security path-traversal confinement.
 
 `validate_xlsx_path`/`validate_read_path`/`validate_write_path` used to check
 for the literal substring ".." *after* `Path.resolve()` had already
@@ -10,7 +10,7 @@ exercise the real fix: an optional `base_dir` parameter that confines the
 
 import pytest
 
-from streamxl.security import (
+from pystreamxl.security import (
     SecurityError,
     validate_read_path,
     validate_write_path,

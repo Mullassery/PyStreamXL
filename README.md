@@ -1,4 +1,4 @@
-# StreamXL
+# PyStreamXL
 
 ## Problem
 
@@ -11,9 +11,9 @@ against large `.xlsx` exports.
 
 **Stream large `.xlsx` files row-by-row in constant memory, powered by a Rust core with no `unsafe` code.**
 
-`pip install`s as `streamxl`, `import streamxl`. Read multi-sheet Excel workbooks without loading them fully into memory, extract formulas and comments, write new `.xlsx` files, and append to existing ones — all through a small, plain Python API backed by a Rust engine.
+`pip install`s as `pystreamxl`, `import pystreamxl`. Read multi-sheet Excel workbooks without loading them fully into memory, extract formulas and comments, write new `.xlsx` files, and append to existing ones — all through a small, plain Python API backed by a Rust engine.
 
-[![PyPI](https://img.shields.io/pypi/v/streamxl)](https://pypi.org/project/streamxl/)
+[![PyPI](https://img.shields.io/pypi/v/pystreamxl)](https://pypi.org/project/pystreamxl/)
 [![CI](https://github.com/Mullassery/PyStreamXL/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyStreamXL/actions/workflows/ci.yml)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
@@ -36,7 +36,7 @@ against large `.xlsx` exports.
 ## Install
 
 ```bash
-pip install streamxl
+pip install pystreamxl
 ```
 
 A prebuilt wheel is currently published only for macOS (arm64); other platforms install from the source distribution, which requires a Rust toolchain (see `rust-toolchain.toml`) and [maturin](https://www.maturin.rs/) to build. Every PyPI release to date (1.2.0 through 5.2.0) has shipped exactly one platform wheel plus an sdist — no Linux or Windows wheels have been published yet.
@@ -44,9 +44,9 @@ A prebuilt wheel is currently published only for macOS (arm64); other platforms 
 ## Quick start
 
 ```python
-import streamxl
+import pystreamxl
 
-for row in streamxl.read("data.xlsx"):
+for row in pystreamxl.read("data.xlsx"):
     print(row)  # ['Name', 'Age', 'Score']
 ```
 
@@ -57,33 +57,33 @@ for row in streamxl.read("data.xlsx"):
 **Read as dictionaries, keyed by header row:**
 
 ```python
-import streamxl
+import pystreamxl
 
-for row in streamxl.read("sales.xlsx", as_dict=True):
+for row in pystreamxl.read("sales.xlsx", as_dict=True):
     print(row["Customer"], row["Amount"])
 ```
 
 **Read only specific columns:**
 
 ```python
-for row in streamxl.read("sales.xlsx", as_dict=True, columns=["Customer", "Amount"]):
+for row in pystreamxl.read("sales.xlsx", as_dict=True, columns=["Customer", "Amount"]):
     ...
 ```
 
 **Read every sheet in a workbook:**
 
 ```python
-sheet_names = streamxl.sheets("workbook.xlsx")
-all_data = streamxl.read_all("workbook.xlsx")  # {sheet_name: [rows...]}
+sheet_names = pystreamxl.sheets("workbook.xlsx")
+all_data = pystreamxl.read_all("workbook.xlsx")  # {sheet_name: [rows...]}
 ```
 
 **Write a new `.xlsx` file:**
 
 ```python
 import datetime
-import streamxl
+import pystreamxl
 
-streamxl.write("report.xlsx", [
+pystreamxl.write("report.xlsx", [
     ["Name", "Joined", "Score"],
     ["Alice", datetime.date(2024, 1, 15), 95.5],
     ["Bob", datetime.date(2024, 3, 2), 88.0],
@@ -93,7 +93,7 @@ streamxl.write("report.xlsx", [
 **Stream-write multiple sheets without holding the whole file in memory:**
 
 ```python
-with streamxl.writer("report.xlsx") as w:
+with pystreamxl.writer("report.xlsx") as w:
     w.write_row(["Name", "Age"])
     w.write_row(["Alice", 30])
     w.add_sheet("Summary")
@@ -103,19 +103,19 @@ with streamxl.writer("report.xlsx") as w:
 **Append rows to an existing file (other sheets are preserved):**
 
 ```python
-streamxl.write("log.xlsx", [["Date", "Event"]])
-streamxl.append("log.xlsx", [[datetime.date.today(), "started"]])
-streamxl.append("log.xlsx", [[datetime.date.today(), "finished"]])
+pystreamxl.write("log.xlsx", [["Date", "Event"]])
+pystreamxl.append("log.xlsx", [[datetime.date.today(), "started"]])
+pystreamxl.append("log.xlsx", [[datetime.date.today(), "finished"]])
 ```
 
 **Extract formulas and comments:**
 
 ```python
-rows = list(streamxl.read("model.xlsx", with_formulas=True))
+rows = list(pystreamxl.read("model.xlsx", with_formulas=True))
 # each cell is a dict: {"value": ..., "formula": ..., "formula_type": ...,
 #                        "comment": ..., "comment_author": ...}
 
-from streamxl import FormulaSerializer
+from pystreamxl import FormulaSerializer
 export = FormulaSerializer.export_formulas(rows)
 FormulaSerializer.export_to_json(rows, "formulas.json")
 FormulaSerializer.export_to_csv(rows, "formulas.csv")  # sanitized against CSV/formula injection
@@ -125,19 +125,19 @@ FormulaSerializer.export_to_csv(rows, "formulas.csv")  # sanitized against CSV/f
 
 ```python
 import csv
-import streamxl
-from streamxl.security import sanitize_csv_cell
+import pystreamxl
+from pystreamxl.security import sanitize_csv_cell
 
 with open("output.csv", "w", newline="") as f:
     writer = csv.writer(f)
-    for row in streamxl.read("large.xlsx"):
+    for row in pystreamxl.read("large.xlsx"):
         writer.writerow([sanitize_csv_cell(cell) for cell in row])
 ```
 
 **Validate a file and recover from bad cells instead of crashing:**
 
 ```python
-from streamxl import validate_excel_file
+from pystreamxl import validate_excel_file
 
 report = validate_excel_file("questionable.xlsx")
 if report.has_fatal_errors():
@@ -159,7 +159,7 @@ What's here and real, backed by the Rust core and covered by the test suite:
 - **Type-aware cells** — strings, numbers, booleans, dates, datetimes, and empty cells round-trip correctly.
 - **Error recovery & validation** — `validate_excel_file()` and `ErrorRecoveryHandler` classify and (optionally) recover from malformed cells instead of hard-failing on the whole file.
 - **Security hardening** — path validation, file-size limits, and ZIP-bomb defenses (entry-size, compression-ratio, and total-decompressed-size limits) enforced before/while a file is opened. CSV export is sanitized against formula-injection (see below).
-- **REST API (optional)** — `streamxl.server.StreamXLServer` / `create_flask_app()` wrap the real streaming engine behind HTTP endpoints (`/sources`, `/sources/<id>/query`, `/sources/<id>/export`, ...). Requires `pip install "streamxl[server]"`.
+- **REST API (optional)** — `pystreamxl.server.StreamXLServer` / `create_flask_app()` wrap the real streaming engine behind HTTP endpoints (`/sources`, `/sources/<id>/query`, `/sources/<id>/export`, ...). Requires `pip install "pystreamxl[server]"`.
 
 What's **not** here, so you don't have to find out the hard way:
 
@@ -172,7 +172,7 @@ What's **not** here, so you don't have to find out the hard way:
 
 - **Path & size validation** — `validate_read_path()` / `validate_write_path()` reject non-`.xlsx` paths, path traversal, and oversized files before any parsing happens.
 - **ZIP-bomb defenses** — the Rust core enforces a per-entry size limit, a compression-ratio limit, and a total-decompressed-size limit while unpacking a workbook (see `core/src/zip_reader.rs`), tested against real crafted archives in `core/tests/zip_bomb_defense.rs`.
-- **CSV/formula-injection protection** — `streamxl.security.sanitize_csv_cell()` neutralizes any string cell that starts with `=`, `+`, `-`, `@`, TAB, or CR (the standard CSV-injection trigger set) by prefixing it with `'`, so a malicious workbook can't turn a CSV export into an executable formula when reopened in Excel/LibreOffice/Google Sheets. `FormulaSerializer.export_to_csv()` applies this automatically; apply it yourself when writing CSV from `read()` output (see the example above).
+- **CSV/formula-injection protection** — `pystreamxl.security.sanitize_csv_cell()` neutralizes any string cell that starts with `=`, `+`, `-`, `@`, TAB, or CR (the standard CSV-injection trigger set) by prefixing it with `'`, so a malicious workbook can't turn a CSV export into an executable formula when reopened in Excel/LibreOffice/Google Sheets. `FormulaSerializer.export_to_csv()` applies this automatically; apply it yourself when writing CSV from `read()` output (see the example above).
 
 **Limits, enforced by default (no configuration needed):**
 
@@ -186,7 +186,7 @@ What's **not** here, so you don't have to find out the hard way:
 Handle malformed or malicious files by catching `SecurityError`:
 
 ```python
-from streamxl import SecurityError, read
+from pystreamxl import SecurityError, read
 
 try:
     for row in read("data.xlsx"):
@@ -219,18 +219,18 @@ and a positional checksum matched exactly across all three methods
 single-process wall-clock via `time.perf_counter()`, peak RSS via
 `resource.getrusage(...).ru_maxrss` on macOS/arm64, Python 3.13.
 
-| Rows | streamxl `read()` | openpyxl `read_only=True` | openpyxl full load |
+| Rows | pystreamxl `read()` | openpyxl `read_only=True` | openpyxl full load |
 |------|---|---|---|
 | 10,000  | 0.07s · 28MB peak RSS | 0.61s · 31MB peak RSS | — |
 | 30,000  | 0.19s · 52MB peak RSS | 1.89s · 32MB peak RSS | — |
 | 75,000  | 0.48s · 103MB peak RSS | 4.72s · 36MB peak RSS | — |
 | 150,000 (2 sheets) | 0.96s · 192MB peak RSS | 9.27s · 43MB peak RSS | 13.5s · 1,040MB peak RSS |
 
-**streamxl is ~9.7x faster than `openpyxl(read_only=True)` and ~14x
+**pystreamxl is ~9.7x faster than `openpyxl(read_only=True)` and ~14x
 faster than `openpyxl()` full-load** at 150k rows — but at that size it
 uses **~4.5x more peak memory than `openpyxl(read_only=True)`** (192MB
 vs 43MB), because `read()` isn't actually O(1) yet (see above). If your
-bottleneck is wall-clock time, streamxl wins clearly. If your bottleneck
+bottleneck is wall-clock time, pystreamxl wins clearly. If your bottleneck
 is memory on a very large file and you don't need every column loaded at
 once, `openpyxl(read_only=True)` currently uses less RAM. Reproduce with
 `benchmarks/openpyxl_vs_streamxl.py` against any real `.xlsx` file.
@@ -271,4 +271,4 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 
 ---
 
-**StreamXL** | Constant-memory Excel streaming | Rust core, Python API
+**PyStreamXL** | Constant-memory Excel streaming | Rust core, Python API

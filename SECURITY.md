@@ -3,7 +3,7 @@
 This document describes the security-relevant behavior of the current
 codebase (last checked against v5.3.0). It is not versioned separately
 from the package — read it against whatever version you have installed,
-and verify against `python/streamxl/security.py` and
+and verify against `python/pystreamxl/security.py` and
 `core/src/zip_reader.rs` if it matters for your use case.
 
 ## Executive Summary
@@ -64,7 +64,7 @@ and was dead code. A call like `read("../../../etc/passwd.xlsx")` still
 raised `SecurityError`, but only because `/etc/passwd.xlsx` didn't exist or
 wasn't a `.xlsx`/`.xls` file — not because traversal was detected.
 
-**What's fixed now (`python/streamxl/security.py`):**
+**What's fixed now (`python/pystreamxl/security.py`):**
 `validate_xlsx_path()`, `validate_read_path()`, and `validate_write_path()`
 all accept an optional `base_dir` argument. When passed, the path is
 resolved (`Path(path).resolve()`, which also collapses `..` and symlinks)
@@ -74,7 +74,7 @@ after normalization instead of a dead substring check performed too late
 to matter:
 
 ```python
-from streamxl.security import validate_read_path, SecurityError
+from pystreamxl.security import validate_read_path, SecurityError
 
 try:
     validate_read_path(user_supplied_path, base_dir="/var/app/uploads")
@@ -86,11 +86,11 @@ except SecurityError:
 default), no confinement is enforced and any resolved path is accepted —
 same behavior as every prior release. This library is used both as a
 general-purpose file-path API (arbitrary absolute paths anywhere on disk
-are a legitimate, existing use case — see `python/streamxl/api.py`) and
+are a legitimate, existing use case — see `python/pystreamxl/api.py`) and
 potentially embedded in services with a real trust boundary (e.g. a
 multi-tenant upload handler). Those are different confinement contracts,
 so the check is available but must be deliberately opted into by callers
-that have an actual base directory to enforce; `streamxl.read()`/`write()`
+that have an actual base directory to enforce; `pystreamxl.read()`/`write()`
 and the bundled `StreamXLServer` do not pass `base_dir` today. If you're
 embedding this in a service that accepts user-supplied paths, call
 `validate_read_path()`/`validate_write_path()` yourself with `base_dir` set
@@ -145,7 +145,7 @@ MAX_TOTAL_SIZE  = 1 GB    // across the whole workbook, mirrors the read-side li
 Raised when file fails security validation.
 
 ```python
-from streamxl import SecurityError, read
+from pystreamxl import SecurityError, read
 
 try:
     for row in read("data.xlsx"):
@@ -159,7 +159,7 @@ except SecurityError as e:
 Returns current security configuration.
 
 ```python
-from streamxl import get_security_limits
+from pystreamxl import get_security_limits
 
 limits = get_security_limits()
 # {
@@ -205,16 +205,16 @@ from outside callers, verify:
 
 **Example code:**
 ```python
-import streamxl
+import pystreamxl
 import logging
 
 logger = logging.getLogger(__name__)
 
 def process_excel(filepath: str):
     try:
-        for row in streamxl.read(filepath):
+        for row in pystreamxl.read(filepath):
             yield row
-    except streamxl.SecurityError as e:
+    except pystreamxl.SecurityError as e:
         logger.error(f"Security violation in {filepath}: {e}")
         raise  # Don't silently fail
 ```
@@ -229,20 +229,20 @@ def process_excel(filepath: str):
 ```python
 # data_part1.xlsx (400 MB)
 # data_part2.xlsx (300 MB)
-for row in streamxl.read("data_part1.xlsx"):
+for row in pystreamxl.read("data_part1.xlsx"):
     process(row)
-for row in streamxl.read("data_part2.xlsx"):
+for row in pystreamxl.read("data_part2.xlsx"):
     process(row)
 ```
 
 **Option 2: Append incrementally**
 ```python
-with streamxl.writer("log.xlsx") as w:
+with pystreamxl.writer("log.xlsx") as w:
     w.write_row(["Date", "Event"])
 
 # Append in smaller batches
 for event in events:
-    streamxl.append("log.xlsx", [[event.date, event.msg]])
+    pystreamxl.append("log.xlsx", [[event.date, event.msg]])
 ```
 
 **Option 3: Custom build**
@@ -253,27 +253,27 @@ Open an issue with business justification for custom limits.
 ## Testing Security
 
 ```python
-import streamxl
+import pystreamxl
 import tempfile
 import pytest
 
 def test_zip_bomb_protection():
     """Verify ZIP bomb protection."""
-    with pytest.raises(streamxl.SecurityError):
-        streamxl.read("fake_huge_file.xlsx")
+    with pytest.raises(pystreamxl.SecurityError):
+        pystreamxl.read("fake_huge_file.xlsx")
 
 def test_nonexistent_or_wrong_extension_path_raises():
     """A path that doesn't resolve to a real .xlsx/.xls file raises
     SecurityError — but note this is existence/extension validation,
     not path-traversal confinement (see "Path Handling" above)."""
-    with pytest.raises(streamxl.SecurityError):
-        streamxl.read("../../../etc/passwd.xlsx")
+    with pytest.raises(pystreamxl.SecurityError):
+        pystreamxl.read("../../../etc/passwd.xlsx")
 
 def test_empty_file_rejection():
     """Verify empty files are rejected."""
     with tempfile.NamedTemporaryFile(suffix=".xlsx") as f:
-        with pytest.raises(streamxl.SecurityError):
-            streamxl.read(f.name)
+        with pytest.raises(pystreamxl.SecurityError):
+            pystreamxl.read(f.name)
 ```
 
 ---
@@ -328,7 +328,7 @@ What's real and enabled by default, no configuration needed:
 - Oversized files rejected via a file-size check before parsing
 - File extension and basic format validated
 - Empty files rejected
-- CSV/formula-injection sanitization available via `streamxl.security.sanitize_csv_cell()` (opt-in for your own CSV writes; automatic in `FormulaSerializer.export_to_csv()`)
+- CSV/formula-injection sanitization available via `pystreamxl.security.sanitize_csv_cell()` (opt-in for your own CSV writes; automatic in `FormulaSerializer.export_to_csv()`)
 
 What's **not** real, despite being implied by earlier drafts of this
 document: this library does not sandbox/confine file paths to a base

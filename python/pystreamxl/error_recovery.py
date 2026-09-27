@@ -315,14 +315,14 @@ def validate_excel_file(
     Returns:
         ValidationReport with findings
     """
-    import streamxl
+    import pystreamxl
 
     report = ValidationReport(file_path=file_path, sheet_name="All")
 
     try:
         # Try to read file with metadata to detect errors
         rows = list(
-            streamxl.read(file_path, with_formulas=True)
+            pystreamxl.read(file_path, with_formulas=True)
         )
         report.total_cells = sum(len(row) for row in rows)
 

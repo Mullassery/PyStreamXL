@@ -1,10 +1,10 @@
-# streamxl
+# pystreamxl
 
 > High-performance streaming XLSX reader for Python, powered by a Rust engine exposed via PyO3.
 
 ## What it is
 
-streamxl reads `.xlsx` files row-by-row without loading the entire file into memory. It is designed for ETL pipelines, data engineering, and large-file processing where openpyxl runs out of memory or is too slow.
+pystreamxl reads `.xlsx` files row-by-row without loading the entire file into memory. It is designed for ETL pipelines, data engineering, and large-file processing where openpyxl runs out of memory or is too slow.
 
 - Peak memory stays proportional to the shared string table, not the file size, not the number of rows
 - Throughput/speed-vs-openpyxl figures are not published as a checked-in, reproducible benchmark result in this repo — see `benchmarks/` and `examples/memory_benchmark.py` to measure against your own files rather than relying on a fixed number
@@ -12,9 +12,9 @@ streamxl reads `.xlsx` files row-by-row without loading the entire file into mem
 ## Install
 
 ```bash
-pip install streamxl
+pip install pystreamxl
 # or
-uv add streamxl
+uv add pystreamxl
 # or one-liner (auto-detects uv/pip, falls back to source build)
 curl -sSf https://raw.githubusercontent.com/Mullassery/PyStreamXL/main/scripts/install.sh | sh
 ```
@@ -22,15 +22,15 @@ curl -sSf https://raw.githubusercontent.com/Mullassery/PyStreamXL/main/scripts/i
 ## Usage
 
 ```python
-import streamxl
+import pystreamxl
 
-for row in streamxl.read("data.xlsx"):
+for row in pystreamxl.read("data.xlsx"):
     print(row)
 # ['Name', 'Age', 'Score']
 # ['Alice', 30.0, 95.5]
 ```
 
-`streamxl.stream()` is an alias for `streamxl.read()`.
+`pystreamxl.stream()` is an alias for `pystreamxl.read()`.
 
 Each row is `list[str | float | bool | None]`.
 

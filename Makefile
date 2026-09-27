@@ -1,7 +1,7 @@
 .PHONY: install install-dev build test lint fmt clean help setup-hooks
 
 help:
-	@echo "streamxl development tasks:"
+	@echo "pystreamxl development tasks:"
 	@echo "  make install         Install pre-commit hooks"
 	@echo "  make build           Build Python wheel (maturin)"
 	@echo "  make dev             Dev install with hot reload"

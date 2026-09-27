@@ -1,6 +1,6 @@
 import os
 import pytest
-import streamxl
+import pystreamxl
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -16,15 +16,15 @@ SAMPLE_ROWS = [
 def roundtrip(tmp_path, rows):
     """Write rows to a temp XLSX, read them back."""
     path = str(tmp_path / "out.xlsx")
-    streamxl.write(path, rows)
-    return list(streamxl.read(path))
+    pystreamxl.write(path, rows)
+    return list(pystreamxl.read(path))
 
 
 # ── write() API ───────────────────────────────────────────────────────────────
 
 def test_write_creates_file(tmp_path):
     path = str(tmp_path / "out.xlsx")
-    streamxl.write(path, SAMPLE_ROWS)
+    pystreamxl.write(path, SAMPLE_ROWS)
     assert os.path.exists(path)
     assert os.path.getsize(path) > 0
 
@@ -94,7 +94,7 @@ def test_write_large_roundtrip(tmp_path):
 
 def test_context_manager_creates_file(tmp_path):
     path = str(tmp_path / "cm.xlsx")
-    with streamxl.writer(path) as w:
+    with pystreamxl.writer(path) as w:
         w.write_row(["a", "b"])
         w.write_row([1, 2])
     assert os.path.exists(path)
@@ -102,17 +102,17 @@ def test_context_manager_creates_file(tmp_path):
 
 def test_context_manager_roundtrip(tmp_path):
     path = str(tmp_path / "cm.xlsx")
-    with streamxl.writer(path) as w:
+    with pystreamxl.writer(path) as w:
         for row in SAMPLE_ROWS:
             w.write_row(row)
-    result = list(streamxl.read(path))
+    result = list(pystreamxl.read(path))
     assert len(result) == len(SAMPLE_ROWS)
     assert result[0][0] == "Name"
 
 
 def test_context_manager_close_is_idempotent(tmp_path):
     path = str(tmp_path / "cm.xlsx")
-    w = streamxl.writer(path)
+    w = pystreamxl.writer(path)
     w.write_row(["x"])
     w.close()
     w.close()  # should not raise
@@ -120,7 +120,7 @@ def test_context_manager_close_is_idempotent(tmp_path):
 
 def test_writer_error_after_close(tmp_path):
     path = str(tmp_path / "cm.xlsx")
-    w = streamxl.writer(path)
+    w = pystreamxl.writer(path)
     w.write_row(["x"])
     w.close()
     with pytest.raises(Exception):

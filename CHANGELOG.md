@@ -10,6 +10,21 @@ time — see `git log` and GitHub Releases for that history.
 
 ## [Unreleased]
 
+## [6.0.0] - 2026-09-27
+
+### Changed
+- **Breaking: PyPI project and import name changed from `streamxl` to
+  `pystreamxl`**, to match the CLI command, class names
+  (`PyStreamXLDashboard`, `StreamXLServer`), and repo name
+  (`Mullassery/PyStreamXL`), which already used the `PyStreamXL`/
+  `pystreamxl` spelling — `streamxl` was the odd one out and a real
+  source of confusion (reviewers flagged the two names being used
+  interchangeably without realizing they referred to the same
+  project). `pip install pystreamxl`, `import pystreamxl` going
+  forward. The old `streamxl` PyPI project gets one final release
+  (see below) that re-exports from `pystreamxl` with a deprecation
+  warning rather than being silently abandoned at 5.3.2.
+
 ## [5.3.2] - 2026-09-27
 
 ### Added

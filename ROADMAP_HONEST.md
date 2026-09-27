@@ -17,7 +17,7 @@ of scope for that pass).
 ## Bugs / security gaps
 
 1. ~~**Path-traversal check is dead code.**~~ **FIXED (2026-09-22).**
-   `python/streamxl/security.py` — the old `if '..' in str(path)` check
+   `python/pystreamxl/security.py` — the old `if '..' in str(path)` check
    ran after `Path.resolve()` had already collapsed `..` segments and
    could never fire. `validate_xlsx_path()`/`validate_read_path()`/
    `validate_write_path()` now accept an optional `base_dir`; when passed,
@@ -29,7 +29,7 @@ of scope for that pass).
    disk). See `tests/test_security.py` and `SECURITY.md` "Path Handling".
 
 2. ~~**`validate_write_path()` uses `print()` for overwrite warnings**~~
-   **FIXED (2026-09-22).** `python/streamxl/security.py` now logs via
+   **FIXED (2026-09-22).** `python/pystreamxl/security.py` now logs via
    `logging.getLogger(__name__).warning(...)` instead of `print()`.
 
 3. **No dependency-audit CI job.** Neither `cargo audit`/`cargo deny`
@@ -51,7 +51,7 @@ of scope for that pass).
    Dependency Analysis") releases — but **none of the three symbols is
    referenced anywhere in `python/src/lib.rs`**. They compile, they
    pass their own tests, and they do nothing for any actual caller of
-   the `streamxl` package. This needs a real decision: finish wiring
+   the `pystreamxl` package. This needs a real decision: finish wiring
    them into the Python API and the README's feature list, or delete
    them. Left as-is, they're maintenance burden (compile time, contributor
    confusion, a stale mental model of "what phase 4/5 shipped") with zero

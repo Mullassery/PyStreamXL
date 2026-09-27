@@ -3,7 +3,7 @@
 **Environment:** Apple Silicon (aarch64-apple-darwin), Python 3.13, Rust 1.96, macOS  
 **File contents:** 10 columns — ID, Name, Value, Score, Category, Flag, Amount, Date, Code, Notes  
 **Methods:**
-- `streamxl` — `streamxl.read()` Rust streaming engine
+- `pystreamxl` — `pystreamxl.read()` Rust streaming engine
 - `openpyxl (read_only)` — `load_workbook(read_only=True)` + `iter_rows()`
 - `openpyxl (full load)` — `load_workbook()` + `iter_rows()`
 
@@ -13,11 +13,11 @@
 
 | Library | Time | Peak RAM | Rows/sec |
 |---------|------|----------|----------|
-| **streamxl** | **0.40s** | 2.8 MB | **25,080/s** |
+| **pystreamxl** | **0.40s** | 2.8 MB | **25,080/s** |
 | openpyxl (read_only) | 1.52s | 1.5 MB | 6,570/s |
 | openpyxl (full load) | 1.94s | 38.4 MB | 5,164/s |
 
-streamxl: **3.8× faster** than read_only · **4.9× faster** than full load
+pystreamxl: **3.8× faster** than read_only · **4.9× faster** than full load
 
 ---
 
@@ -25,11 +25,11 @@ streamxl: **3.8× faster** than read_only · **4.9× faster** than full load
 
 | Library | Time | Peak RAM | Rows/sec |
 |---------|------|----------|----------|
-| **streamxl** | **1.81s** | 13.8 MB | **27,572/s** |
+| **pystreamxl** | **1.81s** | 13.8 MB | **27,572/s** |
 | openpyxl (read_only) | 7.72s | 4.3 MB | 6,473/s |
 | openpyxl (full load) | 9.83s | 186.3 MB | 5,085/s |
 
-streamxl: **4.3× faster** than read_only · **5.4× faster** than full load
+pystreamxl: **4.3× faster** than read_only · **5.4× faster** than full load
 
 ---
 
@@ -37,11 +37,11 @@ streamxl: **4.3× faster** than read_only · **5.4× faster** than full load
 
 | Library | Time | Peak RAM | Rows/sec |
 |---------|------|----------|----------|
-| **streamxl** | **3.59s** | 27.5 MB | **27,873/s** |
+| **pystreamxl** | **3.59s** | 27.5 MB | **27,873/s** |
 | openpyxl (read_only) | 15.80s | 8.1 MB | 6,331/s |
 | openpyxl (full load) | 19.77s | 372.5 MB | 5,059/s |
 
-streamxl: **4.4× faster** than read_only · **5.5× faster** than full load
+pystreamxl: **4.4× faster** than read_only · **5.5× faster** than full load
 
 ---
 
@@ -49,17 +49,17 @@ streamxl: **4.4× faster** than read_only · **5.5× faster** than full load
 
 | Library | Time | Peak RAM | Rows/sec |
 |---------|------|----------|----------|
-| **streamxl** | **9.04s** | 68.7 MB | **27,651/s** |
+| **pystreamxl** | **9.04s** | 68.7 MB | **27,651/s** |
 | openpyxl (read_only) | 40.46s | 19.6 MB | 6,178/s |
 | openpyxl (full load) | 50.67s | **911.3 MB** | 4,934/s |
 
-streamxl: **4.5× faster** than read_only · **5.6× faster** than full load
+pystreamxl: **4.5× faster** than read_only · **5.6× faster** than full load
 
 ---
 
 ## Summary
 
-| Rows | streamxl | openpyxl read_only | openpyxl full | Speedup vs read_only | Memory (full load) |
+| Rows | pystreamxl | openpyxl read_only | openpyxl full | Speedup vs read_only | Memory (full load) |
 |------|----------|--------------------|---------------|---------------------|--------------------|
 | 10k  | 0.40s | 1.52s | 1.94s | 3.8× | 38 MB |
 | 50k  | 1.81s | 7.72s | 9.83s | 4.3× | 186 MB |
@@ -74,7 +74,7 @@ streamxl: **4.5× faster** than read_only · **5.6× faster** than full load
 
 ```bash
 # Install deps
-pip install openpyxl streamxl
+pip install openpyxl pystreamxl
 
 # Generate a test file
 python -c "

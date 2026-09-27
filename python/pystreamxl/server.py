@@ -1,10 +1,10 @@
-"""REST API server for StreamXL - spreadsheet data engine workflow integration.
+"""REST API server for PyStreamXL - spreadsheet data engine workflow integration.
 
-Every endpoint below is backed by the real StreamXL streaming/ETL engine
-(``streamxl.api.read`` / ``streamxl.api.sheets``): a "source" is a real
+Every endpoint below is backed by the real PyStreamXL streaming/ETL engine
+(``pystreamxl.api.read`` / ``pystreamxl.api.sheets``): a "source" is a real
 ``.xlsx`` file on disk, "query" streams actual rows from it, and "export"
 serializes actual sheet data (CSV output is sanitized against
-formula-injection via :func:`streamxl.security.sanitize_csv_cell`).
+formula-injection via :func:`pystreamxl.security.sanitize_csv_cell`).
 Nothing here returns synthetic/hardcoded data.
 """
 
@@ -142,7 +142,7 @@ class StreamXLServer:
         Export a real sheet's rows as CSV or JSON.
 
         CSV output has every cell passed through
-        :func:`streamxl.security.sanitize_csv_cell` to prevent
+        :func:`pystreamxl.security.sanitize_csv_cell` to prevent
         formula-injection when the export is later opened in a
         spreadsheet application.
         """
@@ -198,7 +198,7 @@ class StreamXLServer:
         """Health check endpoint."""
         return {
             "status": "healthy",
-            "service": "streamxl",
+            "service": "pystreamxl",
             "version": __version__,
             "sources_connected": len(self.sources),
             "queries_executed": len(self.queries),
@@ -211,7 +211,7 @@ def create_flask_app(server: Optional[StreamXLServer] = None):
         from flask import Flask, request, jsonify
     except ImportError:
         raise ImportError(
-            "Flask is required for REST API. Install with: pip install 'streamxl[server]' or pip install flask"
+            "Flask is required for REST API. Install with: pip install 'pystreamxl[server]' or pip install flask"
         )
 
     app = Flask(__name__)

@@ -1,11 +1,11 @@
 import datetime
-import streamxl
+import pystreamxl
 
 
 def roundtrip(tmp_path, rows):
     path = str(tmp_path / "dates.xlsx")
-    streamxl.write(path, rows)
-    return list(streamxl.read(path))
+    pystreamxl.write(path, rows)
+    return list(pystreamxl.read(path))
 
 
 # ── date write/read ───────────────────────────────────────────────────────────
@@ -90,9 +90,9 @@ def test_writer_with_dates(tmp_path):
     path = str(tmp_path / "w_dates.xlsx")
     d = datetime.date(2025, 3, 10)
     dt = datetime.datetime(2025, 3, 10, 9, 0, 0)
-    with streamxl.writer(path) as w:
+    with pystreamxl.writer(path) as w:
         w.write_row(["Date", "DateTime"])
         w.write_row([d, dt])
-    result = list(streamxl.read(path))
+    result = list(pystreamxl.read(path))
     assert result[1][0] == d
     assert isinstance(result[1][1], datetime.datetime)

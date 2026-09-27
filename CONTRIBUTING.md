@@ -1,11 +1,11 @@
 # Contributing to PyStreamXL
 
-Thanks for your interest! PyStreamXL (`pip install streamxl`, `import streamxl`) is a Rust + Python library that streams large `.xlsx` files row-by-row without loading the whole workbook into memory.
+Thanks for your interest! PyStreamXL (`pip install pystreamxl`, `import pystreamxl`) is a Rust + Python library that streams large `.xlsx` files row-by-row without loading the whole workbook into memory.
 
 ## Project layout
 
 ```
-core/                    # Rust engine (streamxl-core crate)
+core/                    # Rust engine (pystreamxl-core crate)
 ├── src/
 │   ├── stream.rs         # XlsxStream: opens the ZIP, orchestrates parsing
 │   ├── zip_reader.rs     # ZIP-bomb defenses (entry/ratio/total-size limits)
@@ -20,10 +20,10 @@ core/                    # Rust engine (streamxl-core crate)
 
 python/
 ├── src/lib.rs            # PyO3 bridge exposing the Rust engine to Python
-└── streamxl/             # Python package: api.py, core.py, security.py, server.py, cli.py, ...
+└── pystreamxl/             # Python package: api.py, core.py, security.py, server.py, cli.py, ...
 
 tests/                    # Python test suite (pytest)
-benchmarks/                # openpyxl-vs-streamxl comparison scripts
+benchmarks/                # openpyxl-vs-pystreamxl comparison scripts
 examples/                  # runnable usage examples
 docs/                       # architecture, feature, and format docs
 ```

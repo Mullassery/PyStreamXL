@@ -1,4 +1,4 @@
-# streamxl — Cursor rules
+# pystreamxl — Cursor rules
 
 ## What this repo is
 
@@ -34,7 +34,7 @@ Never run `cargo build --workspace` — `python/` has its own `[workspace]` and 
 | `core/src/shared_strings.rs` | SST parser |
 | `core/src/stream.rs` | Opens ZIP, holds sheet bytes, owns RowIter |
 | `python/src/lib.rs` | PyO3 bridge; exposes `read()` to Python |
-| `python/streamxl/api.py` | Python-facing `read()` / `stream()` iterators |
+| `python/pystreamxl/api.py` | Python-facing `read()` / `stream()` iterators |
 | `pyproject.toml` | maturin build config |
 
 ## Cell value mapping

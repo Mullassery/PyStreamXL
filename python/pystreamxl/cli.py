@@ -1,8 +1,8 @@
 """PyStreamXL CLI - Spreadsheet formula extraction"""
 
 import sys, argparse
-from streamxl import __version__
-from streamxl.cli_dashboard import PyStreamXLDashboard
+from pystreamxl import __version__
+from pystreamxl.cli_dashboard import PyStreamXLDashboard
 
 
 def dashboard_command(args):

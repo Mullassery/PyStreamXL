@@ -1,12 +1,12 @@
 #!/usr/bin/env sh
-# streamxl installer — detects pip or uv and installs the package.
+# pystreamxl installer — detects pip or uv and installs the package.
 #
 # Usage:
 #   curl -sSf https://raw.githubusercontent.com/Mullassery/PyStreamXL/main/scripts/install.sh | sh
 
 set -e
 
-PACKAGE="streamxl"
+PACKAGE="pystreamxl"
 
 echo "Installing $PACKAGE..."
 
@@ -28,5 +28,5 @@ else
 fi
 
 echo ""
-echo "streamxl installed. Verify with:"
-echo '  python -c "import streamxl; print(streamxl.__version__)"'
+echo "pystreamxl installed. Verify with:"
+echo '  python -c "import pystreamxl; print(pystreamxl.__version__)"'

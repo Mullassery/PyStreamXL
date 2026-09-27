@@ -8,7 +8,7 @@ doesn't" list, see the [README's "Honest feature list"](../../README.md#honest-f
 
 ```mermaid
 flowchart TD
-    subgraph Python["Python (python/streamxl/)"]
+    subgraph Python["Python (python/pystreamxl/)"]
         API["api.py — read() / stream() / write() / append() / writer()"]
         SEC["security.py — path/size validation, CSV-injection sanitizer"]
         FIO["formula_io.py, formula_reference_mapper.py"]
@@ -51,7 +51,7 @@ flowchart TD
 
 ## Data flow (read path)
 
-1. `streamxl.read(path)` (Python) calls `security.validate_read_path()` —
+1. `pystreamxl.read(path)` (Python) calls `security.validate_read_path()` —
    rejects non-`.xlsx`/`.xls` extensions, missing files, and files over
    512 MB, before any parsing happens.
 2. The PyO3 bridge (`python/src/lib.rs`) opens an `XlsxStream`
@@ -82,7 +82,7 @@ flowchart TD
 
 ## Data flow (write path)
 
-`streamxl.write()` / `streamxl.writer()` / `streamxl.append()` go through
+`pystreamxl.write()` / `pystreamxl.writer()` / `pystreamxl.append()` go through
 `core/src/writer.rs`'s `XlsxWriter`. As of v5.3.0 this buffers worksheet
 XML and flushes it to the underlying ZIP stream every ~4 MB
 (`FLUSH_THRESHOLD`) rather than only once at `finish()`, and enforces the

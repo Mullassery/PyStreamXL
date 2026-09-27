@@ -1,5 +1,5 @@
 """
-Benchmark: openpyxl vs streamxl on large XLSX files.
+Benchmark: openpyxl vs pystreamxl on large XLSX files.
 
 Usage:
     python benchmarks/openpyxl_vs_streamxl.py benchmarks/large_file_test.xlsx
@@ -23,10 +23,10 @@ def bench_openpyxl(path: str):
 
 
 def bench_streamxl(path: str):
-    import streamxl
+    import pystreamxl
     tracemalloc.start()
     t0 = time.perf_counter()
-    count = sum(1 for _ in streamxl.read(path))
+    count = sum(1 for _ in pystreamxl.read(path))
     elapsed = time.perf_counter() - t0
     _, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
@@ -42,4 +42,4 @@ if __name__ == "__main__":
     print(f"openpyxl:  {rows:,} rows | {t:.2f}s | {mem:.1f} MB peak")
 
     rows, t, mem = bench_streamxl(path)
-    print(f"streamxl:  {rows:,} rows | {t:.2f}s | {mem:.1f} MB peak")
+    print(f"pystreamxl:  {rows:,} rows | {t:.2f}s | {mem:.1f} MB peak")

@@ -340,7 +340,7 @@ fn write(py: Python<'_>, path: &str, rows: PyObject) -> PyResult<()> {
 
 /// Streaming context-manager writer with multi-sheet support.
 ///
-///     with streamxl.writer("out.xlsx") as w:
+///     with pystreamxl.writer("out.xlsx") as w:
 ///         w.write_row(["Name", "Age"])
 ///         w.add_sheet("Sheet2")
 ///         w.write_row(["City", "Pop"])

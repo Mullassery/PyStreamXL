@@ -13,7 +13,7 @@
 #
 # The final `publish` job uses PyPI Trusted Publishing (OIDC) and has
 # not been exercised end-to-end — it needs a Trusted Publisher entry
-# added on the `streamxl` PyPI project (Publishing -> Add a new
+# added on the `pystreamxl` PyPI project (Publishing -> Add a new
 # publisher) pointing at this repo/workflow/environment before it will
 # work. Until that's set up, download the `wheels-*` artifacts from a
 # run and `twine upload` them by hand.
