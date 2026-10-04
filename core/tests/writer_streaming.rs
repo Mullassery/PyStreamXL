@@ -73,6 +73,7 @@ fn large_row_count_round_trips_and_flushes_incrementally() {
     let stream = XlsxStream::open(&path, None).expect("open written file");
     let rows: Vec<Vec<CellValue>> = stream
         .rows()
+        .expect("open row stream")
         .collect::<Result<Vec<_>, _>>()
         .expect("all rows parse cleanly");
 
@@ -160,11 +161,19 @@ fn multi_sheet_round_trip_with_streaming() {
     assert_eq!(names, vec!["Sheet1".to_string(), "Sheet2".to_string()]);
 
     let sheet1 = XlsxStream::open(&path, Some("Sheet1")).expect("open sheet1");
-    let rows1: Vec<_> = sheet1.rows().collect::<Result<Vec<_>, _>>().unwrap();
+    let rows1: Vec<_> = sheet1
+        .rows()
+        .unwrap()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
     assert_eq!(rows1.len(), 5_000);
 
     let sheet2 = XlsxStream::open(&path, Some("Sheet2")).expect("open sheet2");
-    let rows2: Vec<_> = sheet2.rows().collect::<Result<Vec<_>, _>>().unwrap();
+    let rows2: Vec<_> = sheet2
+        .rows()
+        .unwrap()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
     assert_eq!(rows2.len(), 5_000);
 
     let _ = std::fs::remove_file(&path);

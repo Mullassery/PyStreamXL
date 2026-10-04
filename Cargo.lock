@@ -670,6 +670,7 @@ dependencies = [
  "pyo3",
  "quick-xml",
  "regex",
+ "self_cell",
  "serde",
  "serde_json",
  "zip",
@@ -680,7 +681,6 @@ name = "streamxl-python"
 version = "6.0.0"
 dependencies = [
  "pyo3",
- "self_cell",
  "streamxl-core",
 ]
 

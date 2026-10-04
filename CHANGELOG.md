@@ -10,6 +10,19 @@ time — see `git log` and GitHub Releases for that history.
 
 ## [Unreleased]
 
+### Fixed
+- **Real O(1) memory for `read()`/`stream()`** (ROADMAP_HONEST.md gap #10).
+  `XlsxStream::open()` previously decompressed the entire sheet XML into a
+  `Vec<u8>` before any row was yielded, so peak RSS scaled with sheet size
+  despite the Python-facing API already being a real row-by-row iterator.
+  `SheetParser` is now generic over any `BufRead` source and streams the
+  zip entry's body incrementally instead of buffering it first; the
+  self-referential owned-archive-plus-borrowed-reader this needs is built
+  safely via the `self_cell` crate, with no unsafe code added. Verified via
+  live RSS sampling across a 1.2M-row file: memory plateaus in the first
+  50k rows and stays flat for the remaining 1.15M. All 61 Rust + 168 Python
+  tests still pass.
+
 ## [6.0.0] - 2026-09-27
 
 ### Changed

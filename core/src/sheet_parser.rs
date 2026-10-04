@@ -1,6 +1,8 @@
 use crate::styles::StyleInfo;
 use quick_xml::events::Event;
 use quick_xml::Reader;
+use std::io::BufRead;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub enum CellValue {
@@ -46,21 +48,38 @@ impl CellMetadata {
     }
 }
 
-/// Streams rows from sheet XML, resolving shared strings and detecting date cells.
-pub struct SheetParser<'a> {
-    reader: Reader<&'a [u8]>,
-    sst: &'a [String],
-    styles: &'a StyleInfo,
+/// Streams rows from sheet XML, resolving shared strings and detecting date
+/// cells. Generic over any `BufRead` source -- `&[u8]` for the (rare) case
+/// the whole sheet is already buffered, or a real incremental decompressing
+/// reader (see `stream.rs`'s `open_streaming_parser`) so a multi-gigabyte
+/// sheet never needs to be materialized into memory all at once.
+///
+/// `sst`/`styles` are `Rc`-shared rather than borrowed: they're bounded by
+/// the workbook's unique-string/style-table sizes (not row count), and
+/// sharing by `Rc` instead of a lifetime-tied reference lets `SheetParser`
+/// be fully owned (no lifetime parameter), which a self-referential
+/// streaming reader needs.
+pub struct SheetParser<R: BufRead> {
+    reader: Reader<R>,
+    sst: Rc<Vec<String>>,
+    styles: Rc<StyleInfo>,
+    // Scratch buffer for `Reader::read_event_into` -- the generic `Reader<R>`
+    // (unlike the `&[u8]`-specialized one) needs a caller-owned buffer to
+    // decode each event into. Cleared before every read; its capacity settles
+    // around the largest single event (one row's worth of XML), not the
+    // whole sheet, so this stays small and bounded regardless of row count.
+    buf: Vec<u8>,
 }
 
-impl<'a> SheetParser<'a> {
-    pub fn new(xml: &'a [u8], sst: &'a [String], styles: &'a StyleInfo) -> Self {
-        let mut reader = Reader::from_reader(xml);
+impl<R: BufRead> SheetParser<R> {
+    pub fn new(source: R, sst: Rc<Vec<String>>, styles: Rc<StyleInfo>) -> Self {
+        let mut reader = Reader::from_reader(source);
         reader.config_mut().trim_text(true);
         Self {
             reader,
             sst,
             styles,
+            buf: Vec::new(),
         }
     }
 
@@ -73,7 +92,8 @@ impl<'a> SheetParser<'a> {
         let mut in_t = false;
 
         loop {
-            match self.reader.read_event()? {
+            self.buf.clear();
+            match self.reader.read_event_into(&mut self.buf)? {
                 Event::Start(ref e) => match e.name().as_ref() {
                     b"row" => row = Some(Vec::new()),
                     b"c" => {
@@ -139,7 +159,8 @@ impl<'a> SheetParser<'a> {
         let mut in_t = false;
 
         loop {
-            match self.reader.read_event()? {
+            self.buf.clear();
+            match self.reader.read_event_into(&mut self.buf)? {
                 Event::Start(ref e) => match e.name().as_ref() {
                     b"row" => row = Some(Vec::new()),
                     b"c" => {

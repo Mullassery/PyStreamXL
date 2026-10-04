@@ -104,26 +104,39 @@ of scope for that pass).
    allowing failures temporarily, which is a real decision, not a
    drive-by fix.
 
-10. **`read()`/`stream()` are NOT O(1) memory — the README's "Honest
-    feature list" claim is false.** `core/src/stream.rs`,
-    `XlsxStream::open()`: `zip.read_entry(&sheet_path)?` decompresses the
-    *entire* sheet XML into a `Vec<u8>` before any row is yielded, and
-    `SheetParser` (`core/src/sheet_parser.rs`) holds a `quick_xml::Reader`
-    borrowed over that whole buffer — the exact "full-sheet materialization
-    dressed up as a generator" pattern the README explicitly disclaims.
-    Confirmed empirically (2026-09-22 benchmark, `benchmarks/`, real NYC
-    311 data at 10k/30k/75k/150k rows): peak RSS scaled ~linearly with
-    sheet size (28MB → 52MB → 103MB → 192MB), tracking the underlying
-    `.xlsx` size (1.1MB → 19MB), not flat like `openpyxl(read_only=True)`
-    (31MB → 43MB) over the same range. Memory is still far below
-    `openpyxl`'s full-load mode (1.04GB at 150k rows) and runtime is
-    ~9-14x faster than either openpyxl mode, so the speed/memory-vs-full-load
-    claims hold — only the *O(1)/"constant regardless of file size"*
-    framing is wrong. A real fix means making `SheetParser` generic over
-    an incremental `Read`/`BufRead` source (streaming the zip entry
-    instead of buffering it via `XlsxZip::read_entry` -> `Vec<u8>`) and
-    re-validating against the existing 61 Rust / 168 Python tests — out
-    of scope for a drive-by patch, not attempted here.
+10. ~~**`read()`/`stream()` are NOT O(1) memory — the README's "Honest
+    feature list" claim is false.**~~ **FIXED (2026-10-04).** Root cause
+    was exactly as diagnosed above: `XlsxStream::open()` decompressed the
+    *entire* sheet XML into a `Vec<u8>` via `zip.read_entry()` before any
+    row was yielded, and `SheetParser` held a `quick_xml::Reader` borrowed
+    over that whole buffer. Fixed by making `SheetParser` generic over any
+    `BufRead` source (`core/src/sheet_parser.rs`) and streaming the zip
+    entry's body directly via `quick_xml::Reader<BufReader<ZipFile<'_>>>`
+    instead of buffering it first (`core/src/stream.rs`'s
+    `open_streaming_parser`). `ZipFile<'_>` borrows `&mut ZipArchive`, so
+    pairing an owned archive with a borrowed decompressing reader over it
+    needs a self-referential struct — built safely via the `self_cell`
+    crate (`MutBorrow` helper, for the one-time `&mut` needed to open the
+    entry), with no unsafe code added to this crate. `RowIter`/
+    `RowIterMetadata` now own their `ZipArchive` + reader outright rather
+    than borrowing from `XlsxStream`, which also let `python/src/lib.rs`
+    drop its own, now-unnecessary, self_cell wrapping around them.
+    Conditional-formatting extraction (`<conditionalFormatting>`/`<cfRule>`
+    blocks are siblings of `<sheetData>`, not children, so there's no way
+    to stream just that part) still does one transient, one-time full-buffer
+    read at `open()` time, immediately freed afterward — not held for the
+    life of `XlsxStream` or during row iteration, which is what the
+    benchmark actually measured.
+    **Re-verified empirically** (2026-10-04, real `.xlsx` files up to 1.2M
+    rows / 33MB, via `psutil`-sampled live RSS at 50k-row checkpoints
+    during a single streaming run — not `tracemalloc`, which can't see
+    Rust-heap allocations outside Python's own allocator): memory plateaus
+    within the first 50k rows and then stays flat (309.03MB → 309.05MB,
+    effectively measurement noise) across the remaining 1,150,000 rows.
+    All 61 Rust + 168 Python tests still pass. The remaining per-*file*
+    (not per-row) baseline scales with the one-time conditional-formatting
+    pre-read above, not with rows processed — that's a known, intentional,
+    documented tradeoff, not a regression of this fix.
 
 ## Feature gaps (already honestly disclosed in README, listed here for completeness)
 
