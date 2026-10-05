@@ -266,9 +266,9 @@ mod tests {
 
         analyzer.analyze_dependencies();
 
-        // Dependencies may or may not be detected depending on formula parsing logic
-        // Just check that function runs without error
-        assert!(analyzer.dependencies.len() >= 0);
+        // Dependencies may or may not be detected depending on formula parsing logic.
+        // Just check that function runs without error.
+        let _ = analyzer.dependencies.len();
     }
 
     #[test]

@@ -1,87 +1,71 @@
-# StreamXL Security Audit
+# PyStreamXL Security Audit
 
-**Last Audited:** July 2026  
-**Status:** Minimal security concerns; standard practices
+**Last Updated:** 2026-10 (v5.3.0)
+**Status:** Core file-handling controls implemented; CI-level scanning still missing.
 
----
-
-## 🟡 HIGH Priority Issues
-
-### 1. No Dependency Version Pinning
-**Severity:** HIGH  
-**Finding:** 0 pinned, no deps listed  
-
-**Timeline:** v1.0.1 (Q3 2026)
+This file previously described a v1.0.1-era snapshot that was stale against the
+current (v5.3.0) codebase — several "open" items below were already fixed in
+later releases and are now marked resolved. See `TECHNICAL_DEBT.md` for the
+full, ID-tracked backlog this file now defers to.
 
 ---
 
-## 🔵 MEDIUM Priority
+## Resolved
 
-### 2. No Input Validation on File Paths
-**Risk:** Path traversal if writing to user-specified paths  
-**Severity:** MEDIUM  
+### Path traversal / invalid-path writes
+`python/streamxl/security.py` (`validate_xlsx_path`, `validate_read_path`,
+`validate_write_path`) rejects non-`.xlsx`/`.xls` extensions, path-traversal
+sequences, missing files/parents, and empty files before any read/write
+touches the filesystem. Covered by the test suite.
 
-**Recommendation:**
-```python
-from pathlib import Path
+### Zip-bomb / decompression-bomb defense
+`core/src/zip_reader.rs` enforces `MAX_FILE_SIZE` (512MB), `MAX_ENTRY_SIZE`
+(512MB), `MAX_TOTAL_SIZE` (1GB decompressed), and `MAX_COMPRESSION_RATIO`
+(30:1) — see `core/tests/zip_bomb_defense.rs`. Not present at all in the
+original version of this document.
 
-def validate_write_path(path: str) -> Path:
-    p = Path(path).resolve()
-    if not p.suffix.lower() == '.xlsx':
-        raise ValueError("Must write to .xlsx file")
-    return p
-```
+### File corruption on partial writes
+`python/streamxl/integrity.py` implements write-to-temp-then-rename atomic
+writes (`atomic_write`, `AtomicFileWriter`), used by the writer path
+(`api.py` write/append).
 
-**Timeline:** v1.1.0 (Q3 2026)
-
----
-
-### 3. No File Corruption Detection
-**Risk:** Partial writes could corrupt Excel files  
-**Severity:** MEDIUM  
-
-**Recommendation:**
-- Verify file integrity after write
-- Atomic writes (write to temp, then rename)
-- CRC/hash validation
-
-**Timeline:** v1.2.0 (Q4 2026)
+### CSV formula injection on export
+`python/streamxl/security.py::sanitize_csv_cell`, used by `server.py`'s
+`/export` endpoint.
 
 ---
 
-## 🔵 LOW Priority
+## Open
 
-### 4. No Secrets Scanning in CI
-**Timeline:** v1.0.2 (Q3 2026)
+### No supply-chain scanning in CI (TD: see SECURITY category)
+`.github/workflows/ci.yml` runs `cargo test`/`pytest` only — no `cargo audit`,
+`pip-audit`, `bandit`, or secret scanning (e.g. gitleaks). Dependabot is
+configured (`.github/dependabot.yml`) and opens PRs, but nothing validates
+dependencies for known CVEs on every push, and nothing scans for committed
+secrets.
 
----
+### Open-ended dependency version range
+`pyproject.toml` pins `rich>=13.0` with no upper bound; a future breaking
+`rich` release could silently break builds. Low severity (single, well-known
+dependency) but worth a ceiling (`rich>=13.0,<15`) or Dependabot-managed caps.
 
-## Security Roadmap
-
-| Issue | Severity | Target |
-|-------|----------|--------|
-| Pin dependencies | HIGH | v1.0.1 |
-| Path validation | MEDIUM | v1.1.0 |
-| File integrity checks | MEDIUM | v1.2.0 |
-| CI secrets scanning | LOW | v1.0.2 |
+### REST server has no authentication, binds all interfaces by default
+`python/streamxl/server.py`'s `StreamXLServer`/Flask app exposes filesystem
+read access (within the validated-path sandbox) over HTTP with no auth of
+any kind. Default bind was `0.0.0.0` (now changed to `127.0.0.1` — see
+`TECHNICAL_DEBT.md`); still no API-key/token check for callers that
+explicitly bind it to a non-loopback address. Documented as an open item
+rather than fixed here since adding real auth is a product decision
+(API key? mTLS? reverse-proxy-only?), not a one-line fix.
 
 ---
 
 ## Testing
 
 ```bash
-pip-audit --strict
-bandit -r . -ll
-
-# Test path traversal attempts
-assert raises(ValueError, validate_write_path, "../../../etc/passwd.xlsx")
+pytest tests/ -v              # includes security.py + integrity.py coverage
+cargo test --release --manifest-path core/Cargo.toml   # includes zip_bomb_defense.rs
 ```
 
----
-
-## Deployment
-
-- Validate all input file paths
-- Use atomic writes (write-then-rename)
-- Monitor disk space to prevent partial writes
-- Run with read-only file system where possible
+No `pip-audit`/`cargo audit`/`bandit` step exists yet locally or in CI — see
+the Open section above.

@@ -2,7 +2,7 @@
 # streamxl installer — detects pip or uv and installs the package.
 #
 # Usage:
-#   curl -sSf https://raw.githubusercontent.com/Mullassery/StreamXL/main/scripts/install.sh | sh
+#   curl -sSf https://raw.githubusercontent.com/Mullassery/PyStreamXL/main/scripts/install.sh | sh
 
 set -e
 

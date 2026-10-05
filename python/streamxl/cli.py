@@ -1,6 +1,7 @@
 """PyStreamXL CLI - Spreadsheet formula extraction"""
 
 import sys, argparse
+from streamxl import __version__
 from streamxl.cli_dashboard import PyStreamXLDashboard
 
 
@@ -40,7 +41,7 @@ def main():
     dashboard_parser.add_argument('--config', metavar='PATH', help='Config file path')
     dashboard_parser.set_defaults(func=dashboard_command)
 
-    parser.add_argument('--version', action='version', version='PyStreamXL 5.2.0')
+    parser.add_argument('--version', action='version', version=f'PyStreamXL {__version__}')
 
     args = parser.parse_args()
 

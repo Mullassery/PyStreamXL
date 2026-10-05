@@ -132,7 +132,7 @@ def get_size_error(file_mb: float) -> ExcelError:
         title=f"File Very Large ({file_mb:.1f}MB)",
         message="Large files may consume significant memory.",
         recovery=[
-            "StreamXL streams rows, so memory is O(1)",
+            "PyStreamXL streams rows, so memory is O(1)",
             "Processing should work despite size",
             "Monitor memory usage: top or Activity Monitor",
             "Report if processing is slower than expected",

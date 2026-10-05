@@ -1,4 +1,4 @@
-# StreamXL
+# PyStreamXL
 
 ## Problem
 
@@ -218,8 +218,8 @@ pystreamxl --version
 ## Development
 
 ```bash
-git clone https://github.com/Mullassery/StreamXL.git
-cd StreamXL
+git clone https://github.com/Mullassery/PyStreamXL.git
+cd PyStreamXL
 pip install -e ".[dev]"       # builds the Rust extension via maturin and installs test deps
 pytest tests/ -v
 cargo test --all-features     # Rust unit + integration tests
@@ -231,4 +231,4 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 
 ---
 
-**StreamXL** | Constant-memory Excel streaming | Rust core, Python API
+**PyStreamXL** | Constant-memory Excel streaming | Rust core, Python API

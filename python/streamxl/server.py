@@ -1,6 +1,6 @@
-"""REST API server for StreamXL - spreadsheet data engine workflow integration.
+"""REST API server for PyStreamXL - spreadsheet data engine workflow integration.
 
-Every endpoint below is backed by the real StreamXL streaming/ETL engine
+Every endpoint below is backed by the real PyStreamXL streaming/ETL engine
 (``streamxl.api.read`` / ``streamxl.api.sheets``): a "source" is a real
 ``.xlsx`` file on disk, "query" streams actual rows from it, and "export"
 serializes actual sheet data (CSV output is sanitized against
@@ -27,7 +27,7 @@ class StreamXLServer:
     engine.
     """
 
-    def __init__(self, host: str = "0.0.0.0", port: int = 8004):
+    def __init__(self, host: str = "127.0.0.1", port: int = 8004):
         """Initialize server."""
         self.host = host
         self.port = port
@@ -288,7 +288,7 @@ def create_flask_app(server: Optional[StreamXLServer] = None):
     return app
 
 
-def run_server(host: str = "0.0.0.0", port: int = 8004):
+def run_server(host: str = "127.0.0.1", port: int = 8004):
     """Run the REST API server."""
     app = create_flask_app()
     app.run(host=host, port=port, debug=False)

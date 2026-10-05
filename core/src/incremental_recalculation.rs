@@ -248,7 +248,7 @@ impl RecalcOptimizer {
 
     pub fn profile_operation(&mut self, name: String, cells_affected: usize, time_ms: u64) {
         let efficiency = if cells_affected > 0 {
-            (time_ms as f32 / cells_affected as f32)
+            time_ms as f32 / cells_affected as f32
         } else {
             0.0
         };

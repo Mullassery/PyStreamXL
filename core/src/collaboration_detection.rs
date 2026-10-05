@@ -439,8 +439,9 @@ mod tests {
         detector.detect_collaboration_groups();
         detector.identify_optimizations();
 
-        // With proper shared dependencies and more references, should have optimizations
-        assert!(detector.optimization_opportunities.len() >= 0);  // May or may not have opportunities
+        // With proper shared dependencies and more references, just check that
+        // detection runs without error — opportunities aren't guaranteed here.
+        let _ = detector.optimization_opportunities.len();
     }
 
     #[test]

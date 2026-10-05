@@ -1,7 +1,7 @@
 """
 Tests for streamxl.server — the REST API layer.
 
-These exercise the *real* StreamXL streaming engine end-to-end: a real
+These exercise the *real* PyStreamXL streaming engine end-to-end: a real
 .xlsx file is written to disk, connected as a "source", then queried and
 exported through StreamXLServer / the Flask app. The previous
 implementation of this module returned hardcoded/fake data (e.g. always
