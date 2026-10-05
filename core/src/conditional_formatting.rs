@@ -93,7 +93,9 @@ fn pending_rule_from_attrs(e: &quick_xml::events::BytesStart) -> PendingRule {
     PendingRule {
         rule_type: attr(e, b"type").unwrap_or_default(),
         operator: attr(e, b"operator"),
-        priority: attr(e, b"priority").and_then(|v| v.parse().ok()).unwrap_or(0),
+        priority: attr(e, b"priority")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0),
         dxf_id: attr(e, b"dxfId").and_then(|v| v.parse().ok()),
         stop_if_true: attr(e, b"stopIfTrue").map(|v| v == "1").unwrap_or(false),
         formulas: Vec::new(),
@@ -197,10 +199,13 @@ mod tests {
     <cfRule type="duplicateValues" dxfId="1" priority="2"/>
   </conditionalFormatting>
 </worksheet>"#;
-        let dxfs = vec![DxfFormat::default(), DxfFormat {
-            fill_bg_color: Some("FFFFFF00".to_string()),
-            ..Default::default()
-        }];
+        let dxfs = vec![
+            DxfFormat::default(),
+            DxfFormat {
+                fill_bg_color: Some("FFFFFF00".to_string()),
+                ..Default::default()
+            },
+        ];
         let rules = parse(xml, &dxfs).unwrap();
         assert_eq!(rules.len(), 2);
         assert_eq!(rules[0].sqref, "A1:A5");

@@ -1,7 +1,6 @@
 /// Formula Extraction & Analysis for Phase 2
 ///
 /// Extract formulas from Excel cells, parse dependencies, and build reference maps.
-
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -11,7 +10,7 @@ pub struct CellReference {
     pub sheet: String,
     pub column: String,
     pub row: u32,
-    pub absolute: bool,  // $A$1 vs A1
+    pub absolute: bool, // $A$1 vs A1
 }
 
 impl CellReference {
@@ -26,16 +25,19 @@ impl CellReference {
 
     pub fn to_string(&self) -> String {
         let prefix = if self.absolute { "$" } else { "" };
-        format!("{}{}!{}{}{}", prefix, self.sheet, prefix, self.column, self.row)
+        format!(
+            "{}{}!{}{}{}",
+            prefix, self.sheet, prefix, self.column, self.row
+        )
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Formula {
     pub original: String,
-    pub formula_type: String,  // SUM, IF, VLOOKUP, CONCATENATE, etc.
+    pub formula_type: String, // SUM, IF, VLOOKUP, CONCATENATE, etc.
     pub references: Vec<CellReference>,
-    pub complexity: u32,  // Nesting depth
+    pub complexity: u32, // Nesting depth
     pub has_external_links: bool,
     pub is_array_formula: bool,
 }
@@ -79,7 +81,7 @@ impl Formula {
     fn calculate_complexity(formula: &str) -> u32 {
         let open_parens = formula.matches('(').count() as u32;
         let nested_ifs = formula.matches("IF(").count() as u32;
-        open_parens + (nested_ifs * 2)  // Nested IFs add extra complexity
+        open_parens + (nested_ifs * 2) // Nested IFs add extra complexity
     }
 }
 
@@ -104,8 +106,8 @@ impl FormulaExtractor {
 
         // Pattern: Sheet!$A$1 or A1 or Sheet.A1
         let patterns = vec![
-            r"([A-Za-z_]\w*)?[!.]?(\$?[A-Z]+\$?\d+)",  // Standard cell refs
-            r"([A-Za-z_]\w*)?[!.]?(\$?[A-Z]+\$?\d+:\$?[A-Z]+\$?\d+)",  // Ranges
+            r"([A-Za-z_]\w*)?[!.]?(\$?[A-Z]+\$?\d+)", // Standard cell refs
+            r"([A-Za-z_]\w*)?[!.]?(\$?[A-Z]+\$?\d+:\$?[A-Z]+\$?\d+)", // Ranges
         ];
 
         for pattern_str in patterns {
@@ -167,11 +169,7 @@ impl ReferenceMapper {
         self.formula_map.insert(cell_id.clone(), formula.clone());
 
         // Build dependency graph
-        let refs: Vec<String> = formula
-            .references
-            .iter()
-            .map(|r| r.to_string())
-            .collect();
+        let refs: Vec<String> = formula.references.iter().map(|r| r.to_string()).collect();
 
         self.dependency_graph.insert(cell_id.clone(), refs.clone());
 
@@ -269,8 +267,14 @@ impl ReferenceMapper {
         let mut stats = HashMap::new();
 
         let total_formulas = self.formula_map.len() as u32;
-        let avg_complexity = self.formula_map.values().map(|f| f.complexity).sum::<u32>() / total_formulas.max(1);
-        let max_complexity = self.formula_map.values().map(|f| f.complexity).max().unwrap_or(0);
+        let avg_complexity =
+            self.formula_map.values().map(|f| f.complexity).sum::<u32>() / total_formulas.max(1);
+        let max_complexity = self
+            .formula_map
+            .values()
+            .map(|f| f.complexity)
+            .max()
+            .unwrap_or(0);
 
         stats.insert("total_formulas".to_string(), total_formulas);
         stats.insert("average_complexity".to_string(), avg_complexity);
@@ -293,8 +297,14 @@ mod tests {
 
     #[test]
     fn test_formula_type_identification() {
-        assert_eq!(FormulaExtractor::extract_formulas("=SUM(A1:A10)")[0].formula_type, "SUM");
-        assert_eq!(FormulaExtractor::extract_formulas("=IF(A1>0,1,0)")[0].formula_type, "IF");
+        assert_eq!(
+            FormulaExtractor::extract_formulas("=SUM(A1:A10)")[0].formula_type,
+            "SUM"
+        );
+        assert_eq!(
+            FormulaExtractor::extract_formulas("=IF(A1>0,1,0)")[0].formula_type,
+            "IF"
+        );
     }
 
     #[test]

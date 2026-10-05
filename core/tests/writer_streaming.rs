@@ -110,7 +110,9 @@ fn flush_count_scales_with_rows_written_not_fixed() {
     let small_path = temp_path("small");
     let mut small_writer = XlsxWriter::new(&small_path).expect("create writer");
     for i in 0..30_000 {
-        small_writer.write_row(&wide_row(i), false).expect("write_row");
+        small_writer
+            .write_row(&wide_row(i), false)
+            .expect("write_row");
     }
     let small_flushes = small_writer.flush_count();
     small_writer.finish().expect("finish");
@@ -118,7 +120,9 @@ fn flush_count_scales_with_rows_written_not_fixed() {
     let large_path = temp_path("large");
     let mut large_writer = XlsxWriter::new(&large_path).expect("create writer");
     for i in 0..300_000 {
-        large_writer.write_row(&wide_row(i), false).expect("write_row");
+        large_writer
+            .write_row(&wide_row(i), false)
+            .expect("write_row");
     }
     let large_flushes = large_writer.flush_count();
     large_writer.finish().expect("finish");

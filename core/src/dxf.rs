@@ -32,15 +32,13 @@ pub fn parse_dxfs(xml: &[u8]) -> Result<Vec<DxfFormat>, Box<dyn std::error::Erro
             // Self-closed tags (`<font/>`) never get a matching `Event::End`,
             // so an empty `<font/>`/`<fill/>` must not flip `in_font`/`in_fill`
             // to true -- there'd be nothing to turn it back off.
-            Event::Start(ref e) => {
-                match e.name().as_ref() {
-                    b"dxfs" => in_dxfs = true,
-                    b"dxf" if in_dxfs => current = Some(DxfFormat::default()),
-                    b"font" if current.is_some() => in_font = true,
-                    b"fill" if current.is_some() => in_fill = true,
-                    _ => {}
-                }
-            }
+            Event::Start(ref e) => match e.name().as_ref() {
+                b"dxfs" => in_dxfs = true,
+                b"dxf" if in_dxfs => current = Some(DxfFormat::default()),
+                b"font" if current.is_some() => in_font = true,
+                b"fill" if current.is_some() => in_fill = true,
+                _ => {}
+            },
             Event::Empty(ref e) => match e.name().as_ref() {
                 b"color" if in_font => {
                     if let Some(rgb) = attr(e, b"rgb") {

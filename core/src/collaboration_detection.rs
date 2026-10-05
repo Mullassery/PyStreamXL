@@ -2,18 +2,17 @@
 ///
 /// Detect when cells work together in patterns and suggest optimizations.
 /// Identify shared computation opportunities and circular dependency risks.
-
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CellCollaborationGroup {
     pub group_id: String,
-    pub cells: Vec<String>,            // Member cells
-    pub shared_dependencies: Vec<String>,  // What they have in common
-    pub collaboration_strength: f32,   // 0-1: how tightly coupled?
-    pub total_references: usize,       // Total inter-cell references
-    pub optimization_potential: f32,   // 0-1: optimization opportunity score
+    pub cells: Vec<String>,               // Member cells
+    pub shared_dependencies: Vec<String>, // What they have in common
+    pub collaboration_strength: f32,      // 0-1: how tightly coupled?
+    pub total_references: usize,          // Total inter-cell references
+    pub optimization_potential: f32,      // 0-1: optimization opportunity score
 }
 
 impl CellCollaborationGroup {
@@ -38,10 +37,10 @@ impl CellCollaborationGroup {
 pub struct OptimizationOpportunity {
     pub opp_id: String,
     pub cell_group: String,
-    pub optimization_type: String,  // "merge", "cache", "parallelize", "extract_common"
-    pub estimated_speedup: f32,     // 1.2x = 20% faster
-    pub complexity_reduction: f32,  // 0-100%
-    pub risk_level: String,         // "low", "medium", "high"
+    pub optimization_type: String, // "merge", "cache", "parallelize", "extract_common"
+    pub estimated_speedup: f32,    // 1.2x = 20% faster
+    pub complexity_reduction: f32, // 0-100%
+    pub risk_level: String,        // "low", "medium", "high"
 }
 
 impl OptimizationOpportunity {
@@ -132,10 +131,7 @@ impl CollaborationDetector {
 
             if group.len() >= 2 {
                 let group_id = format!("group_{}", groups.len());
-                let mut collab_group = CellCollaborationGroup::new(
-                    group_id,
-                    group.clone(),
-                );
+                let mut collab_group = CellCollaborationGroup::new(group_id, group.clone());
 
                 // Calculate shared dependencies
                 collab_group.shared_dependencies = self._find_shared_dependencies(&group);
@@ -179,13 +175,15 @@ impl CollaborationDetector {
             return Vec::new();
         }
 
-        let mut shared: HashSet<String> = self.cells
+        let mut shared: HashSet<String> = self
+            .cells
             .get(&cells[0])
             .map(|c| c.dependencies.iter().cloned().collect())
             .unwrap_or_default();
 
         for cell_id in &cells[1..] {
-            let deps: HashSet<String> = self.cells
+            let deps: HashSet<String> = self
+                .cells
                 .get(cell_id)
                 .map(|c| c.dependencies.iter().cloned().collect())
                 .unwrap_or_default();
@@ -202,7 +200,9 @@ impl CollaborationDetector {
 
         for cell_id in cells {
             if let Some(cell) = self.cells.get(cell_id) {
-                count += cell.dependencies.iter()
+                count += cell
+                    .dependencies
+                    .iter()
                     .filter(|d| cell_set.contains(*d))
                     .count();
             }
@@ -239,8 +239,10 @@ impl CollaborationDetector {
             if !group.shared_dependencies.is_empty() {
                 let mut opp = OptimizationOpportunity::new("extract_common".to_string());
                 opp.cell_group = group.group_id.clone();
-                opp.estimated_speedup = 1.2 + (group.shared_dependencies.len() as f32 * 0.1).min(0.5);
-                opp.complexity_reduction = (group.shared_dependencies.len() as f32 * 10.0).min(50.0);
+                opp.estimated_speedup =
+                    1.2 + (group.shared_dependencies.len() as f32 * 0.1).min(0.5);
+                opp.complexity_reduction =
+                    (group.shared_dependencies.len() as f32 * 10.0).min(50.0);
                 opp.risk_level = "low".to_string();
 
                 self.optimization_opportunities.push(opp);
@@ -309,7 +311,12 @@ impl CollaborationDetector {
         None
     }
 
-    fn _dfs_cycle(&self, cell_id: &str, visited: &mut HashSet<String>, path: &mut Vec<String>) -> bool {
+    fn _dfs_cycle(
+        &self,
+        cell_id: &str,
+        visited: &mut HashSet<String>,
+        path: &mut Vec<String>,
+    ) -> bool {
         if path.contains(&cell_id.to_string()) {
             return true;
         }
@@ -338,11 +345,18 @@ impl CollaborationDetector {
         let mut stats = HashMap::new();
 
         stats.insert("total_cells".to_string(), self.cells.len() as f32);
-        stats.insert("collaboration_groups".to_string(), self.collaboration_groups.len() as f32);
-        stats.insert("optimization_opportunities".to_string(), self.optimization_opportunities.len() as f32);
+        stats.insert(
+            "collaboration_groups".to_string(),
+            self.collaboration_groups.len() as f32,
+        );
+        stats.insert(
+            "optimization_opportunities".to_string(),
+            self.optimization_opportunities.len() as f32,
+        );
 
         if !self.collaboration_groups.is_empty() {
-            let avg_strength: f32 = self.collaboration_groups
+            let avg_strength: f32 = self
+                .collaboration_groups
                 .iter()
                 .map(|g| g.collaboration_strength)
                 .sum::<f32>()
@@ -360,7 +374,8 @@ mod tests {
 
     #[test]
     fn test_collaboration_group_creation() {
-        let group = CellCollaborationGroup::new("g1".to_string(), vec!["A1".to_string(), "B1".to_string()]);
+        let group =
+            CellCollaborationGroup::new("g1".to_string(), vec!["A1".to_string(), "B1".to_string()]);
         assert_eq!(group.cells.len(), 2);
     }
 
@@ -402,7 +417,9 @@ mod tests {
 
         detector.add_reference("A1", "B1");
 
-        assert!(detector.cells["A1"].dependencies.contains(&"B1".to_string()));
+        assert!(detector.cells["A1"]
+            .dependencies
+            .contains(&"B1".to_string()));
         assert!(detector.cells["B1"].dependents.contains(&"A1".to_string()));
     }
 

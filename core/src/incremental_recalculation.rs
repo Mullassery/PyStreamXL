@@ -2,7 +2,6 @@
 ///
 /// Enable fast, targeted recalculation of formulas when their dependencies change.
 /// Uses invalidation graph to minimize recalc scope.
-
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -11,8 +10,8 @@ pub struct RecalcNode {
     pub cell_id: String,
     pub formula: String,
     pub current_value: f64,
-    pub dependencies: Vec<String>,      // Cells this depends on
-    pub dependents: Vec<String>,        // Cells that depend on this
+    pub dependencies: Vec<String>, // Cells this depends on
+    pub dependents: Vec<String>,   // Cells that depend on this
     pub last_recalc_time: u64,
     pub recalc_count: usize,
 }
@@ -48,7 +47,7 @@ pub struct RecalcChange {
     pub cell_id: String,
     pub old_value: f64,
     pub new_value: f64,
-    pub affected_cells: Vec<String>,    // All cells transitively affected
+    pub affected_cells: Vec<String>, // All cells transitively affected
     pub recalc_time_ms: u64,
 }
 
@@ -56,7 +55,7 @@ pub struct IncrementalRecalculator {
     cells: HashMap<String, RecalcNode>,
     change_log: Vec<RecalcChange>,
     dirty_cells: HashSet<String>,
-    recalc_threshold: f64,              // Min relative change to trigger propagation
+    recalc_threshold: f64, // Min relative change to trigger propagation
 }
 
 impl IncrementalRecalculator {
@@ -70,7 +69,8 @@ impl IncrementalRecalculator {
     }
 
     pub fn register_cell(&mut self, cell_id: String, formula: String) {
-        self.cells.insert(cell_id.clone(), RecalcNode::new(cell_id, formula));
+        self.cells
+            .insert(cell_id.clone(), RecalcNode::new(cell_id, formula));
     }
 
     pub fn add_dependency(&mut self, cell: &str, dep: &str) {
@@ -89,7 +89,11 @@ impl IncrementalRecalculator {
             .unwrap_or_default()
             .as_millis() as u64;
 
-        let old_value = self.cells.get(cell_id).map(|c| c.current_value).unwrap_or(0.0);
+        let old_value = self
+            .cells
+            .get(cell_id)
+            .map(|c| c.current_value)
+            .unwrap_or(0.0);
 
         // Update the cell
         if let Some(node) = self.cells.get_mut(cell_id) {
@@ -102,7 +106,11 @@ impl IncrementalRecalculator {
         let relative_change = if old_value.abs() > 1e-10 {
             ((new_value - old_value) / old_value.abs()).abs()
         } else {
-            if new_value.abs() > 1e-10 { 1.0 } else { 0.0 }
+            if new_value.abs() > 1e-10 {
+                1.0
+            } else {
+                0.0
+            }
         };
 
         let mut affected_cells = vec![cell_id.to_string()];
@@ -117,7 +125,8 @@ impl IncrementalRecalculator {
         let recalc_time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
-            .as_millis() as u64 - start_time;
+            .as_millis() as u64
+            - start_time;
 
         let change = RecalcChange {
             cell_id: cell_id.to_string(),
@@ -169,11 +178,14 @@ impl IncrementalRecalculator {
 
         for cell_id in dirty {
             // Collect dependency values first
-            let deps = self.cells.get(&cell_id)
+            let deps = self
+                .cells
+                .get(&cell_id)
                 .map(|n| n.dependencies.clone())
                 .unwrap_or_default();
 
-            let new_value: f64 = deps.iter()
+            let new_value: f64 = deps
+                .iter()
                 .filter_map(|dep| self.cells.get(dep).map(|c| c.current_value))
                 .sum();
 
@@ -204,9 +216,12 @@ impl IncrementalRecalculator {
         stats.insert("active_cells".to_string(), self.cells.len());
 
         if total_changes > 0 {
-            let avg_affected: f64 = self.change_log.iter()
+            let avg_affected: f64 = self
+                .change_log
+                .iter()
                 .map(|c| c.affected_cells.len() as f64)
-                .sum::<f64>() / total_changes as f64;
+                .sum::<f64>()
+                / total_changes as f64;
             stats.insert("avg_affected_cells".to_string(), avg_affected as usize);
         }
 
@@ -232,7 +247,7 @@ pub struct RecalcProfile {
     pub operation_name: String,
     pub cells_affected: usize,
     pub recalc_time_ms: u64,
-    pub efficiency_score: f32,     // Time / cells_affected
+    pub efficiency_score: f32, // Time / cells_affected
 }
 
 pub struct RecalcOptimizer {
@@ -272,7 +287,8 @@ impl RecalcOptimizer {
 
         // Find operations with poor efficiency (high time per cell)
         for profile in &self.profiles {
-            if profile.efficiency_score > 10.0 {  // >10ms per cell is slow
+            if profile.efficiency_score > 10.0 {
+                // >10ms per cell is slow
                 opportunities.push(format!(
                     "Optimize {}: {}ms for {} cells",
                     profile.operation_name, profile.recalc_time_ms, profile.cells_affected

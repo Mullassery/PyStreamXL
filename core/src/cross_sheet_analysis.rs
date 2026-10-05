@@ -2,7 +2,6 @@
 ///
 /// Track formula dependencies across multiple sheets, detect redundant calculations,
 /// and suggest consolidation and optimization opportunities.
-
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
@@ -13,8 +12,8 @@ pub struct CrossSheetDependency {
     pub source_cell: String,
     pub target_sheet: String,
     pub target_cell: String,
-    pub ref_count: usize,                    // How many times referenced?
-    pub is_critical: bool,                   // Would break things if changed?
+    pub ref_count: usize,  // How many times referenced?
+    pub is_critical: bool, // Would break things if changed?
 }
 
 impl CrossSheetDependency {
@@ -43,11 +42,11 @@ impl CrossSheetDependency {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RedundantCalculation {
     pub redundancy_id: String,
-    pub cell_ids: Vec<(String, String)>,   // (sheet, cell) pairs
+    pub cell_ids: Vec<(String, String)>, // (sheet, cell) pairs
     pub formula: String,
     pub occurrences: usize,
-    pub potential_savings: f32,            // % speedup if consolidated
-    pub consolidation_complexity: f32,     // 0-1: how hard to consolidate
+    pub potential_savings: f32,        // % speedup if consolidated
+    pub consolidation_complexity: f32, // 0-1: how hard to consolidate
 }
 
 impl RedundantCalculation {
@@ -73,7 +72,7 @@ impl RedundantCalculation {
 }
 
 pub struct CrossSheetAnalyzer {
-    sheets: HashMap<String, Vec<(String, String)>>,  // sheet -> [(cell, formula)]
+    sheets: HashMap<String, Vec<(String, String)>>, // sheet -> [(cell, formula)]
     dependencies: Vec<CrossSheetDependency>,
     redundancies: Vec<RedundantCalculation>,
 }
@@ -147,10 +146,12 @@ impl CrossSheetAnalyzer {
                 redundancy.occurrences = redundancy.cell_ids.len();
 
                 // Potential savings: 1/N speedup for N occurrences
-                redundancy.potential_savings = ((1.0 - 1.0 / redundancy.occurrences as f32) * 100.0).min(90.0);
+                redundancy.potential_savings =
+                    ((1.0 - 1.0 / redundancy.occurrences as f32) * 100.0).min(90.0);
 
                 // Consolidation complexity increases with cross-sheet dependencies
-                redundancy.consolidation_complexity = (redundancy.occurrences as f32 / 10.0).min(1.0);
+                redundancy.consolidation_complexity =
+                    (redundancy.occurrences as f32 / 10.0).min(1.0);
 
                 self.redundancies.push(redundancy);
             }
@@ -159,7 +160,8 @@ impl CrossSheetAnalyzer {
 
     /// Find consolidation opportunities
     pub fn get_consolidation_opportunities(&self) -> Vec<(String, f32)> {
-        let mut opportunities: Vec<_> = self.redundancies
+        let mut opportunities: Vec<_> = self
+            .redundancies
             .iter()
             .map(|r| (r.redundancy_id.clone(), r.savings_score()))
             .collect();
@@ -179,7 +181,7 @@ impl CrossSheetAnalyzer {
 
         let mut critical: Vec<_> = dep_count
             .into_iter()
-            .filter(|(_, count)| *count > 2)  // 2+ dependencies = critical
+            .filter(|(_, count)| *count > 2) // 2+ dependencies = critical
             .map(|(k, count)| (format!("{}.{}", k.0, k.1), count))
             .collect();
 
@@ -192,14 +194,21 @@ impl CrossSheetAnalyzer {
         let mut stats = HashMap::new();
 
         stats.insert("num_sheets".to_string(), self.sheets.len() as f32);
-        stats.insert("total_dependencies".to_string(), self.dependencies.len() as f32);
-        stats.insert("redundant_calculations".to_string(), self.redundancies.len() as f32);
+        stats.insert(
+            "total_dependencies".to_string(),
+            self.dependencies.len() as f32,
+        );
+        stats.insert(
+            "redundant_calculations".to_string(),
+            self.redundancies.len() as f32,
+        );
 
         let total_cells: usize = self.sheets.values().map(|v| v.len()).sum();
         stats.insert("total_cells".to_string(), total_cells as f32);
 
         if !self.redundancies.is_empty() {
-            let avg_savings: f32 = self.redundancies
+            let avg_savings: f32 = self
+                .redundancies
                 .iter()
                 .map(|r| r.potential_savings)
                 .sum::<f32>()
@@ -261,7 +270,11 @@ mod tests {
         analyzer.add_sheet("Sheet1".to_string());
         analyzer.add_sheet("Sheet2".to_string());
 
-        analyzer.add_formula("Sheet1".to_string(), "A1".to_string(), "=Sheet2!B1+1".to_string());
+        analyzer.add_formula(
+            "Sheet1".to_string(),
+            "A1".to_string(),
+            "=Sheet2!B1+1".to_string(),
+        );
         analyzer.add_formula("Sheet2".to_string(), "B1".to_string(), "=10".to_string());
 
         analyzer.analyze_dependencies();
