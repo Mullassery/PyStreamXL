@@ -10,7 +10,7 @@ Verifies:
 """
 
 import pytest
-import streamxl
+import pystreamxl
 from openpyxl import Workbook
 import tempfile
 import os
@@ -94,7 +94,7 @@ def formula_workbook():
 
 def test_read_without_formulas(formula_workbook):
     """Test that reading without formulas still works (backward compat)."""
-    rows = list(streamxl.read(formula_workbook))
+    rows = list(pystreamxl.read(formula_workbook))
     assert len(rows) == 9  # Header + 8 data rows
     assert rows[0] == ["Name", "Value1", "Value2", "Result", "Type"]
     # Row 2 is the Average row (because row 1 is Sum)
@@ -105,7 +105,7 @@ def test_read_without_formulas(formula_workbook):
 
 def test_read_with_formulas(formula_workbook):
     """Test reading with formula metadata."""
-    rows = list(streamxl.read(formula_workbook, with_formulas=True))
+    rows = list(pystreamxl.read(formula_workbook, with_formulas=True))
     assert len(rows) == 9
 
     # Check header row
@@ -159,7 +159,7 @@ def test_read_with_formulas(formula_workbook):
 
 def test_formula_type_detection(formula_workbook):
     """Test that formula types are correctly detected."""
-    rows = list(streamxl.read(formula_workbook, with_formulas=True))
+    rows = list(pystreamxl.read(formula_workbook, with_formulas=True))
 
     formula_types = {
         "sum": False,
@@ -186,7 +186,7 @@ def test_formula_type_detection(formula_workbook):
 
 def test_metadata_dict_structure(formula_workbook):
     """Test that metadata dicts have correct structure."""
-    rows = list(streamxl.read(formula_workbook, with_formulas=True))
+    rows = list(pystreamxl.read(formula_workbook, with_formulas=True))
 
     for row in rows:
         for cell in row:
@@ -205,7 +205,7 @@ def test_metadata_dict_structure(formula_workbook):
 
 def test_read_with_dict_and_formulas(formula_workbook):
     """Test reading with both as_dict and with_formulas."""
-    rows = list(streamxl.read(formula_workbook, as_dict=True, with_formulas=True))
+    rows = list(pystreamxl.read(formula_workbook, as_dict=True, with_formulas=True))
     assert len(rows) == 8  # Header consumed, 8 data rows
 
     for row in rows:
@@ -220,7 +220,7 @@ def test_read_with_columns_and_formulas(formula_workbook):
     """Test reading with column filtering and formulas."""
     columns = ["Name", "Result"]
     rows = list(
-        streamxl.read(formula_workbook, as_dict=True, columns=columns, with_formulas=True)
+        pystreamxl.read(formula_workbook, as_dict=True, columns=columns, with_formulas=True)
     )
     assert len(rows) == 8
 
@@ -234,7 +234,7 @@ def test_read_with_columns_and_formulas(formula_workbook):
 
 def test_formula_value_preservation(formula_workbook):
     """Test that formula values are preserved (when Excel calculated them)."""
-    rows = list(streamxl.read(formula_workbook, with_formulas=True))
+    rows = list(pystreamxl.read(formula_workbook, with_formulas=True))
 
     # SUM formula should have value if Excel calculated it (row 1, 0-indexed)
     sum_row = rows[1]
@@ -247,7 +247,7 @@ def test_formula_value_preservation(formula_workbook):
 
 def test_empty_cells_with_formulas(formula_workbook):
     """Test that empty cells are handled correctly with formula mode."""
-    rows = list(streamxl.read(formula_workbook, with_formulas=True))
+    rows = list(pystreamxl.read(formula_workbook, with_formulas=True))
 
     # All rows should have the same number of cells (with None for empty ones)
     row_lengths = [len(row) for row in rows]

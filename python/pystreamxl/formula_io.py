@@ -42,7 +42,7 @@ class FormulaSerializer:
             }
 
         Examples:
-            >>> rows = list(streamxl.read("file.xlsx", with_formulas=True))
+            >>> rows = list(pystreamxl.read("file.xlsx", with_formulas=True))
             >>> export = FormulaSerializer.export_formulas(rows)
             >>> json.dump(export, open("formulas.json", "w"))
         """
@@ -77,7 +77,7 @@ class FormulaSerializer:
             sheet_name: Name of the sheet being exported
 
         Examples:
-            >>> rows = list(streamxl.read("file.xlsx", with_formulas=True))
+            >>> rows = list(pystreamxl.read("file.xlsx", with_formulas=True))
             >>> FormulaSerializer.export_to_json(rows, "formulas.json")
         """
         export_data = FormulaSerializer.export_formulas(rows_with_metadata, sheet_name)
@@ -99,7 +99,7 @@ class FormulaSerializer:
         neutralized (prefixed with ``'``) before being written, to prevent
         CSV/formula-injection attacks when the exported file is later
         opened in Excel, LibreOffice, or Google Sheets. See
-        :func:`streamxl.security.sanitize_csv_cell`.
+        :func:`pystreamxl.security.sanitize_csv_cell`.
 
         Args:
             rows_with_metadata: Rows from read(with_formulas=True)
@@ -107,7 +107,7 @@ class FormulaSerializer:
             sheet_name: Name of the sheet being exported
 
         Examples:
-            >>> rows = list(streamxl.read("file.xlsx", with_formulas=True))
+            >>> rows = list(pystreamxl.read("file.xlsx", with_formulas=True))
             >>> FormulaSerializer.export_to_csv(rows, "formulas.csv")
         """
         import csv
@@ -171,7 +171,7 @@ class FormulaSerializer:
             }
 
         Examples:
-            >>> rows = list(streamxl.read("file.xlsx", with_formulas=True))
+            >>> rows = list(pystreamxl.read("file.xlsx", with_formulas=True))
             >>> stats = FormulaSerializer.get_formula_stats(rows)
             >>> print(f"Formulas: {stats['formula_cells']}/{stats['total_cells']}")
         """

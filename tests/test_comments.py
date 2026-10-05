@@ -9,7 +9,7 @@ Verifies:
 """
 
 import pytest
-import streamxl
+import pystreamxl
 from openpyxl import Workbook
 from openpyxl.comments import Comment
 import tempfile
@@ -54,7 +54,7 @@ def workbook_with_comments():
 
 def test_read_with_comments_no_formulas(workbook_with_comments):
     """Test reading comments without formulas."""
-    rows = list(streamxl.read(workbook_with_comments, with_formulas=True))
+    rows = list(pystreamxl.read(workbook_with_comments, with_formulas=True))
     assert len(rows) == 3  # Header + 2 data rows
 
     # Check that comment fields exist in metadata
@@ -67,7 +67,7 @@ def test_read_with_comments_no_formulas(workbook_with_comments):
 
 def test_read_comments_structure(workbook_with_comments):
     """Test that comments are properly formatted in metadata."""
-    rows = list(streamxl.read(workbook_with_comments, with_formulas=True))
+    rows = list(pystreamxl.read(workbook_with_comments, with_formulas=True))
 
     # Row 1, Col 0 should have a comment
     cell = rows[1][0]
@@ -82,7 +82,7 @@ def test_read_comments_structure(workbook_with_comments):
 
 def test_comment_author_preserved(workbook_with_comments):
     """Test that comment authors are preserved."""
-    rows = list(streamxl.read(workbook_with_comments, with_formulas=True))
+    rows = list(pystreamxl.read(workbook_with_comments, with_formulas=True))
 
     # Look for a cell with a comment
     for row in rows:
@@ -96,7 +96,7 @@ def test_comment_author_preserved(workbook_with_comments):
 
 def test_no_comment_cells(workbook_with_comments):
     """Test that cells without comments have None values."""
-    rows = list(streamxl.read(workbook_with_comments, with_formulas=True))
+    rows = list(pystreamxl.read(workbook_with_comments, with_formulas=True))
 
     # Row 2 (index 2), Col 1 should not have a comment
     cell = rows[2][1]
@@ -106,7 +106,7 @@ def test_no_comment_cells(workbook_with_comments):
 def test_comments_with_as_dict(workbook_with_comments):
     """Test comments with as_dict=True."""
     rows = list(
-        streamxl.read(workbook_with_comments, as_dict=True, with_formulas=True)
+        pystreamxl.read(workbook_with_comments, as_dict=True, with_formulas=True)
     )
     assert len(rows) == 2  # Header consumed, 2 data rows
 
@@ -122,7 +122,7 @@ def test_comments_with_column_filtering(workbook_with_comments):
     """Test comments with column filtering."""
     columns = ["Name", "Salary"]
     rows = list(
-        streamxl.read(
+        pystreamxl.read(
             workbook_with_comments,
             as_dict=True,
             columns=columns,

@@ -10,7 +10,7 @@ Tests for:
 """
 
 import pytest
-from streamxl import (
+from pystreamxl import (
     ErrorSeverity,
     ErrorCategory,
     RecoveryMode,

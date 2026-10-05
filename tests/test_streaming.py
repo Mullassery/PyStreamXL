@@ -1,9 +1,9 @@
-import streamxl
-from streamxl.core import read_rows_all_at_once
+import pystreamxl
+from pystreamxl.core import read_rows_all_at_once
 
 
 def test_is_iterator(tmp_xlsx):
-    result = streamxl.read(tmp_xlsx)
+    result = pystreamxl.read(tmp_xlsx)
     assert hasattr(result, "__iter__")
     assert hasattr(result, "__next__")
 
@@ -15,7 +15,7 @@ def test_memory_constant(tmp_large_xlsx):
     snapshot_before = tracemalloc.take_snapshot()
 
     count = 0
-    for _ in streamxl.read(tmp_large_xlsx):
+    for _ in pystreamxl.read(tmp_large_xlsx):
         count += 1
 
     snapshot_after = tracemalloc.take_snapshot()
@@ -45,7 +45,7 @@ def test_read_actually_streams_not_eager_then_yield(tmp_large_xlsx):
     import time
 
     start = time.perf_counter()
-    it = streamxl.read(tmp_large_xlsx)
+    it = pystreamxl.read(tmp_large_xlsx)
     next(it)
     time_to_first_row = time.perf_counter() - start
 
@@ -70,7 +70,7 @@ def test_streaming_reader_is_one_shot_like_a_real_iterator(tmp_xlsx):
     old eager-list-backed generator, which could conceptually be re-driven
     from the same underlying list. This documents the (correct) new
     contract explicitly."""
-    it = streamxl.read(tmp_xlsx)
+    it = pystreamxl.read(tmp_xlsx)
     rows = list(it)
     assert len(rows) > 0
     assert list(it) == [], "a second pass over the same iterator must be empty"
@@ -80,13 +80,13 @@ def test_streaming_and_eager_apis_return_identical_data(tmp_xlsx):
     """Real streaming (default) and the explicit all-at-once escape hatch
     must agree on content -- only their memory/consumption characteristics
     should differ."""
-    streamed = list(streamxl.read(tmp_xlsx))
+    streamed = list(pystreamxl.read(tmp_xlsx))
     eager = list(read_rows_all_at_once(tmp_xlsx))
     assert streamed == eager
 
 
 def test_streaming_with_formulas_matches_eager(tmp_xlsx):
-    from streamxl.core import read_rows_with_metadata, read_rows_with_metadata_all_at_once
+    from pystreamxl.core import read_rows_with_metadata, read_rows_with_metadata_all_at_once
 
     streamed = list(read_rows_with_metadata(tmp_xlsx))
     eager = list(read_rows_with_metadata_all_at_once(tmp_xlsx))
@@ -100,4 +100,4 @@ def test_streaming_propagates_errors_like_the_eager_path(tmp_path):
 
     missing = str(tmp_path / "does_not_exist.xlsx")
     with pytest.raises(Exception):
-        list(streamxl.read(missing))
+        list(pystreamxl.read(missing))

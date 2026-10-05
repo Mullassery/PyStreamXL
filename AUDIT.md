@@ -2,117 +2,124 @@
 
 ## Health
 
-**YELLOW** — core engine is solid (160/160 Python tests, 6/6 Rust zip-bomb
-tests, clippy clean of errors), but accumulated naming/version drift,
-stale docs, orphaned dead code, and a missing auth/CI-scanning layer keep
-this out of GREEN.
+**GREEN** (upgraded from an initial YELLOW assessment). Between this
+audit's first pass and reconciliation, upstream's independent "OSS
+maturity pass" fixed nearly everything this audit found — and found a
+genuinely more serious bug (a dead path-traversal check) this audit
+missed entirely. What's left open is a short, well-understood list: no
+server auth, a couple of dependency decisions, and PyPI OIDC setup.
 
-## Before Audit
+## Reconciliation note
+
+This audit's fixes were committed locally against `cc67d06`. By the time
+they were ready to push, `origin/main` had moved 10 commits ahead (to
+`v6.1.0`) via an unrelated, much larger pass that renamed the package
+(`streamxl`→`pystreamxl`), renamed `StreamXLServer`→`PyStreamXLServer`,
+fixed a real path-traversal bug, added `CHANGELOG.md`/`ROADMAP_HONEST.md`,
+and added CI dependency scanning + a multi-platform release workflow. The
+two histories were merged (git handled the rename-tracking for the
+Python-package move correctly) and conflicts resolved by hand, preferring
+upstream's version wherever both sides touched the same thing. See
+`TECHNICAL_DEBT.md` for the full, attributed breakdown of what was
+already fixed upstream vs. what this audit actually contributed.
+
+## Before Audit (this audit's original baseline, commit cc67d06)
 
 Open debt: 22
 Critical: 0 · High: 5 · Medium: 11 · Low: 6
-(160/160 pytest passing; `cargo clippy` had 2 hard errors + ~20 warnings;
-CLI reported the wrong version; 4 dead/wrong GitHub URLs; a security-
-sensitive default; a stale security audit doc actively contradicting the
-current codebase.)
 
-## After Audit
+## After Reconciliation
 
-Open debt: 7 (1 blocked, 1 future-phase, 5 deferred by design — see
-`TECHNICAL_DEBT.md`)
-Critical: 0 · High: 1 · Medium: 5 · Low: 1
+Open debt: 6
+Critical: 0 · High: 1 (TD-0012, server auth) · Medium: 4 · Low: 1
 
-## Items Fixed (15)
+## Items This Audit Actually Fixed (surviving, non-redundant)
 
-1. **TD-0001** — `__init__.py.__version__` (5.2.0) reconciled with pyproject/Cargo (5.3.0).
-2. **TD-0002** — CLI `--version` no longer hardcodes a version string; reads `__version__`.
-3. **TD-0003** — 4 broken GitHub URLs (README, `llms.txt` x2, `scripts/install.sh`) pointed at a nonexistent `Mullassery/StreamXL` repo; corrected to `Mullassery/PyStreamXL`.
-4. **TD-0004** — README's post-clone `cd StreamXL` corrected to `cd PyStreamXL`.
-5. **TD-0005** — Bare "StreamXL" product-name mentions corrected to "PyStreamXL" across README, CONTRIBUTING, SECURITY_AUDIT title, `server.py` docstring, a user-facing error-recovery string, and a test docstring.
-6. **TD-0006** — `Cargo.lock` was gitignored and uncommitted; now tracked (reproducible builds for a PyO3 extension shipping wheels).
-7. **TD-0007** — `StreamXLServer`/`run_server` default bind changed from `0.0.0.0` to `127.0.0.1`.
-8. **TD-0008** — `rich` dependency given an upper bound (`>=13.0,<15`).
-9. **TD-0009** — Two tautological Rust test assertions (`.len() >= 0`, always true, clippy hard error) replaced with honest no-panic checks.
-10. **TD-0010** — Unnecessary-parens clippy warning removed.
-11. **TD-0011** — Root `CONTRIBUTING.md` fully rewritten: correct source layout, correct license (Apache-2.0, not MIT), dropped already-shipped items from "High-impact areas."
-12. **TD-0014** — `docs/CONTRIBUTING.md` (mislabeled Claude-agent instructions with a stale "not yet implemented" list) moved to root `CLAUDE.md`, corrected; old path left as a redirect stub.
-13. **TD-0015** — `SECURITY_AUDIT.md` rewritten from a frozen v1.0.1-era snapshot to reflect the actual v5.3.0 security posture (path validation, zip-bomb defense, and atomic writes are all implemented and tested; real open gaps — CI scanning, server auth — now listed honestly).
+1. **TD-0007** — `PyStreamXLServer`/`run_server` default bind changed `0.0.0.0` → `127.0.0.1`. Confirmed upstream's tree still had `0.0.0.0` at merge time — not redundant.
+2. **TD-0008** — `rich` dependency capped `>=13.0,<15` (now in tension with an open Dependabot branch proposing `rich>=15` — flagged as TD-0018, needs a human call).
+3. **TD-0009** — Two tautological Rust test assertions (`.len() >= 0`, clippy hard error) fixed in `collaboration_detection.rs`/`cross_sheet_analysis.rs`. Confirmed upstream never touched these files.
+4. **TD-0010** — Unnecessary-parens clippy warning fixed in `incremental_recalculation.rs`.
+5. **TD-0014** — New root `CLAUDE.md` with agent build-instructions (maturin workflow, PyO3 0.23 gotchas, cell-type table), carried forward from the old mislabeled `docs/CONTRIBUTING.md` and corrected for the `pystreamxl` rename. Upstream deleted the stale file but didn't replace it with equivalent agent-facing guidance — this fills that gap.
 
-All fixes verified: `pytest tests/ -v` → 160/160 passing (re-run after
-every meaningful change), `cargo test --release --manifest-path
-core/Cargo.toml` → 6/6 passing, `cargo clippy --manifest-path
-core/Cargo.toml --all-targets` → 0 errors (was 2).
+## Items This Audit Found But Upstream Already Fixed (better, independently)
+
+Version-string drift, hardcoded CLI version, broken GitHub URLs, bare
+"StreamXL" naming throughout docs/source, `Cargo.lock` not committed,
+`StreamXLServer`→`PyStreamXLServer` rename, stale `CONTRIBUTING.md`,
+orphaned `pystreaxl`/`streamxl` contamination, boilerplate
+`docs/ROADMAP.md`, missing `CHANGELOG.md`, missing CI dependency
+scanning/release workflow. Full detail and attribution in
+`TECHNICAL_DEBT.md`.
+
+Notably, this audit's own rewrite of `SECURITY_AUDIT.md` was **discarded**
+during reconciliation: upstream's new `SECURITY.md` is more thorough and
+accurate (it documents a real path-traversal bug — a dead substring check
+that ran *after* `Path.resolve()` already collapsed `..` segments —
+that this audit's security review never caught). Publishing this audit's
+version alongside upstream's would have created two documents describing
+current security posture, guaranteed to drift apart. The original
+`SECURITY_AUDIT.md` was restored to its true, unedited v1.0.1-era content
+at its archived path (`docs/archive/SECURITY_AUDIT_v1_2026-07_STALE.md`)
+rather than left holding this audit's now-superseded rewrite.
 
 ## Items Remaining
 
-- **TD-0012** (P1, open) — REST server has no authentication. Requires a product decision on auth mechanism; not safe to guess at.
-- **TD-0013** (P2, open) — `StreamXLServer` class/module naming inconsistent with product name; renaming is a breaking API change, deferred.
-- **TD-0016** (P2, **blocked**) — Orphaned `pystreaxl/`, `pystreaxl.toml`, `streamxl/` boilerplate contamination identified but **not deleted**: this run executes as a backgrounded/non-interactive fork, and the sandbox's auto-mode classifier denied both `rm -rf` and `git rm` as destructive actions with no one available to approve them. **Needs a human (or an interactive session) to run `git rm -r pystreaxl pystreaxl.toml streamxl` and commit.**
-- **TD-0017** (P2, open) — No dependency/secret scanning in CI, no release/publish workflow.
-- **TD-0018** (P2, open) — 10 unmerged Dependabot branches, including a major `pyo3` bump that needs compatibility testing against a documented 0.23-specific workaround.
-- **TD-0020** (P2, open) — `docs/ROADMAP.md` is boilerplate, not this repo's real roadmap; needs a full honest rewrite (larger effort, deferred).
-- **TD-0019** (P3, open) — ~10 low-priority clippy style warnings (Default impls, `is_multiple_of`, dead fields, etc.).
-- **TD-0021** (P3, future-phase) — Only macOS arm64 wheels published to PyPI; no Linux/Windows wheel CI.
-- **TD-0022** (P3, open) — No `CHANGELOG.md` despite 1.0.0→5.3.0 history.
-
-## Future Phase Work
-
-Multi-platform wheel distribution (TD-0021) and the dataBar/iconSet/colorScale
-conditional-formatting detail parsing (already honestly disclosed in
-`docs/ROADMAP.md`, not re-tracked as new debt) are the two legitimate
-forward-looking items; everything else under "ROADMAP.md" content is
-generic cross-project boilerplate not specific to this repo (TD-0020).
+- **TD-0012** (P1) — No authentication on the REST server. Product decision required.
+- **TD-0018** (P2) — Dependabot backlog, including a `pyo3` major-version bump needing compatibility testing, and a direct conflict between this audit's `rich<15` cap and an open `rich>=15` Dependabot branch.
+- **TD-0023** (P2) — Release workflow builds wheels for Linux/macOS/Windows but can't publish: PyPI Trusted Publisher (OIDC) isn't configured yet. Same recurring gap pattern seen elsewhere in this org. Requires either OIDC setup on the PyPI project or a manual `twine upload` with credentials this audit doesn't have access to.
+- **TD-0021** (P2, partially complete) — Multi-platform wheel building is now defined in CI but has never actually been run (no release tag pushed with it yet).
+- **TD-0017** (P2, resolved-with-caveat) — Dependency-audit CI job added but self-described by its author as unverified end-to-end.
+- **TD-0019** (P3) — ~16 low-priority clippy style warnings, concentrated in Rust modules (`collaboration_detection.rs`, `cross_sheet_analysis.rs`, `incremental_recalculation.rs`) that are compiled and tested but **completely unused** — not wired into the PyO3 bridge at all. This dead-code situation is the single biggest piece of architecture debt in the repo; fixing style warnings in modules that might get deleted isn't worth doing before that decision is made.
 
 ## CI Status
 
-`ci.yml` (rust-build + python-tests matrix across 3.10/3.11/3.12) was not
-modified this run and should still be green — no fix touched behavior
-those jobs exercise beyond what `pytest`/`cargo test` already re-verified
-locally. CI does not run clippy, so TD-0009's tautological-assertion
-compile errors were latent (never failing CI) rather than currently
-broken; fixed anyway since clippy *should* be clean.
+`ci.yml`: rust-build + python-tests (3.10/3.11/3.12 matrix) + new
+dependency-audit job. `release.yml`: new, builds wheels across 3
+platforms × 2 architectures, not yet exercised by an actual tag push.
 
 ## Test Status
 
-160/160 Python tests passing. 6/6 Rust zip-bomb tests passing. 0/0 Rust
-doc-tests (none exist). No tests were removed; 2 were corrected in place
-(TD-0009) without reducing what they exercise (they tested nothing
-before).
+169/169 Python tests passing (verified post-reconciliation; grew from 160
+as upstream added `tests/test_security.py` and expanded others). 9/9 Rust
+tests passing (3 lib + 6 zip-bomb-defense integration). `cargo clippy`:
+0 errors (was 2 before this audit's fixes), ~16 non-blocking style
+warnings remain in dead-code modules.
 
 ## Build Status
 
-`pip install -e ".[dev]"` via maturin succeeds in a clean venv. `cargo
-build --release --all-features` and `cargo clippy --all-targets` both
-succeed (clippy: 0 errors, ~18 style warnings remaining, see TD-0019).
+`cargo build --release --all-features` succeeds. `pip install -e ".[dev]"`
+via maturin succeeds against the renamed `pystreamxl` package; `import
+pystreamxl` and `pystreamxl --version` both confirmed working and
+reporting `6.1.0` correctly.
 
 ## Security Status
 
-Zip-bomb defense, path-traversal validation, and atomic writes are real,
-implemented, and tested — previously undocumented or mis-documented as
-gaps (TD-0015). Remaining real gaps: no server auth (TD-0012), no CI-level
-dependency/secret scanning (TD-0017).
+See `SECURITY.md` (upstream, comprehensive) for the authoritative current
+posture — it documents a real path-traversal fix, ZIP-bomb defenses,
+write-side size caps, and the deliberate choice to make path confinement
+opt-in rather than default. This audit's net contribution to security was
+the server default-bind fix (TD-0007); everything else security-related
+this audit found was either already covered better upstream or is now
+tracked as genuinely open (TD-0012, TD-0023).
 
 ## Dependency Status
 
-`rich` now has an upper bound (TD-0008). `Cargo.lock` now committed
-(TD-0006). 10 Dependabot branches remain unmerged and unevaluated
-(TD-0018) — flagged, not merged, since the `pyo3` major bump needs
-compatibility testing against this codebase's documented 0.23-specific
-workaround before it's safe to take.
+`rich` capped (this audit). `Cargo.lock` committed (upstream, independently
+also done by this audit — redundant). 13 Dependabot branches remain open;
+2 of them (`actions/checkout`/`setup-python` → v7) are functionally
+obsolete since both workflow files already use `@v7` directly from manual
+edits. The rest need evaluation, not blind merging — flagged as TD-0018.
 
 ## Final Assessment
 
-The actual engine (Rust parsing/streaming/writing core, Python API,
-security/integrity layers) is in good shape — well-tested, no stubs, no
-TODOs, prior audits already cleaned up most functional debt. What
-remained was almost entirely **drift**: version strings disagreeing with
-each other, docs describing a version of the project that no longer
-exists (stale license claim, stale "not implemented" list, stale security
-snapshot, wrong GitHub URLs), a dangerous-by-default server bind, and
-dead orphaned directories from an incomplete prior cleanup. All of the
-safely-fixable items in that category are now fixed and re-verified. What
-remains open is either a genuine product decision (server auth, class
-renaming), a larger deferred effort (roadmap rewrite, multi-platform
-wheels, dependency-bump validation), or — in one case (TD-0016) — blocked
-purely by this run's sandbox denying destructive filesystem operations to
-a non-interactive background process, not by any technical obstacle.
+This audit's standalone value, after honest reconciliation against a
+much larger independent pass that landed concurrently, is small but real:
+one security default fix that upstream missed, one dependency ceiling,
+two dead-code test/lint fixes, and a build-instructions doc (`CLAUDE.md`)
+that fills a gap upstream's own cleanup left behind. The bulk of what this
+audit originally flagged as debt was independently found and fixed —
+generally better — by the concurrent pass, including a real security bug
+(the dead path-traversal check) this audit's own security review did not
+catch. What remains open is a short, concrete list: server authentication
+(a product decision), a few dependency calls, and finishing PyPI OIDC
+setup so the new multi-platform release workflow can actually publish.

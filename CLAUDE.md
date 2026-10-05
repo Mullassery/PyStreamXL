@@ -26,8 +26,8 @@ pytest tests/ -v
 ## Repository layout
 
 - `core/src/` — Rust library: `sheet_parser.rs`, `shared_strings.rs`, `stream.rs`, `zip_reader.rs`, `writer.rs`, `dates.rs`, `conditional_formatting.rs`, `dxf.rs`, `formula_parser.rs`
-- `python/src/lib.rs` — PyO3 bridge (the `.so` extension module, `streamxl._core`)
-- `python/streamxl/` — Python package: `__init__.py`, `api.py`, `core.py`, `security.py`, `integrity.py`, `server.py`, `cli.py`, `error_recovery.py`, `error_messages.py`, `formula_io.py`, `formula_reference_mapper.py`
+- `python/src/lib.rs` — PyO3 bridge (the `.so` extension module, `pystreamxl._core`)
+- `python/pystreamxl/` — Python package: `__init__.py`, `api.py`, `core.py`, `security.py`, `integrity.py`, `server.py`, `cli.py`, `error_recovery.py`, `error_messages.py`, `formula_io.py`, `formula_reference_mapper.py`
 - `pyproject.toml` — maturin config; `manifest-path = "python/Cargo.toml"`
 - `Cargo.toml` — workspace root; members = `["core"]` only
 

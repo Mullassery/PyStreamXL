@@ -1,18 +1,21 @@
 # PyStreamXL Security & Hardening Guide
 
-**Version:** 1.1.0 (Security Hardening Release)  
-**Date:** 2026-07-17  
-**Status:** ✅ PRODUCTION READY
-
----
+This document describes the security-relevant behavior of the current
+codebase (last checked against v5.3.0). It is not versioned separately
+from the package — read it against whatever version you have installed,
+and verify against `python/pystreamxl/security.py` and
+`core/src/zip_reader.rs` if it matters for your use case.
 
 ## Executive Summary
 
-PyStreamXL v1.1.0 includes comprehensive security hardening against:
+PyStreamXL includes hardening against:
 - **ZIP bomb attacks** (decompression bombs)
-- **Denial-of-service (DOS) attacks** via resource exhaustion
-- **Path traversal exploits**
+- **Denial-of-service (DOS) attacks** via resource exhaustion (oversized files/entries)
 - **File format violations**
+
+Path-traversal confinement is available but **opt-in** — see "Path
+Handling" below; by default (no `base_dir` passed) any resolved path is
+still accepted, same as always.
 
 All security checks are enabled by default. No configuration needed.
 
@@ -49,12 +52,57 @@ MAX_TOTAL_SIZE = 1 GB         # Total decompressed
 2. During reading — Entries checked (Rust)
 3. Cumulative — Total decompressed checked (Rust)
 
-### 3. Path Traversal Prevention
+### 3. Path Handling — confinement is real, but opt-in via `base_dir`
 
-**Protection:**
-- Rejects paths containing ".." (directory traversal)
-- Validates file extensions (.xlsx, .xls only)
-- Uses `Path.resolve()` to normalize paths
+**History:** until this fix, `validate_xlsx_path()` resolved the path with
+`Path(path).resolve()` and *then* checked for the literal substring `".."`.
+`resolve()` collapses `..` segments as part of normalizing the path, so by
+the time the check ran, a traversal input like `"../../../etc/passwd.xlsx"`
+had already become an absolute path (`/etc/passwd.xlsx`) with no literal
+`".."` left in it — the check could never fire on a real traversal attempt
+and was dead code. A call like `read("../../../etc/passwd.xlsx")` still
+raised `SecurityError`, but only because `/etc/passwd.xlsx` didn't exist or
+wasn't a `.xlsx`/`.xls` file — not because traversal was detected.
+
+**What's fixed now (`python/pystreamxl/security.py`):**
+`validate_xlsx_path()`, `validate_read_path()`, and `validate_write_path()`
+all accept an optional `base_dir` argument. When passed, the path is
+resolved (`Path(path).resolve()`, which also collapses `..` and symlinks)
+and then the *resolved* path is checked with `os.path.commonpath([path,
+base_dir]) == base_dir` — a real, working confinement check performed
+after normalization instead of a dead substring check performed too late
+to matter:
+
+```python
+from pystreamxl.security import validate_read_path, SecurityError
+
+try:
+    validate_read_path(user_supplied_path, base_dir="/var/app/uploads")
+except SecurityError:
+    ...  # traversal attempt or path outside the allowed directory
+```
+
+**This is opt-in, not automatic:** when `base_dir` is omitted (the
+default), no confinement is enforced and any resolved path is accepted —
+same behavior as every prior release. This library is used both as a
+general-purpose file-path API (arbitrary absolute paths anywhere on disk
+are a legitimate, existing use case — see `python/pystreamxl/api.py`) and
+potentially embedded in services with a real trust boundary (e.g. a
+multi-tenant upload handler). Those are different confinement contracts,
+so the check is available but must be deliberately opted into by callers
+that have an actual base directory to enforce; `pystreamxl.read()`/`write()`
+and the bundled `PyStreamXLServer` do not pass `base_dir` today. If you're
+embedding this in a service that accepts user-supplied paths, call
+`validate_read_path()`/`validate_write_path()` yourself with `base_dir` set
+to your trust boundary before opening the file.
+
+**What is real:**
+- File extension is validated (`.xlsx`/`.xls` only)
+- The path is normalized via `Path.resolve()`
+- The resolved file must exist and actually be a file (for reads)
+- With `base_dir` passed, the resolved path is verified to actually be
+  inside that directory (see above); see `tests/test_security.py` for
+  tests that perform real traversal attempts and confirm rejection.
 
 ### 4. File Format Validation
 
@@ -140,20 +188,22 @@ limits = get_security_limits()
 
 ---
 
-## Production Deployment Checklist
+## Deployment Checklist
 
-For **production use**, verify:
+Before relying on this in a service that accepts file paths or uploads
+from outside callers, verify:
 
-- [ ] PyStreamXL version ≥ 1.1.0 (security hardening)
 - [ ] File size limits appropriate for use case
 - [ ] Error handling catches `SecurityError`
 - [ ] Logging captures security violations
 - [ ] No silent exception suppression
 - [ ] Files read from trusted sources only
-- [ ] File uploads validated server-side
+- [ ] File uploads validated server-side, **including your own
+      base-directory confinement** — see the "Path Handling" note above;
+      this library does not provide that
 - [ ] Monitoring alerts on violations
 
-**Example production code:**
+**Example code:**
 ```python
 import pystreamxl
 import logging
@@ -212,8 +262,10 @@ def test_zip_bomb_protection():
     with pytest.raises(pystreamxl.SecurityError):
         pystreamxl.read("fake_huge_file.xlsx")
 
-def test_path_traversal_protection():
-    """Verify path traversal is blocked."""
+def test_nonexistent_or_wrong_extension_path_raises():
+    """A path that doesn't resolve to a real .xlsx/.xls file raises
+    SecurityError — but note this is existence/extension validation,
+    not path-traversal confinement (see "Path Handling" above)."""
     with pytest.raises(pystreamxl.SecurityError):
         pystreamxl.read("../../../etc/passwd.xlsx")
 
@@ -245,25 +297,10 @@ Report privately:
 
 ## Changelog
 
-### v1.1.0 (2026-07-17) — Security Hardening ✅
-
-**New:**
-- ZIP bomb detection (compression ratio checking)
-- File size validation (512 MB limit)
-- SecurityError exception
-- get_security_limits() function
-
-**Changes:**
-- Tightened ZIP limits (2GB → 512MB per entry)
-- Added Python-level file size checking
-- Enhanced error messages
-
-**Security:**
-✅ ZIP bomb protection (30:1 ratio limit)  
-✅ DOS prevention (512 MB file size limit)  
-✅ Path traversal prevention  
-✅ File format validation  
-✅ Empty file rejection  
+Security-relevant changes are tracked in `CHANGELOG.md`. As of this
+writing: ZIP-bomb defenses and file-size limits are read-side (present
+since early releases); write-side bounded buffering/size caps were added
+in v5.3.0 (see the "Write-Side Memory & Size Limits" section above).
 
 ---
 
@@ -279,17 +316,21 @@ A: Most Excel files are < 50 MB. 512 MB is safe margin.
 A: Extremely unlikely. If rejected, file is probably malicious.
 
 **Q: What if I need to process larger files?**  
-A: Split into smaller files or contact support.
+A: Split into smaller files, or open an issue describing your use case.
 
 ---
 
 ## Summary
 
-PyStreamXL v1.1.0 provides **production-grade security**:
+What's real and enabled by default, no configuration needed:
 
-✅ ZIP bombs blocked via compression ratio limits  
-✅ DOS attacks prevented via file size validation  
-✅ Path traversal blocked via path normalization  
-✅ Format violations detected via extension/header checks  
+- ZIP bombs blocked via compression-ratio, per-entry, and total-decompressed-size limits (read and write)
+- Oversized files rejected via a file-size check before parsing
+- File extension and basic format validated
+- Empty files rejected
+- CSV/formula-injection sanitization available via `pystreamxl.security.sanitize_csv_cell()` (opt-in for your own CSV writes; automatic in `FormulaSerializer.export_to_csv()`)
 
-**All protections enabled by default. No configuration needed.**
+What's **not** real, despite being implied by earlier drafts of this
+document: this library does not sandbox/confine file paths to a base
+directory (see "Path Handling" above) — that responsibility is the
+caller's if paths come from an untrusted source.

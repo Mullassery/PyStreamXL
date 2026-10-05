@@ -65,9 +65,6 @@ class SimpleDashboard:
                 print(f"  [{rec.get('type', '').upper()}] {rec.get('message', '')}")
         print(f"\n{'='*80}\n")
 
-    def run(self) -> None:
-        self.render(DashboardMetrics(datetime.now().isoformat(), f"{self.product_name} Dashboard", {"Status": "Active"}, [], []))
-
 
 class RichDashboard:
     def __init__(self, product_name: str):
@@ -107,9 +104,6 @@ class RichDashboard:
                 self.console.print(f"  [{rec.get('type', '').upper()}] {rec.get('message', '')}")
         self.console.print(f"\n[bold cyan]{'='*80}[/bold cyan]\n")
 
-    def run(self) -> None:
-        self.render(DashboardMetrics(datetime.now().isoformat(), f"{self.product_name} Dashboard", {"Status": "Active"}, [], []))
-
 
 class TextualDashboard:
     def __init__(self, product_name: str):
@@ -122,16 +116,7 @@ class TextualDashboard:
             pass
 
     def render(self, data: DashboardMetrics) -> None:
-        if not self.has_textual:
-            RichDashboard(self.product_name).render(data)
-            return
         RichDashboard(self.product_name).render(data)
-
-    def run(self) -> None:
-        if not self.has_textual:
-            RichDashboard(self.product_name).run()
-            return
-        self.render(DashboardMetrics(datetime.now().isoformat(), f"{self.product_name} Dashboard", {"Status": "Active"}, [], []))
 
 
 class PyStreamXLDashboard:
@@ -142,7 +127,7 @@ class PyStreamXLDashboard:
     engine, so there is no real data source to back this view. The values
     below are clearly labeled as sample data rather than presented as
     live metrics, to avoid misleading users. Wiring this up to real
-    telemetry is tracked as a follow-up (see ROADMAP.md).
+    telemetry is tracked as a follow-up (see ROADMAP_HONEST.md).
     """
 
     def __init__(self, config_path: Optional[str] = None):
@@ -198,10 +183,7 @@ class PyStreamXLDashboard:
     def run_dashboard(self, interactive: bool = True) -> None:
         try:
             metrics = self.get_mock_metrics()
-            if interactive:
-                self.dashboard.run()
-            else:
-                self.dashboard.render(metrics)
+            self.dashboard.render(metrics)
         except KeyboardInterrupt:
             print("\n\nDashboard stopped.")
             sys.exit(0)

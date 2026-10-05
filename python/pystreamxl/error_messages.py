@@ -49,7 +49,7 @@ INVALID_SHEET_NAME = ExcelError(
     title="Sheet Not Found",
     message="Specified sheet name does not exist in workbook.",
     recovery=[
-        "List available sheets: streamxl.sheets('file.xlsx')",
+        "List available sheets: pystreamxl.sheets('file.xlsx')",
         "Check sheet name spelling (case-sensitive)",
         "Try sheet index instead: read('file.xlsx', sheet=0)",
         "Verify sheet wasn't deleted or renamed",

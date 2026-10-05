@@ -102,7 +102,7 @@ def write(path: str, rows: Iterable[Iterable[Any]]) -> None:
 
     Example::
 
-        streamxl.write("report.xlsx", [
+        pystreamxl.write("report.xlsx", [
             ["Name", "Joined", "Score"],
             ["Alice", datetime.date(2024, 1, 15), 95.5],
         ])
@@ -120,7 +120,7 @@ def writer(path: str) -> _XlsxWriter:
 
     Supports multiple sheets via add_sheet(). Use as a context manager::
 
-        with streamxl.writer("report.xlsx") as w:
+        with pystreamxl.writer("report.xlsx") as w:
             w.write_row(["Name", "Age"])
             w.write_row(["Alice", 30])
             w.add_sheet("Summary")
@@ -216,9 +216,9 @@ def append(path: str, rows: Iterable[Iterable[Any]], sheet: Optional[str] = None
 
     Example::
 
-        streamxl.write("log.xlsx", [["Date", "Event"]])
-        streamxl.append("log.xlsx", [[datetime.date.today(), "started"]])
-        streamxl.append("log.xlsx", [[datetime.date.today(), "finished"]])
+        pystreamxl.write("log.xlsx", [["Date", "Event"]])
+        pystreamxl.append("log.xlsx", [[datetime.date.today(), "started"]])
+        pystreamxl.append("log.xlsx", [[datetime.date.today(), "finished"]])
 
     Raises:
         SecurityError: If file fails security validation (ZIP bomb protection).

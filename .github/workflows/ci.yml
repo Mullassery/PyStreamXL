@@ -11,7 +11,7 @@ jobs:
     name: Rust Build & Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -35,11 +35,11 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -60,3 +60,39 @@ jobs:
       # never be able to silently no-op.
       - name: Run pytest
         run: pytest tests/ -v --tb=short
+
+  dependency-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    # This job needs network access to crates.io/PyPI advisory
+    # databases, which isn't available in the sandbox this workflow was
+    # authored in — it has not been run/verified end-to-end here. It's
+    # added on the expectation that GitHub-hosted runners have normal
+    # network access; if it misbehaves in practice, that's a real CI
+    # bug to fix, not a pre-existing known issue.
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: Audit Rust dependencies
+        run: cargo audit
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install package and pip-audit
+        run: |
+          pip install -e ".[dev,server]"
+          pip install pip-audit
+
+      # Scans the actual installed environment (this project's runtime +
+      # dev + server extras) against the PyPI advisory database. This
+      # step is intentionally allowed to fail the job on findings — no
+      # `|| true` masking.
+      - name: Audit Python dependencies
+        run: pip-audit

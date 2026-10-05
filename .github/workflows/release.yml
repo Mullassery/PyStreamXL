@@ -1,0 +1,118 @@
+# Builds and publishes wheels on a version tag push (or manually via
+# workflow_dispatch for a dry run without publishing).
+#
+# Why this exists: releases were previously built by hand with local
+# `maturin build`, which only ever produced a single wheel tagged for
+# whatever Python was active on the maintainer's machine at the time
+# (macOS arm64, and a Python version that drifted release to release —
+# cp313, then cp39, then cp311, then cp39 again). No Linux or Windows
+# wheel has ever been published. This workflow builds one wheel per
+# supported interpreter (matching the versions tested in ci.yml) across
+# Linux, macOS, and Windows, so installs on those platforms no longer
+# fall back to a from-source build requiring a Rust toolchain.
+#
+# The final `publish` job uses PyPI Trusted Publishing (OIDC) and has
+# not been exercised end-to-end — it needs a Trusted Publisher entry
+# added on the `pystreamxl` PyPI project (Publishing -> Add a new
+# publisher) pointing at this repo/workflow/environment before it will
+# work. Until that's set up, download the `wheels-*` artifacts from a
+# run and `twine upload` them by hand.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: auto
+          args: --release --out dist -i 3.10 -i 3.11 -i 3.12
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-${{ matrix.target }}
+          path: dist
+
+  macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --auditwheel=repair --out dist -i 3.10 -i 3.11 -i 3.12
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-${{ matrix.target }}
+          path: dist
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          args: --release --out dist -i 3.10 -i 3.11 -i 3.12
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows
+          path: dist
+
+  sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-sdist
+          path: dist
+
+  publish:
+    name: Publish to PyPI
+    needs: [linux, macos, windows, sdist]
+    # Only publish on an actual tag push, not on a manual dry run.
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist

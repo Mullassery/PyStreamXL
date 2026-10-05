@@ -11,7 +11,7 @@ import pytest
 import json
 import tempfile
 import os
-from streamxl import FormulaReferenceMapper, FormulaSerializer
+from pystreamxl import FormulaReferenceMapper, FormulaSerializer
 
 
 class TestFormulaReferenceMapper:
@@ -292,7 +292,7 @@ class TestFormulaSerializer:
 
     def test_sanitize_csv_cell_directly(self):
         """Unit-level check of the sanitizer used by export_to_csv()."""
-        from streamxl.security import sanitize_csv_cell
+        from pystreamxl.security import sanitize_csv_cell
 
         assert sanitize_csv_cell("=cmd|'/c calc'!A0") == "'=cmd|'/c calc'!A0"
         assert sanitize_csv_cell("+1+1") == "'+1+1"

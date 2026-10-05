@@ -1,11 +1,11 @@
-from streamxl._core import read as _read_all
-from streamxl._core import read_with_metadata as _read_with_metadata
-from streamxl._core import stream_rows as _stream_rows
-from streamxl._core import stream_rows_with_metadata as _stream_rows_with_metadata
-from streamxl._core import write as _write_all
-from streamxl._core import sheets as _list_sheets
-from streamxl._core import conditional_formats as _conditional_formats
-from streamxl._core import PyXlsxWriter as XlsxWriter
+from pystreamxl._core import read as _read_all
+from pystreamxl._core import read_with_metadata as _read_with_metadata
+from pystreamxl._core import stream_rows as _stream_rows
+from pystreamxl._core import stream_rows_with_metadata as _stream_rows_with_metadata
+from pystreamxl._core import write as _write_all
+from pystreamxl._core import sheets as _list_sheets
+from pystreamxl._core import conditional_formats as _conditional_formats
+from pystreamxl._core import PyXlsxWriter as XlsxWriter
 
 
 def read_rows(path: str, sheet=None):
