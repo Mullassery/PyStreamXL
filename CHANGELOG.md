@@ -8,6 +8,34 @@ releases (v1.0.0 through v5.3.0) predate it and are not reconstructed
 here to avoid fabricating dates/details that weren't tracked at the
 time — see `git log` and GitHub Releases for that history.
 
+## [6.1.1] - 2026-10-05
+
+### Security
+- `PyStreamXLServer`/`run_server` default bind changed from `0.0.0.0`
+  (all interfaces) to `127.0.0.1`. Callers that need to bind a
+  non-loopback address still can by passing `host` explicitly; there is
+  still no authentication on the REST API regardless of bind address —
+  see `TECHNICAL_DEBT.md` TD-0012.
+
+### Changed
+- `rich` dependency given an upper bound (`>=13.0,<15`) instead of an
+  open-ended range.
+
+### Fixed
+- Two Rust unit tests in the dead/unwired `collaboration_detection.rs`
+  and `cross_sheet_analysis.rs` modules asserted `.len() >= 0` on a
+  `usize` — always true, and a `clippy::absurd_extreme_comparisons` hard
+  error (not caught by CI, which doesn't run clippy). Replaced with
+  honest no-panic checks.
+- Unnecessary-parens clippy warning in `incremental_recalculation.rs`
+  (also dead/unwired).
+
+### Added
+- Root `CLAUDE.md` with agent build-instructions (maturin workflow,
+  PyO3 0.23-specific gotchas, cell-type table) — carried forward from
+  the old mislabeled `docs/CONTRIBUTING.md` this version's predecessor
+  deleted, corrected for the `pystreamxl` rename.
+
 ## [6.1.0] - 2026-10-05
 
 ### Changed
