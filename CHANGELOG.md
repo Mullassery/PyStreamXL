@@ -8,7 +8,15 @@ releases (v1.0.0 through v5.3.0) predate it and are not reconstructed
 here to avoid fabricating dates/details that weren't tracked at the
 time — see `git log` and GitHub Releases for that history.
 
-## [Unreleased]
+## [6.1.0] - 2026-10-05
+
+### Changed
+- **`pystreamxl.server.StreamXLServer` renamed to `PyStreamXLServer`** to
+  match the project's own naming convention — it was the one class still
+  missing the `Py` prefix that the rest of the codebase (`PyStreamXLDashboard`,
+  the `pystreamxl` package itself) already used post-6.0.0. The old name
+  remains available as a subclass that emits a `DeprecationWarning` and
+  delegates to the new one.
 
 ### Fixed
 - **Real O(1) memory for `read()`/`stream()`** (ROADMAP_HONEST.md gap #10).

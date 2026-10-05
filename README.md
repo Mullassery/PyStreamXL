@@ -159,7 +159,7 @@ What's here and real, backed by the Rust core and covered by the test suite:
 - **Type-aware cells** — strings, numbers, booleans, dates, datetimes, and empty cells round-trip correctly.
 - **Error recovery & validation** — `validate_excel_file()` and `ErrorRecoveryHandler` classify and (optionally) recover from malformed cells instead of hard-failing on the whole file.
 - **Security hardening** — path validation, file-size limits, and ZIP-bomb defenses (entry-size, compression-ratio, and total-decompressed-size limits) enforced before/while a file is opened. CSV export is sanitized against formula-injection (see below).
-- **REST API (optional)** — `pystreamxl.server.StreamXLServer` / `create_flask_app()` wrap the real streaming engine behind HTTP endpoints (`/sources`, `/sources/<id>/query`, `/sources/<id>/export`, ...). Requires `pip install "pystreamxl[server]"`.
+- **REST API (optional)** — `pystreamxl.server.PyStreamXLServer` / `create_flask_app()` wrap the real streaming engine behind HTTP endpoints (`/sources`, `/sources/<id>/query`, `/sources/<id>/export`, ...). Requires `pip install "pystreamxl[server]"`.
 
 What's **not** here, so you don't have to find out the hard way:
 

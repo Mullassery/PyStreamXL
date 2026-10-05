@@ -91,7 +91,7 @@ potentially embedded in services with a real trust boundary (e.g. a
 multi-tenant upload handler). Those are different confinement contracts,
 so the check is available but must be deliberately opted into by callers
 that have an actual base directory to enforce; `pystreamxl.read()`/`write()`
-and the bundled `StreamXLServer` do not pass `base_dir` today. If you're
+and the bundled `PyStreamXLServer` do not pass `base_dir` today. If you're
 embedding this in a service that accepts user-supplied paths, call
 `validate_read_path()`/`validate_write_path()` yourself with `base_dir` set
 to your trust boundary before opening the file.

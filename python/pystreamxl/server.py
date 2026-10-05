@@ -10,6 +10,7 @@ Nothing here returns synthetic/hardcoded data.
 
 import csv
 import io
+import warnings
 from typing import Any, Dict, List, Optional
 
 from . import __version__
@@ -17,7 +18,7 @@ from .api import read, sheets as list_sheet_names
 from .security import SecurityError, sanitize_csv_cell, validate_read_path
 
 
-class StreamXLServer:
+class PyStreamXLServer:
     """REST API server for spreadsheet data workflows.
 
     Sources are registered with a real filesystem path to a ``.xlsx`` file
@@ -205,7 +206,7 @@ class StreamXLServer:
         }
 
 
-def create_flask_app(server: Optional[StreamXLServer] = None):
+def create_flask_app(server: Optional[PyStreamXLServer] = None):
     """Create Flask app for REST API."""
     try:
         from flask import Flask, request, jsonify
@@ -215,7 +216,7 @@ def create_flask_app(server: Optional[StreamXLServer] = None):
         )
 
     app = Flask(__name__)
-    srv = server or StreamXLServer()
+    srv = server or PyStreamXLServer()
 
     @app.route("/health", methods=["GET"])
     def health():
@@ -292,6 +293,19 @@ def run_server(host: str = "0.0.0.0", port: int = 8004):
     """Run the REST API server."""
     app = create_flask_app()
     app.run(host=host, port=port, debug=False)
+
+
+class StreamXLServer(PyStreamXLServer):
+    """Deprecated alias for :class:`PyStreamXLServer`; use that instead."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "StreamXLServer is deprecated and will be removed in a future "
+            "release; use PyStreamXLServer instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
 
 
 if __name__ == "__main__":
