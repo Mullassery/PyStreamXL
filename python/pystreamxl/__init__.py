@@ -71,4 +71,11 @@ __all__ = [
     "ExcelValidationError",
     "validate_excel_file",
 ]
-__version__ = "6.1.1"
+try:
+    from importlib.metadata import version as _pkg_version
+
+    __version__ = _pkg_version("pystreamxl")
+except (
+    Exception
+):  # pragma: no cover - only hit for an uninstalled/editable-without-metadata checkout
+    __version__ = "0.0.0+unknown"
