@@ -5,7 +5,7 @@ from pystreamxl._core import stream_rows_with_metadata as _stream_rows_with_meta
 from pystreamxl._core import write as _write_all
 from pystreamxl._core import sheets as _list_sheets
 from pystreamxl._core import conditional_formats as _conditional_formats
-from pystreamxl._core import PyXlsxWriter as XlsxWriter  # noqa: F401 -- re-exported for api.py
+from pystreamxl._core import PyXlsxWriter as XlsxWriter  # noqa: F401
 
 
 def read_rows(path: str, sheet=None):

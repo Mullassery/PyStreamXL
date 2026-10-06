@@ -7,6 +7,40 @@ on:
     branches: [main]
 
 jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            core
+
+      - name: cargo fmt --check
+        run: cargo fmt --check --manifest-path core/Cargo.toml
+
+      - name: cargo clippy
+        run: cargo clippy --manifest-path core/Cargo.toml --all-targets -- -D warnings
+
+      - name: Install lint tools
+        run: pip install black==24.1.1 ruff==0.2.0
+
+      - name: black --check
+        run: black --check python/ tests/
+
+      - name: ruff check
+        run: ruff check python/ tests/
+
   rust-build:
     name: Rust Build & Test
     runs-on: ubuntu-latest
