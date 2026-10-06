@@ -45,9 +45,13 @@ pip install -e ".[dev]"      # builds the Rust extension via maturin, installs t
 pytest tests/ -v              # Python test suite
 
 cargo test --release --all-features    # Rust unit + integration tests (core + python crates)
-cargo clippy --release --all-features  # currently has pre-existing warnings, not yet gated in CI
-cargo fmt --check                       # currently has pre-existing diffs, not yet gated in CI
+cargo clippy --manifest-path core/Cargo.toml --all-targets -- -D warnings  # enforced in CI
+cargo fmt --check --manifest-path core/Cargo.toml                          # enforced in CI
+black --check python/ tests/            # enforced in CI
+ruff check python/ tests/               # enforced in CI
 ```
+
+All four are run by the `lint` job in `.github/workflows/ci.yml` and by `pre-commit run --all-files` (see `.pre-commit-config.yaml`) — both pinned to the same tool versions so they can't silently diverge.
 
 On macOS, building the Rust workspace directly with `cargo` (rather than through `maturin`/`pip install`) may require:
 
@@ -64,11 +68,17 @@ export RUSTFLAGS="-C link-args=-undefined -C link-args=dynamic_lookup"
 - If you touch `README.md`'s "Honest feature list" or "What's not here" sections, make sure they still describe reality, not aspiration
 - Update `CHANGELOG.md` under `[Unreleased]`
 
-`cargo fmt --check` and `cargo clippy` are not currently enforced in CI (see `ROADMAP_HONEST.md`), so passing them isn't a hard requirement yet, but please don't add new warnings in files you touch.
+`cargo fmt --check`, `cargo clippy -- -D warnings`, `black --check`, and `ruff check` are all enforced in CI's `lint` job (see above) — a PR that fails any of them won't pass CI.
 
 ## Known gaps if you're looking for something to work on
 
-See the "What's not here" section of `README.md` and `ROADMAP_HONEST.md` for the current, honest list of missing features and technical debt (dead Rust modules, single-platform wheel, no CI lint/fmt gate, etc.).
+See the "What's not here" section of `README.md` and `ROADMAP_HONEST.md` for the current, honest list of missing features and technical debt (dead Rust modules, single-platform wheel, etc.) — the lint/fmt CI gate mentioned there is now in place. Full tracked backlog: [Mullassery/RepoIssues](https://github.com/Mullassery/RepoIssues), filtered to the `repo:PyStreamXL` label, with [#52](https://github.com/Mullassery/RepoIssues/issues/52) as the master index.
+
+**Maintainer-only action items** (need repo/PyPI-project settings access this audit process doesn't have):
+
+- **PyPI Trusted Publisher (OIDC) is not configured** for this project ([RepoIssues #46](https://github.com/Mullassery/RepoIssues/issues/46)). `.github/workflows/release.yml` is structurally correct (builds wheels for Linux/macOS/Windows, verified with `actionlint`) but its `publish` job will fail on the first real tag push until OIDC trust is set up at https://pypi.org/manage/project/pystreamxl/settings/publishing/ for this repo. The workflow has never been fired end-to-end with a real tag.
+- **1,180 lines of dead Rust code** (`collaboration_detection.rs`, `incremental_recalculation.rs`, `cross_sheet_analysis.rs` — the v4.0.0/v5.0.0 "headline features" that were never wired into the Python API) need a finish-or-delete decision ([RepoIssues #48](https://github.com/Mullassery/RepoIssues/issues/48)).
+- **The "5 - Production/Stable" PyPI classifier** may be more confident than the current state (no server auth, some dependency bumps blocked, etc.) warrants — a maintainer call, not a bug ([RepoIssues #51](https://github.com/Mullassery/RepoIssues/issues/51)).
 
 ## License
 

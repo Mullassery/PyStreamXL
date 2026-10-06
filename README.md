@@ -159,7 +159,7 @@ What's here and real, backed by the Rust core and covered by the test suite:
 - **Type-aware cells** — strings, numbers, booleans, dates, datetimes, and empty cells round-trip correctly.
 - **Error recovery & validation** — `validate_excel_file()` and `ErrorRecoveryHandler` classify and (optionally) recover from malformed cells instead of hard-failing on the whole file.
 - **Security hardening** — path validation, file-size limits, and ZIP-bomb defenses (entry-size, compression-ratio, and total-decompressed-size limits) enforced before/while a file is opened. CSV export is sanitized against formula-injection (see below).
-- **REST API (optional)** — `pystreamxl.server.PyStreamXLServer` / `create_flask_app()` wrap the real streaming engine behind HTTP endpoints (`/sources`, `/sources/<id>/query`, `/sources/<id>/export`, ...). Requires `pip install "pystreamxl[server]"`.
+- **REST API (optional)** — `pystreamxl.server.PyStreamXLServer` / `create_flask_app()` wrap the real streaming engine behind HTTP endpoints (`/sources`, `/sources/<id>/query`, `/sources/<id>/export`, ...). Requires `pip install "pystreamxl[server]"`. **Has no authentication — see Security below before exposing it to any network you don't fully trust.**
 
 What's **not** here, so you don't have to find out the hard way:
 
@@ -167,6 +167,7 @@ What's **not** here, so you don't have to find out the hard way:
 - No pandas/Parquet/Arrow export built in. Convert `read()`'s output yourself, or open an issue if this matters to you.
 - No formula *evaluation* — formula text is extracted and classified, not recalculated.
 - The `pystreamxl dashboard` CLI command renders sample data, not live telemetry — every mode (bare, `--static`, `--alerts`, `--recommendations`, `--export`) shows the same explicit "SAMPLE DATA — not live" warning.
+- **No authentication on the REST server** — `PyStreamXLServer`/`create_flask_app()` have no login, API key, or token check of any kind. Anyone who can reach the port can read and query every loaded source. Do not expose it beyond `localhost`/a trusted private network without putting your own auth layer (reverse proxy, API gateway, etc.) in front of it. Tracked in [RepoIssues #45](https://github.com/Mullassery/RepoIssues/issues/45) pending a decision on which auth scheme to add natively.
 
 ## Security
 
@@ -194,6 +195,8 @@ try:
 except SecurityError as e:
     print(f"Security violation: {e}")
 ```
+
+**Known gap: the optional REST server has no authentication.** `PyStreamXLServer`/`create_flask_app()` (see "REST API (optional)" above) accept requests from anyone who can reach the port — there is no API key, token, or login of any kind today. Keep it on `localhost` or behind your own auth layer (reverse proxy, API gateway) if you deploy it. Tracked in [RepoIssues #45](https://github.com/Mullassery/RepoIssues/issues/45).
 
 Found a security issue? See [SECURITY.md](SECURITY.md).
 
