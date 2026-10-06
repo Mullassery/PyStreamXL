@@ -33,7 +33,7 @@ fn wide_row(i: usize) -> Vec<WriteCell> {
     for j in 0..8 {
         cells.push(WriteCell::Num((i * 10 + j) as f64));
     }
-    cells.push(WriteCell::Bool(i % 2 == 0));
+    cells.push(WriteCell::Bool(i.is_multiple_of(2)));
     cells
 }
 

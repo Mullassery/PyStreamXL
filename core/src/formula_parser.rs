@@ -4,6 +4,7 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use std::fmt;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CellReference {
@@ -23,9 +24,13 @@ impl CellReference {
         }
     }
 
-    pub fn to_string(&self) -> String {
+}
+
+impl fmt::Display for CellReference {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let prefix = if self.absolute { "$" } else { "" };
-        format!(
+        write!(
+            f,
             "{}{}!{}{}{}",
             prefix, self.sheet, prefix, self.column, self.row
         )
@@ -155,6 +160,12 @@ pub struct ReferenceMapper {
     reverse_dependencies: HashMap<String, Vec<String>>,
 }
 
+impl Default for ReferenceMapper {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ReferenceMapper {
     pub fn new() -> Self {
         ReferenceMapper {
@@ -177,7 +188,7 @@ impl ReferenceMapper {
         for ref_id in refs {
             self.reverse_dependencies
                 .entry(ref_id)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(cell_id.clone());
         }
     }

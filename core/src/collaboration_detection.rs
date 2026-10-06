@@ -86,6 +86,12 @@ struct CellInfo {
     dependents: Vec<String>,
 }
 
+impl Default for CollaborationDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CollaborationDetector {
     pub fn new() -> Self {
         CollaborationDetector {
@@ -127,7 +133,7 @@ impl CollaborationDetector {
             }
 
             // Find all cells connected to this one
-            let mut group = self._find_connected_component(cell_id, &mut visited);
+            let group = self._find_connected_component(cell_id, &mut visited);
 
             if group.len() >= 2 {
                 let group_id = format!("group_{}", groups.len());

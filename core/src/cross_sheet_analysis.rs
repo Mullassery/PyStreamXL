@@ -3,7 +3,7 @@
 /// Track formula dependencies across multiple sheets, detect redundant calculations,
 /// and suggest consolidation and optimization opportunities.
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CrossSheetDependency {
@@ -77,6 +77,12 @@ pub struct CrossSheetAnalyzer {
     redundancies: Vec<RedundantCalculation>,
 }
 
+impl Default for CrossSheetAnalyzer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CrossSheetAnalyzer {
     pub fn new() -> Self {
         CrossSheetAnalyzer {
@@ -93,7 +99,7 @@ impl CrossSheetAnalyzer {
     pub fn add_formula(&mut self, sheet: String, cell: String, formula: String) {
         self.sheets
             .entry(sheet)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push((cell, formula));
     }
 
@@ -134,7 +140,7 @@ impl CrossSheetAnalyzer {
             for (cell, formula) in formulas {
                 formula_map
                     .entry(formula.clone())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push((sheet.clone(), cell.clone()));
             }
         }

@@ -254,6 +254,12 @@ pub struct RecalcOptimizer {
     profiles: Vec<RecalcProfile>,
 }
 
+impl Default for RecalcOptimizer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RecalcOptimizer {
     pub fn new() -> Self {
         RecalcOptimizer {
@@ -278,7 +284,7 @@ impl RecalcOptimizer {
 
     pub fn get_slowest_operations(&self, n: usize) -> Vec<RecalcProfile> {
         let mut sorted = self.profiles.clone();
-        sorted.sort_by(|a, b| b.recalc_time_ms.cmp(&a.recalc_time_ms));
+        sorted.sort_by_key(|p| std::cmp::Reverse(p.recalc_time_ms));
         sorted.into_iter().take(n).collect()
     }
 
