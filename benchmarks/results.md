@@ -1,7 +1,7 @@
 # Benchmark Results
 
-**Environment:** Apple Silicon (aarch64-apple-darwin), Python 3.13, Rust 1.96, macOS  
-**File contents:** 10 columns — ID, Name, Value, Score, Category, Flag, Amount, Date, Code, Notes  
+**Environment:** Apple Silicon (aarch64-apple-darwin), Python 3.13, Rust 1.96, macOS
+**File contents:** 10 columns — ID, Name, Value, Score, Category, Flag, Amount, Date, Code, Notes
 **Methods:**
 - `pystreamxl` — `pystreamxl.read()` Rust streaming engine
 - `openpyxl (read_only)` — `load_workbook(read_only=True)` + `iter_rows()`

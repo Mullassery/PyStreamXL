@@ -10,7 +10,7 @@ Provides:
 """
 
 from enum import Enum
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 import logging
 
@@ -19,13 +19,15 @@ logger = logging.getLogger(__name__)
 
 class ErrorSeverity(Enum):
     """Severity levels for parsing errors."""
-    FATAL = "fatal"           # Must stop reading
+
+    FATAL = "fatal"  # Must stop reading
     RECOVERABLE = "recoverable"  # Can skip cell/row and continue
-    WARNING = "warning"       # Continue but flag for attention
+    WARNING = "warning"  # Continue but flag for attention
 
 
 class ErrorCategory(Enum):
     """Categories of errors."""
+
     ZIP_CORRUPTION = "zip_corruption"
     MISSING_FILE = "missing_file"
     XML_PARSING = "xml_parsing"
@@ -40,15 +42,17 @@ class ErrorCategory(Enum):
 
 class RecoveryMode(Enum):
     """Strategies for handling errors during reading."""
-    FAIL_FAST = "fail_fast"          # Stop on first error
-    SKIP_ROW = "skip_row"            # Skip problematic row, continue
-    SKIP_SHEET = "skip_sheet"        # Skip problematic sheet, continue
+
+    FAIL_FAST = "fail_fast"  # Stop on first error
+    SKIP_ROW = "skip_row"  # Skip problematic row, continue
+    SKIP_SHEET = "skip_sheet"  # Skip problematic sheet, continue
     SKIP_NON_FATAL = "skip_non_fatal"  # Skip non-fatal errors, keep data
 
 
 @dataclass
 class CellError:
     """Error encountered in a specific cell."""
+
     category: ErrorCategory
     message: str
     cell_ref: Optional[str] = None
@@ -85,6 +89,7 @@ class CellError:
 @dataclass
 class ValidationReport:
     """Report of validation issues in a workbook."""
+
     file_path: str
     sheet_name: str
     total_cells: int = 0
@@ -272,31 +277,39 @@ class ErrorRecoveryHandler:
         suggestions = []
 
         if error.category == ErrorCategory.FORMULA_SYNTAX:
-            suggestions.extend([
-                "Open file in Excel to auto-correct formula",
-                "Check formula syntax manually",
-                "Use FormulaAnalyzer to validate formula",
-            ])
+            suggestions.extend(
+                [
+                    "Open file in Excel to auto-correct formula",
+                    "Check formula syntax manually",
+                    "Use FormulaAnalyzer to validate formula",
+                ]
+            )
 
         elif error.category == ErrorCategory.CIRCULAR_REFERENCE:
-            suggestions.extend([
-                "Identify and remove circular reference",
-                "Use INDIRECT() or other workarounds",
-                "Restructure calculation order",
-            ])
+            suggestions.extend(
+                [
+                    "Identify and remove circular reference",
+                    "Use INDIRECT() or other workarounds",
+                    "Restructure calculation order",
+                ]
+            )
 
         elif error.category == ErrorCategory.INVALID_STYLE:
-            suggestions.extend([
-                "Re-save file from Excel to rebuild styles",
-                "Remove custom styles and reapply",
-            ])
+            suggestions.extend(
+                [
+                    "Re-save file from Excel to rebuild styles",
+                    "Remove custom styles and reapply",
+                ]
+            )
 
         elif error.category == ErrorCategory.ZIP_CORRUPTION:
-            suggestions.extend([
-                "Try to open and re-save file in Excel",
-                "Use recovery tools if available",
-                "Restore from backup",
-            ])
+            suggestions.extend(
+                [
+                    "Try to open and re-save file in Excel",
+                    "Use recovery tools if available",
+                    "Restore from backup",
+                ]
+            )
 
         return suggestions
 
@@ -321,9 +334,7 @@ def validate_excel_file(
 
     try:
         # Try to read file with metadata to detect errors
-        rows = list(
-            pystreamxl.read(file_path, with_formulas=True)
-        )
+        rows = list(pystreamxl.read(file_path, with_formulas=True))
         report.total_cells = sum(len(row) for row in rows)
 
         # Check for common issues

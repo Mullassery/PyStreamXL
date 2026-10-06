@@ -7,7 +7,7 @@ from .core import (
     write_rows,
     XlsxWriter as _XlsxWriter,
 )
-from .security import validate_read_path, validate_write_path, SecurityError
+from .security import validate_read_path, validate_write_path
 
 
 def read(
@@ -60,7 +60,10 @@ def read(
         if i == 0:
             # Extract header values for column indexing
             if with_formulas:
-                header_values = [cell.get("value") if isinstance(cell, dict) else cell for cell in row]
+                header_values = [
+                    cell.get("value") if isinstance(cell, dict) else cell
+                    for cell in row
+                ]
             else:
                 header_values = row
 
@@ -70,16 +73,24 @@ def read(
                     name_to_pos = {h: j for j, h in enumerate(header)}
                     col_idx = [name_to_pos[c] for c in columns if c in name_to_pos]
                 else:
-                    col_idx = [c for c in columns if isinstance(c, int) and c < len(header)]
+                    col_idx = [
+                        c for c in columns if isinstance(c, int) and c < len(header)
+                    ]
             if not as_dict:
                 # Yield the (possibly filtered) header row
                 yield [row[j] for j in col_idx] if col_idx is not None else row
             continue
 
-        filtered = [row[j] for j in col_idx if j < len(row)] if col_idx is not None else row
+        filtered = (
+            [row[j] for j in col_idx if j < len(row)] if col_idx is not None else row
+        )
 
         if as_dict:
-            keys = [header[j] for j in col_idx if j < len(header)] if col_idx is not None else header
+            keys = (
+                [header[j] for j in col_idx if j < len(header)]
+                if col_idx is not None
+                else header
+            )
             yield dict(zip(keys, filtered))
         else:
             yield filtered
@@ -197,12 +208,13 @@ def read_all(
                   keyed by the header row (same semantics as read(as_dict=True)).
     """
     return {
-        name: list(read(path, sheet=name, as_dict=as_dict))
-        for name in sheets(path)
+        name: list(read(path, sheet=name, as_dict=as_dict)) for name in sheets(path)
     }
 
 
-def append(path: str, rows: Iterable[Iterable[Any]], sheet: Optional[str] = None) -> None:
+def append(
+    path: str, rows: Iterable[Iterable[Any]], sheet: Optional[str] = None
+) -> None:
     """
     Append rows to a sheet in an existing Excel (.xlsx) file.
 

@@ -18,7 +18,6 @@ import pystreamxl
 from openpyxl import Workbook
 from openpyxl.formatting.rule import CellIsRule, Rule
 from openpyxl.styles import Font, PatternFill
-from openpyxl.styles.differential import DifferentialStyle
 
 
 @pytest.fixture
@@ -36,7 +35,9 @@ def workbook_with_conditional_formatting():
         operator="greaterThan",
         formula=["100"],
         font=Font(color="FFFF0000", bold=True),
-        fill=PatternFill(start_color="FFFFFF00", end_color="FFFFFF00", fill_type="solid"),
+        fill=PatternFill(
+            start_color="FFFFFF00", end_color="FFFFFF00", fill_type="solid"
+        ),
     )
     ws.conditional_formatting.add("A1:A10", red_bold)
 
@@ -95,7 +96,9 @@ def test_all_rules_captured(workbook_with_conditional_formatting):
     assert {r["sqref"] for r in rules} == {"A1:A10", "B1:B10", "C1:C10"}
 
 
-def test_conditional_formats_respects_sheet_argument(workbook_with_conditional_formatting):
+def test_conditional_formats_respects_sheet_argument(
+    workbook_with_conditional_formatting,
+):
     rules_by_name = pystreamxl.conditional_formats(
         workbook_with_conditional_formatting, sheet="Data"
     )

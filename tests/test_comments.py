@@ -24,27 +24,27 @@ def workbook_with_comments():
     ws.title = "Data"
 
     # Add headers
-    ws['A1'] = "Name"
-    ws['B1'] = "Salary"
-    ws['C1'] = "Total"
+    ws["A1"] = "Name"
+    ws["B1"] = "Salary"
+    ws["C1"] = "Total"
 
     # Add data with comments
-    ws['A2'] = "Alice"
-    ws['A2'].comment = Comment("Employee name", "System")
+    ws["A2"] = "Alice"
+    ws["A2"].comment = Comment("Employee name", "System")
 
-    ws['B2'] = 50000
-    ws['B2'].comment = Comment("Annual salary in USD", "HR")
+    ws["B2"] = 50000
+    ws["B2"].comment = Comment("Annual salary in USD", "HR")
 
-    ws['C2'] = 55000
-    ws['C2'].comment = Comment("Salary + bonus", "Finance")
+    ws["C2"] = 55000
+    ws["C2"].comment = Comment("Salary + bonus", "Finance")
 
-    ws['A3'] = "Bob"
-    ws['A3'].comment = Comment("Another employee", "System")
+    ws["A3"] = "Bob"
+    ws["A3"].comment = Comment("Another employee", "System")
 
-    ws['B3'] = 60000
+    ws["B3"] = 60000
     # No comment on B3
 
-    ws['C3'] = 67500
+    ws["C3"] = 67500
 
     with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
         wb.save(tmp.name)
@@ -64,6 +64,7 @@ def test_read_with_comments_no_formulas(workbook_with_comments):
     assert "comment_author" in row1[0]
     # Note: comment may be None if openpyxl doesn't properly serialize comments
     # This test just verifies the fields exist
+
 
 def test_read_comments_structure(workbook_with_comments):
     """Test that comments are properly formatted in metadata."""
@@ -123,10 +124,7 @@ def test_comments_with_column_filtering(workbook_with_comments):
     columns = ["Name", "Salary"]
     rows = list(
         pystreamxl.read(
-            workbook_with_comments,
-            as_dict=True,
-            columns=columns,
-            with_formulas=True
+            workbook_with_comments, as_dict=True, columns=columns, with_formulas=True
         )
     )
 

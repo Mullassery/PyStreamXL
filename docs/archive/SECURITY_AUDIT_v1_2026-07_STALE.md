@@ -1,6 +1,6 @@
 # StreamXL Security Audit
 
-**Last Audited:** July 2026  
+**Last Audited:** July 2026
 **Status:** Minimal security concerns; standard practices
 
 ---
@@ -8,8 +8,8 @@
 ## 🟡 HIGH Priority Issues
 
 ### 1. No Dependency Version Pinning
-**Severity:** HIGH  
-**Finding:** 0 pinned, no deps listed  
+**Severity:** HIGH
+**Finding:** 0 pinned, no deps listed
 
 **Timeline:** v1.0.1 (Q3 2026)
 
@@ -18,8 +18,8 @@
 ## 🔵 MEDIUM Priority
 
 ### 2. No Input Validation on File Paths
-**Risk:** Path traversal if writing to user-specified paths  
-**Severity:** MEDIUM  
+**Risk:** Path traversal if writing to user-specified paths
+**Severity:** MEDIUM
 
 **Recommendation:**
 ```python
@@ -37,8 +37,8 @@ def validate_write_path(path: str) -> Path:
 ---
 
 ### 3. No File Corruption Detection
-**Risk:** Partial writes could corrupt Excel files  
-**Severity:** MEDIUM  
+**Risk:** Partial writes could corrupt Excel files
+**Severity:** MEDIUM
 
 **Recommendation:**
 - Verify file integrity after write

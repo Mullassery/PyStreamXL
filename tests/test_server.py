@@ -9,6 +9,7 @@ implementation of this module returned hardcoded/fake data (e.g. always
 the actual source file — these tests assert on values that can only be
 correct if real data is being read.
 """
+
 import json
 
 import pytest
@@ -52,7 +53,9 @@ class TestPyStreamXLServerReal:
 
     def test_connect_source_nonexistent_file_is_error(self, tmp_path):
         server = PyStreamXLServer()
-        result = server.connect_source("src1", {"path": str(tmp_path / "does_not_exist.xlsx")})
+        result = server.connect_source(
+            "src1", {"path": str(tmp_path / "does_not_exist.xlsx")}
+        )
         assert result["status"] == "error"
         assert "src1" not in server.sources
 
@@ -91,7 +94,9 @@ class TestPyStreamXLServerReal:
         assert result["rows_returned"] == 2
         assert result["rows"] == [["Name", "Age", "Score"], ["Alice", 30.0, 95.5]]
 
-    def test_execute_query_unknown_sheet_falls_back_to_first_real_sheet(self, two_sheet_xlsx):
+    def test_execute_query_unknown_sheet_falls_back_to_first_real_sheet(
+        self, two_sheet_xlsx
+    ):
         server = PyStreamXLServer()
         server.connect_source("src1", {"path": two_sheet_xlsx})
 
@@ -120,10 +125,13 @@ class TestPyStreamXLServerReal:
     def test_export_data_csv_matches_real_content_and_is_sanitized(self, tmp_path):
         # Build a source containing a formula-injection-style value.
         path = str(tmp_path / "malicious.xlsx")
-        pystreamxl.write(path, [
-            ["Name", "Note"],
-            ["Alice", "=cmd|'/c calc'!A0"],
-        ])
+        pystreamxl.write(
+            path,
+            [
+                ["Name", "Note"],
+                ["Alice", "=cmd|'/c calc'!A0"],
+            ],
+        )
         server = PyStreamXLServer()
         server.connect_source("src1", {"path": path})
         sheet_name = pystreamxl.sheets(path)[0]
@@ -220,7 +228,7 @@ class TestFlaskAppReal:
 
         # Query real rows.
         resp = client.post(
-            f"/sources/s1/query",
+            "/sources/s1/query",
             data=json.dumps({"query": first_sheet, "limit": 100}),
             content_type="application/json",
         )
@@ -231,7 +239,7 @@ class TestFlaskAppReal:
 
         # Export real rows as CSV.
         resp = client.post(
-            f"/sources/s1/export",
+            "/sources/s1/export",
             data=json.dumps({"sheet": first_sheet, "format": "csv"}),
             content_type="application/json",
         )

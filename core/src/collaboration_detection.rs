@@ -80,7 +80,12 @@ pub struct CollaborationDetector {
 
 #[derive(Debug, Clone)]
 struct CellInfo {
+    // cell_id/formula are parsed for struct completeness but not yet read by any
+    // consumer. Part of the collaboration_detection module tracked as dead code
+    // pending a finish-or-delete decision -- see RepoIssues #48.
+    #[allow(dead_code)]
     cell_id: String,
+    #[allow(dead_code)]
     formula: String,
     dependencies: Vec<String>,
     dependents: Vec<String>,

@@ -3,6 +3,7 @@ import pystreamxl
 
 # ── sheets() listing ──────────────────────────────────────────────────────────
 
+
 def test_sheets_single(tmp_path):
     path = str(tmp_path / "s.xlsx")
     pystreamxl.write(path, [["a"]])
@@ -22,6 +23,7 @@ def test_sheets_multi(tmp_path):
 
 
 # ── multi-sheet write + read ──────────────────────────────────────────────────
+
 
 def test_multisheet_write_read_first(tmp_path):
     path = str(tmp_path / "ms.xlsx")
@@ -94,13 +96,17 @@ def test_multisheet_shared_strings_across_sheets(tmp_path):
 
 # ── as_dict ───────────────────────────────────────────────────────────────────
 
+
 def test_as_dict_basic(tmp_path):
     path = str(tmp_path / "d.xlsx")
-    pystreamxl.write(path, [
-        ["Name", "Age", "Score"],
-        ["Alice", 30.0, 95.5],
-        ["Bob", 25.0, 88.0],
-    ])
+    pystreamxl.write(
+        path,
+        [
+            ["Name", "Age", "Score"],
+            ["Alice", 30.0, 95.5],
+            ["Bob", 25.0, 88.0],
+        ],
+    )
     result = list(pystreamxl.read(path, as_dict=True))
     assert len(result) == 2
     assert result[0] == {"Name": "Alice", "Age": 30.0, "Score": 95.5}
@@ -124,13 +130,17 @@ def test_as_dict_empty_data(tmp_path):
 
 # ── column filtering ──────────────────────────────────────────────────────────
 
+
 def test_columns_by_index(tmp_path):
     path = str(tmp_path / "c.xlsx")
-    pystreamxl.write(path, [
-        ["A", "B", "C"],
-        [1.0, 2.0, 3.0],
-        [4.0, 5.0, 6.0],
-    ])
+    pystreamxl.write(
+        path,
+        [
+            ["A", "B", "C"],
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+        ],
+    )
     result = list(pystreamxl.read(path, columns=[0, 2]))
     assert result[0] == ["A", "C"]
     assert result[1] == [1.0, 3.0]
@@ -138,11 +148,14 @@ def test_columns_by_index(tmp_path):
 
 def test_columns_by_name_with_as_dict(tmp_path):
     path = str(tmp_path / "c.xlsx")
-    pystreamxl.write(path, [
-        ["Name", "Age", "City"],
-        ["Alice", 30.0, "London"],
-        ["Bob", 25.0, "Paris"],
-    ])
+    pystreamxl.write(
+        path,
+        [
+            ["Name", "Age", "City"],
+            ["Alice", 30.0, "London"],
+            ["Bob", 25.0, "Paris"],
+        ],
+    )
     result = list(pystreamxl.read(path, as_dict=True, columns=["Name", "City"]))
     assert result[0] == {"Name": "Alice", "City": "London"}
     assert "Age" not in result[0]
@@ -150,10 +163,13 @@ def test_columns_by_name_with_as_dict(tmp_path):
 
 def test_columns_by_name_without_as_dict(tmp_path):
     path = str(tmp_path / "c.xlsx")
-    pystreamxl.write(path, [
-        ["Name", "Age", "City"],
-        ["Alice", 30.0, "London"],
-    ])
+    pystreamxl.write(
+        path,
+        [
+            ["Name", "Age", "City"],
+            ["Alice", 30.0, "London"],
+        ],
+    )
     result = list(pystreamxl.read(path, columns=["Name", "City"]))
-    assert result[0] == ["Name", "City"]   # filtered header
+    assert result[0] == ["Name", "City"]  # filtered header
     assert result[1] == ["Alice", "London"]

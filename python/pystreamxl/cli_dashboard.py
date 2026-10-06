@@ -1,9 +1,11 @@
 """PyStreamXL CLI Dashboard - Formula extraction monitoring"""
 
-import sys, platform
-from datetime import datetime
-from typing import Optional, Dict, Any
+import importlib.util
+import platform
+import sys
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 
 @dataclass
@@ -18,27 +20,19 @@ class DashboardMetrics:
 def get_dashboard_impl(product_name: str):
     platform_name = platform.system()
     if platform_name == "Darwin":
-        try:
-            from rich.console import Console
+        if importlib.util.find_spec("rich.console") is not None:
             return RichDashboard(product_name)
-        except ImportError:
-            return SimpleDashboard(product_name)
+        return SimpleDashboard(product_name)
     elif platform_name == "Linux":
-        try:
-            from textual.app import App
+        if importlib.util.find_spec("textual.app") is not None:
             return TextualDashboard(product_name)
-        except ImportError:
-            try:
-                from rich.console import Console
-                return RichDashboard(product_name)
-            except ImportError:
-                return SimpleDashboard(product_name)
-    else:
-        try:
-            from rich.console import Console
+        if importlib.util.find_spec("rich.console") is not None:
             return RichDashboard(product_name)
-        except ImportError:
-            return SimpleDashboard(product_name)
+        return SimpleDashboard(product_name)
+    else:
+        if importlib.util.find_spec("rich.console") is not None:
+            return RichDashboard(product_name)
+        return SimpleDashboard(product_name)
 
 
 class SimpleDashboard:
@@ -58,7 +52,9 @@ class SimpleDashboard:
         if data.alerts:
             print("\n⚠️  ALERTS:")
             for alert in data.alerts:
-                print(f"  [{alert.get('level', '').upper()}] {alert.get('message', '')}")
+                print(
+                    f"  [{alert.get('level', '').upper()}] {alert.get('message', '')}"
+                )
         if data.recommendations:
             print("\n💡 RECOMMENDATIONS:")
             for rec in data.recommendations:
@@ -71,6 +67,7 @@ class RichDashboard:
         self.product_name = product_name
         try:
             from rich.console import Console
+
             self.console = Console()
         except ImportError:
             print("Error: Rich required. Install with: pip install rich")
@@ -78,6 +75,7 @@ class RichDashboard:
 
     def render(self, data: DashboardMetrics) -> None:
         from rich.table import Table
+
         self.console.print(f"\n[bold cyan]{'='*80}[/bold cyan]")
         self.console.print(f"[bold cyan]✓ {data.title}[/bold cyan]")
         self.console.print(f"[dim cyan]{data.timestamp}[/dim cyan]")
@@ -97,23 +95,22 @@ class RichDashboard:
         if data.alerts:
             self.console.print("\n[bold red]⚠️  ALERTS[/bold red]")
             for alert in data.alerts:
-                self.console.print(f"  [{alert.get('level', 'info').upper()}] {alert.get('message', '')}")
+                self.console.print(
+                    f"  [{alert.get('level', 'info').upper()}] {alert.get('message', '')}"
+                )
         if data.recommendations:
             self.console.print("\n[bold yellow]💡 RECOMMENDATIONS[/bold yellow]")
             for rec in data.recommendations:
-                self.console.print(f"  [{rec.get('type', '').upper()}] {rec.get('message', '')}")
+                self.console.print(
+                    f"  [{rec.get('type', '').upper()}] {rec.get('message', '')}"
+                )
         self.console.print(f"\n[bold cyan]{'='*80}[/bold cyan]\n")
 
 
 class TextualDashboard:
     def __init__(self, product_name: str):
         self.product_name = product_name
-        self.has_textual = False
-        try:
-            from textual.app import App
-            self.has_textual = True
-        except ImportError:
-            pass
+        self.has_textual = importlib.util.find_spec("textual.app") is not None
 
     def render(self, data: DashboardMetrics) -> None:
         RichDashboard(self.product_name).render(data)
@@ -172,12 +169,21 @@ class PyStreamXLDashboard:
                     "message": "This dashboard shows SAMPLE data — no live telemetry is connected.",
                 },
                 {"level": "info", "message": "Formula extraction running smoothly"},
-                {"level": "warning", "message": "3 files failed to parse (complex formulas)"},
+                {
+                    "level": "warning",
+                    "message": "3 files failed to parse (complex formulas)",
+                },
             ],
             [
-                {"type": "performance", "message": "Consider GPU acceleration for complex formulas"},
-                {"type": "quality", "message": "234 broken references detected - review mapping"},
-            ]
+                {
+                    "type": "performance",
+                    "message": "Consider GPU acceleration for complex formulas",
+                },
+                {
+                    "type": "quality",
+                    "message": "234 broken references detected - review mapping",
+                },
+            ],
         )
 
     def run_dashboard(self, interactive: bool = True) -> None:
@@ -207,6 +213,7 @@ class PyStreamXLDashboard:
 
     def export_json(self, output_file: str) -> None:
         import json
+
         metrics = self.get_mock_metrics()
         data = {
             "timestamp": metrics.timestamp,
@@ -215,6 +222,6 @@ class PyStreamXLDashboard:
             "alerts": metrics.alerts,
             "recommendations": metrics.recommendations,
         }
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             json.dump(data, f, indent=2)
         print(f"✓ Metrics exported to {output_file}")

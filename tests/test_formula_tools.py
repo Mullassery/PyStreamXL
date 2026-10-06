@@ -54,12 +54,16 @@ class TestFormulaReferenceMapper:
 
     def test_map_cell_coordinates_simple(self):
         """Map cell coordinates with simple offset."""
-        result = FormulaReferenceMapper.map_cell_coordinates("=A1", row_offset=1, col_offset=1)
+        result = FormulaReferenceMapper.map_cell_coordinates(
+            "=A1", row_offset=1, col_offset=1
+        )
         assert result == "=B2"
 
     def test_map_cell_coordinates_multiple_cells(self):
         """Map multiple cell references."""
-        result = FormulaReferenceMapper.map_cell_coordinates("=A1+B2", row_offset=1, col_offset=1)
+        result = FormulaReferenceMapper.map_cell_coordinates(
+            "=A1+B2", row_offset=1, col_offset=1
+        )
         assert result == "=B2+C3"
 
     def test_map_cell_coordinates_preserve_absolute_row(self):
@@ -85,7 +89,9 @@ class TestFormulaReferenceMapper:
 
     def test_map_cell_coordinates_negative_offset(self):
         """Map with negative offsets."""
-        result = FormulaReferenceMapper.map_cell_coordinates("=C3", row_offset=-1, col_offset=-1)
+        result = FormulaReferenceMapper.map_cell_coordinates(
+            "=C3", row_offset=-1, col_offset=-1
+        )
         assert result == "=B2"
 
     def test_map_cell_coordinates_no_offset(self):
@@ -162,7 +168,11 @@ class TestFormulaSerializer:
             ],
             [
                 {"value": "Bob", "formula": None, "formula_type": None},
-                {"value": None, "formula": "AVERAGE(A1:A10)", "formula_type": "average"},
+                {
+                    "value": None,
+                    "formula": "AVERAGE(A1:A10)",
+                    "formula_type": "average",
+                },
             ],
         ]
 
@@ -241,8 +251,20 @@ class TestFormulaSerializer:
             # Formula text (no leading '=' — matches internal representation)
             # crafted to start with each trigger character.
             [{"value": None, "formula": "+cmd|'/c calc'!A0", "formula_type": "custom"}],
-            [{"value": None, "formula": "-2+3+cmd|'/c calc'!A0", "formula_type": "custom"}],
-            [{"value": None, "formula": "@SUM(1+1)*cmd|'/c calc'!A0", "formula_type": "custom"}],
+            [
+                {
+                    "value": None,
+                    "formula": "-2+3+cmd|'/c calc'!A0",
+                    "formula_type": "custom",
+                }
+            ],
+            [
+                {
+                    "value": None,
+                    "formula": "@SUM(1+1)*cmd|'/c calc'!A0",
+                    "formula_type": "custom",
+                }
+            ],
             # A computed value that itself is an injection payload.
             [
                 {

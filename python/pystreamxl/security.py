@@ -16,6 +16,7 @@ MAX_COMPRESSION_RATIO = 30.0  # Max 30:1 compression (ZIP bomb threshold)
 
 class SecurityError(ValueError):
     """Raised when security validation fails."""
+
     pass
 
 
@@ -52,7 +53,7 @@ def validate_xlsx_path(
     path = Path(path).resolve()
 
     # Ensure it's an Excel file
-    if path.suffix.lower() not in ['.xlsx', '.xls']:
+    if path.suffix.lower() not in [".xlsx", ".xls"]:
         raise SecurityError(f"Must be Excel file (.xlsx or .xls), got: {path.suffix}")
 
     if base_dir is not None:

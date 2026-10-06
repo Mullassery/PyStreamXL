@@ -306,16 +306,16 @@ in v5.3.0 (see the "Write-Side Memory & Size Limits" section above).
 
 ## FAQ
 
-**Q: Can I increase the limits?**  
+**Q: Can I increase the limits?**
 A: Open an issue with business justification.
 
-**Q: Why 512 MB?**  
+**Q: Why 512 MB?**
 A: Most Excel files are < 50 MB. 512 MB is safe margin.
 
-**Q: Will legitimate files be rejected?**  
+**Q: Will legitimate files be rejected?**
 A: Extremely unlikely. If rejected, file is probably malicious.
 
-**Q: What if I need to process larger files?**  
+**Q: What if I need to process larger files?**
 A: Split into smaller files, or open an issue describing your use case.
 
 ---

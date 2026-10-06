@@ -11,6 +11,7 @@ def test_is_iterator(tmp_xlsx):
 def test_memory_constant(tmp_large_xlsx):
     """Rows should be yielded one at a time — no full-file load."""
     import tracemalloc
+
     tracemalloc.start()
     snapshot_before = tracemalloc.take_snapshot()
 
@@ -86,7 +87,10 @@ def test_streaming_and_eager_apis_return_identical_data(tmp_xlsx):
 
 
 def test_streaming_with_formulas_matches_eager(tmp_xlsx):
-    from pystreamxl.core import read_rows_with_metadata, read_rows_with_metadata_all_at_once
+    from pystreamxl.core import (
+        read_rows_with_metadata,
+        read_rows_with_metadata_all_at_once,
+    )
 
     streamed = list(read_rows_with_metadata(tmp_xlsx))
     eager = list(read_rows_with_metadata_all_at_once(tmp_xlsx))

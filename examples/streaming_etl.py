@@ -6,6 +6,7 @@ formula by Excel/LibreOffice/Google Sheets if written to CSV verbatim and
 reopened later (CSV/formula-injection). We neutralize each cell with
 pystreamxl.security.sanitize_csv_cell() before writing it out.
 """
+
 import csv
 import pystreamxl
 from pystreamxl.security import sanitize_csv_cell

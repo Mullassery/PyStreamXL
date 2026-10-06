@@ -1,4 +1,5 @@
 """Measure peak memory while streaming a file."""
+
 import tracemalloc
 import pystreamxl
 import sys

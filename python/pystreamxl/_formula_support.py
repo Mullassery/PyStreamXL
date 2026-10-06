@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class FormulaType(Enum):
     """Types of Excel formulas."""
+
     SUM = "sum"
     AVERAGE = "average"
     IF = "if"
@@ -30,6 +31,7 @@ class FormulaType(Enum):
 @dataclass
 class FormulaCell:
     """Represents a cell containing a formula."""
+
     row: int
     col: int
     formula: str  # e.g., "=SUM(A1:A10)"
@@ -41,6 +43,7 @@ class FormulaCell:
 @dataclass
 class FormulaMapping:
     """Mapping of cell references in formulas."""
+
     original_cell: Tuple[int, int]
     mapped_cell: Tuple[int, int]
     formula_before: str
@@ -112,18 +115,16 @@ class FormulaPreserver:
         self.formulas: Dict[Tuple[int, int], FormulaCell] = {}
         self.analyzer = FormulaAnalyzer()
 
-    def add_formula(self, row: int, col: int, formula: str, value: Optional[float] = None):
+    def add_formula(
+        self, row: int, col: int, formula: str, value: Optional[float] = None
+    ):
         """Register a formula to preserve."""
         if not self.analyzer.is_formula(formula):
             raise ValueError(f"Invalid formula: {formula}. Must start with '='")
 
         formula_type = self.analyzer.get_formula_type(formula)
         cell = FormulaCell(
-            row=row,
-            col=col,
-            formula=formula,
-            value=value,
-            formula_type=formula_type
+            row=row, col=col, formula=formula, value=value, formula_type=formula_type
         )
         self.formulas[(row, col)] = cell
         logger.debug(f"Added formula at ({row}, {col}): {formula}")
@@ -134,7 +135,9 @@ class FormulaPreserver:
             return self.formulas[(row, col)].formula
         return None
 
-    def update_references(self, row_offset: int = 0, col_offset: int = 0) -> List[FormulaMapping]:
+    def update_references(
+        self, row_offset: int = 0, col_offset: int = 0
+    ) -> List[FormulaMapping]:
         """
         Update cell references in all formulas (e.g., after inserting rows/columns).
 
@@ -152,12 +155,14 @@ class FormulaPreserver:
             new_formula = self._shift_references(old_formula, row_offset, col_offset)
 
             if old_formula != new_formula:
-                updates.append(FormulaMapping(
-                    original_cell=(row, col),
-                    mapped_cell=(row + row_offset, col + col_offset),
-                    formula_before=old_formula,
-                    formula_after=new_formula
-                ))
+                updates.append(
+                    FormulaMapping(
+                        original_cell=(row, col),
+                        mapped_cell=(row + row_offset, col + col_offset),
+                        formula_before=old_formula,
+                        formula_after=new_formula,
+                    )
+                )
                 cell.formula = new_formula
 
         logger.info(f"Updated {len(updates)} formula references")
@@ -213,7 +218,7 @@ class FormulaPreserver:
                 row=row,
                 col=col,
                 formula=cell_data["formula"],
-                value=cell_data.get("value")
+                value=cell_data.get("value"),
             )
 
     @staticmethod
@@ -234,7 +239,7 @@ class FormulaPreserver:
                 if char.isalpha():
                     col_part += char
                 else:
-                    row_part = rest[len(col_part):]
+                    row_part = rest[len(col_part) :]
                     break
 
             is_row_abs = row_part.startswith("$")
@@ -290,8 +295,9 @@ class FormulaSubstitution:
     """Find and replace in formulas while maintaining references."""
 
     @staticmethod
-    def substitute(formula: str, find: str, replace: str,
-                  case_sensitive: bool = False) -> str:
+    def substitute(
+        formula: str, find: str, replace: str, case_sensitive: bool = False
+    ) -> str:
         """
         Replace text in formula, preserving cell references.
 
@@ -322,11 +328,9 @@ class FormulaSubstitution:
                 else:
                     # Case-insensitive replacement
                     import re as regex_module
+
                     part = regex_module.sub(
-                        re.escape(find),
-                        replace,
-                        part,
-                        flags=re.IGNORECASE
+                        re.escape(find), replace, part, flags=re.IGNORECASE
                     )
             result.append(part)
 

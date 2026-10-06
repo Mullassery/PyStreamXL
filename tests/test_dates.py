@@ -10,6 +10,7 @@ def roundtrip(tmp_path, rows):
 
 # ── date write/read ───────────────────────────────────────────────────────────
 
+
 def test_date_roundtrip(tmp_path):
     d = datetime.date(2024, 6, 15)
     result = roundtrip(tmp_path, [[d]])
@@ -56,6 +57,7 @@ def test_date_mixed_with_other_types(tmp_path):
 
 # ── datetime write/read ───────────────────────────────────────────────────────
 
+
 def test_datetime_roundtrip(tmp_path):
     dt = datetime.datetime(2024, 6, 15, 14, 30, 0)
     result = roundtrip(tmp_path, [[dt]])
@@ -85,6 +87,7 @@ def test_datetime_end_of_day(tmp_path):
 
 
 # ── context manager writer with dates ────────────────────────────────────────
+
 
 def test_writer_with_dates(tmp_path):
     path = str(tmp_path / "w_dates.xlsx")

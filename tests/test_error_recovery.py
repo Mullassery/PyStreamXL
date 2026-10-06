@@ -17,7 +17,6 @@ from pystreamxl import (
     CellError,
     ValidationReport,
     ErrorRecoveryHandler,
-    ExcelValidationError,
 )
 
 

@@ -97,10 +97,7 @@ impl CrossSheetAnalyzer {
     }
 
     pub fn add_formula(&mut self, sheet: String, cell: String, formula: String) {
-        self.sheets
-            .entry(sheet)
-            .or_default()
-            .push((cell, formula));
+        self.sheets.entry(sheet).or_default().push((cell, formula));
     }
 
     /// Analyze cross-sheet dependencies

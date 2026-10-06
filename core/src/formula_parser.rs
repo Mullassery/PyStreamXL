@@ -23,7 +23,6 @@ impl CellReference {
             absolute: false,
         }
     }
-
 }
 
 impl fmt::Display for CellReference {

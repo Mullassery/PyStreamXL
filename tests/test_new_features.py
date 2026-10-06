@@ -1,10 +1,12 @@
 """Tests for read_all(), append(), and bold cell formatting."""
+
 import os
 import datetime
 import pystreamxl
 
 
 # ── read_all() ────────────────────────────────────────────────────────────────
+
 
 def test_read_all_single_sheet(tmp_path):
     path = str(tmp_path / "r.xlsx")
@@ -42,6 +44,7 @@ def test_read_all_empty_file(tmp_path):
 
 
 # ── append() ──────────────────────────────────────────────────────────────────
+
 
 def test_append_basic(tmp_path):
     path = str(tmp_path / "a.xlsx")
@@ -109,13 +112,14 @@ def test_append_file_unchanged_on_error(tmp_path):
 
 # ── bold formatting ───────────────────────────────────────────────────────────
 
+
 def test_bold_row_roundtrip(tmp_path):
     path = str(tmp_path / "b.xlsx")
     with pystreamxl.writer(path) as w:
         w.write_row(["Name", "Score"], bold=True)
         w.write_row(["Alice", 95.5])
     result = list(pystreamxl.read(path))
-    assert result[0] == ["Name", "Score"]   # bold doesn't change values
+    assert result[0] == ["Name", "Score"]  # bold doesn't change values
     assert result[1] == ["Alice", 95.5]
 
 
@@ -137,7 +141,7 @@ def test_bold_with_all_types(tmp_path):
 def test_bold_default_is_false(tmp_path):
     path = str(tmp_path / "b.xlsx")
     with pystreamxl.writer(path) as w:
-        w.write_row(["a", "b"])   # no bold kwarg
+        w.write_row(["a", "b"])  # no bold kwarg
     result = list(pystreamxl.read(path))
     assert result[0] == ["a", "b"]
 

@@ -1,4 +1,3 @@
-import datetime
 import pytest
 import pystreamxl
 
@@ -6,11 +5,14 @@ import pystreamxl
 @pytest.fixture
 def tmp_xlsx(tmp_path):
     path = str(tmp_path / "sample.xlsx")
-    pystreamxl.write(path, [
-        ["Name", "Age", "Score"],
-        ["Alice", 30.0, 95.5],
-        ["Bob", 25.0, 88.0],
-    ])
+    pystreamxl.write(
+        path,
+        [
+            ["Name", "Age", "Score"],
+            ["Alice", 30.0, 95.5],
+            ["Bob", 25.0, 88.0],
+        ],
+    )
     return path
 
 

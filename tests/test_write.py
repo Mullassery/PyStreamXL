@@ -22,6 +22,7 @@ def roundtrip(tmp_path, rows):
 
 # ── write() API ───────────────────────────────────────────────────────────────
 
+
 def test_write_creates_file(tmp_path):
     path = str(tmp_path / "out.xlsx")
     pystreamxl.write(path, SAMPLE_ROWS)
@@ -91,6 +92,7 @@ def test_write_large_roundtrip(tmp_path):
 
 
 # ── writer() context-manager API ──────────────────────────────────────────────
+
 
 def test_context_manager_creates_file(tmp_path):
     path = str(tmp_path / "cm.xlsx")

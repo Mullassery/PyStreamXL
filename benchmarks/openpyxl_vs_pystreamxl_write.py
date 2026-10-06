@@ -20,6 +20,7 @@ def make_rows(n):
 
 def bench_streamxl_write(rows, path):
     import pystreamxl
+
     t0 = time.perf_counter()
     pystreamxl.write(path, rows)
     return time.perf_counter() - t0
@@ -27,6 +28,7 @@ def bench_streamxl_write(rows, path):
 
 def bench_openpyxl_write(rows, path):
     import openpyxl
+
     t0 = time.perf_counter()
     wb = openpyxl.Workbook(write_only=True)
     ws = wb.create_sheet()
@@ -45,7 +47,9 @@ def file_mb(path):
 
 
 def run(row_sizes):
-    print(f"\n{'Rows':>10}  {'pystreamxl':>12}  {'openpyxl (write_only)':>22}  {'Speedup':>8}")
+    print(
+        f"\n{'Rows':>10}  {'pystreamxl':>12}  {'openpyxl (write_only)':>22}  {'Speedup':>8}"
+    )
     print("-" * 62)
 
     with tempfile.TemporaryDirectory() as tmp:

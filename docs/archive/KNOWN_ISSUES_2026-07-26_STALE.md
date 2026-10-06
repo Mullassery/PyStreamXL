@@ -1,7 +1,7 @@
 # PyStreamXL - Known Issues
 
-**Last Updated:** 2026-07-26  
-**Version:** 1.0.1  
+**Last Updated:** 2026-07-26
+**Version:** 1.0.1
 **Status:** ✅ Published to PyPI successfully
 
 ---
@@ -10,7 +10,7 @@
 
 ### Previous Issue: Cargo.lock v4 Incompatibility ✅ FIXED
 
-**Status:** ✅ Resolved in 3d62732  
+**Status:** ✅ Resolved in 3d62732
 **Cargo Requirement:** 1.97+ (was requiring 1.75)
 
 #### What Was Fixed
@@ -30,7 +30,7 @@
 
 ### Minor PyO3 Deprecation Warnings
 
-**Severity:** 🟡 Warning (non-blocking)  
+**Severity:** 🟡 Warning (non-blocking)
 **Messages:**
 ```
 warning: use of deprecated associated function `pyo3::types::PyDate::new_bound`
@@ -40,8 +40,8 @@ warning: use of deprecated associated function `pyo3::types::PyDateTime::new_bou
   renamed to `PyDateTime::new`
 ```
 
-**Impact:** None; code works correctly despite warnings  
-**Fix:** Update PyO3 API calls in `python/src/lib.rs` (lines 17, 23)  
+**Impact:** None; code works correctly despite warnings
+**Fix:** Update PyO3 API calls in `python/src/lib.rs` (lines 17, 23)
 **Priority:** Low (cosmetic; doesn't affect functionality)
 
 ---
@@ -50,9 +50,9 @@ warning: use of deprecated associated function `pyo3::types::PyDateTime::new_bou
 
 ### ✅ RESOLVED: v1.0.1 Published Successfully
 
-**Status:** ✅ Published  
-**Package:** `streamxl` on PyPI  
-**Latest Version:** 1.0.1  
+**Status:** ✅ Published
+**Package:** `streamxl` on PyPI
+**Latest Version:** 1.0.1
 **Install:** `pip install streamxl`
 
 #### Previous Issue (Now Fixed)
@@ -106,8 +106,8 @@ python -c "import streamxl; print(streamxl.__version__)"
 
 ## Dependencies
 
-**Python:** 3.10+  
-**Rust:** 1.97+  
+**Python:** 3.10+
+**Rust:** 1.97+
 **Python Libraries:**
 - openpyxl (for Excel)
 - csv (built-in)
@@ -124,8 +124,8 @@ python -c "import streamxl; print(streamxl.__version__)"
 
 ### External Library Warning
 
-**Message:** `Your library requires copying external libraries`  
-**Library:** `/usr/lib/liblzma.5.dylib`  
+**Message:** `Your library requires copying external libraries`
+**Library:** `/usr/lib/liblzma.5.dylib`
 **Severity:** 🟡 Warning (handled automatically)
 
 **What This Means:**
@@ -154,10 +154,10 @@ python -m build --auditwheel=repair
 
 ## Testing Status
 
-**Unit Tests:** 25+ passing  
-**Integration Tests:** ✅ Passing  
-**Spreadsheet Loading:** ✅ Tested with 1M+ row datasets  
-**Query Performance:** ✅ Benchmarked  
+**Unit Tests:** 25+ passing
+**Integration Tests:** ✅ Passing
+**Spreadsheet Loading:** ✅ Tested with 1M+ row datasets
+**Query Performance:** ✅ Benchmarked
 
 **Status:** ✅ Production ready (once PyPI resolved)
 
@@ -232,6 +232,6 @@ python -c "import ctypes; ctypes.cdll.LoadLibrary('/usr/lib/liblzma.5.dylib')"
 
 ---
 
-**Status:** ✅ v1.0.1 Published and Production Ready  
-**Next Phase:** v1.1.0 Cross-Platform Benchmarks (Q3 2026)  
+**Status:** ✅ v1.0.1 Published and Production Ready
+**Next Phase:** v1.1.0 Cross-Platform Benchmarks (Q3 2026)
 **Last Review:** 2026-07-26

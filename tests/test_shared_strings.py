@@ -2,6 +2,7 @@
 Shared string table is an internal Rust detail — test it through the public API:
 write rows with repeated strings, read them back, verify correctness.
 """
+
 import pystreamxl
 
 

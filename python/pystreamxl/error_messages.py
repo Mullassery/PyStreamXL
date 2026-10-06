@@ -3,12 +3,12 @@
 
 class ExcelError:
     """Excel file operation error with recovery."""
-    
+
     def __init__(self, title: str, message: str, recovery: list = None):
         self.title = title
         self.message = message
         self.recovery = recovery or []
-    
+
     def format(self) -> str:
         """Format error."""
         lines = [f"\n❌ {self.title}\n", f"   {self.message}\n"]
@@ -17,7 +17,7 @@ class ExcelError:
             for i, step in enumerate(self.recovery, 1):
                 lines.append(f"      {i}. {step}")
         return "\n".join(lines)
-    
+
     def __str__(self) -> str:
         return self.format()
 
@@ -31,7 +31,7 @@ FILE_NOT_FOUND = ExcelError(
         "Verify file exists and extension is .xlsx or .xls",
         "Use absolute path to avoid directory confusion",
         "Check file permissions: chmod 644 /path/to/file.xlsx",
-    ]
+    ],
 )
 
 CORRUPTED_EXCEL_FILE = ExcelError(
@@ -42,7 +42,7 @@ CORRUPTED_EXCEL_FILE = ExcelError(
         "Check file integrity: file /path/to/file.xlsx",
         "Re-download file if from external source",
         "Try older backup if available",
-    ]
+    ],
 )
 
 INVALID_SHEET_NAME = ExcelError(
@@ -53,7 +53,7 @@ INVALID_SHEET_NAME = ExcelError(
         "Check sheet name spelling (case-sensitive)",
         "Try sheet index instead: read('file.xlsx', sheet=0)",
         "Verify sheet wasn't deleted or renamed",
-    ]
+    ],
 )
 
 ENCODING_ERROR = ExcelError(
@@ -64,7 +64,7 @@ ENCODING_ERROR = ExcelError(
         "Check if file is actually XLSX or misnamed XLS",
         "Try opening in Excel and re-saving as XLSX",
         "Check for corrupted headers or embedded data",
-    ]
+    ],
 )
 
 # Write errors
@@ -76,7 +76,7 @@ OUTPUT_DIR_NOT_FOUND = ExcelError(
         "Verify path is correct: pwd",
         "Check directory permissions: chmod 755 /path/to/directory",
         "Ensure you have write permissions",
-    ]
+    ],
 )
 
 WRITE_PERMISSION_DENIED = ExcelError(
@@ -87,7 +87,7 @@ WRITE_PERMISSION_DENIED = ExcelError(
         "Make file writable: chmod 644 /path/to/file.xlsx",
         "Try different output directory",
         "Ensure not writing to read-only location",
-    ]
+    ],
 )
 
 DISK_SPACE_ERROR = ExcelError(
@@ -98,7 +98,7 @@ DISK_SPACE_ERROR = ExcelError(
         "Free up space by deleting old files",
         "Try writing to different drive/partition",
         "Reduce file size by filtering data",
-    ]
+    ],
 )
 
 PARTIAL_WRITE_ERROR = ExcelError(
@@ -109,7 +109,7 @@ PARTIAL_WRITE_ERROR = ExcelError(
         "Delete partial file: rm /path/to/file.xlsx",
         "Retry write operation",
         "Check disk space is sufficient",
-    ]
+    ],
 )
 
 
@@ -122,7 +122,7 @@ def get_sheet_error(available_sheets: list) -> ExcelError:
             f"Use one of: {', '.join(available_sheets)}",
             "Sheet names are case-sensitive",
             "Try sheet index: 0, 1, 2, etc.",
-        ]
+        ],
     )
 
 
@@ -136,5 +136,5 @@ def get_size_error(file_mb: float) -> ExcelError:
             "Processing should work despite size",
             "Monitor memory usage: top or Activity Monitor",
             "Report if processing is slower than expected",
-        ]
+        ],
     )

@@ -9,8 +9,7 @@ Enables:
 """
 
 import json
-from typing import Dict, List, Any, Optional
-from pathlib import Path
+from typing import Dict, List, Any
 
 from .security import sanitize_csv_cell
 
@@ -61,12 +60,17 @@ class FormulaSerializer:
         return {
             "version": "1.0",
             "sheets": {sheet_name: sheet_formulas},
-            "metadata": {"row_count": len(rows_with_metadata), "sheet_name": sheet_name},
+            "metadata": {
+                "row_count": len(rows_with_metadata),
+                "sheet_name": sheet_name,
+            },
         }
 
     @staticmethod
     def export_to_json(
-        rows_with_metadata: List[List[Dict]], output_path: str, sheet_name: str = "Sheet1"
+        rows_with_metadata: List[List[Dict]],
+        output_path: str,
+        sheet_name: str = "Sheet1",
     ) -> None:
         """
         Export formulas to a JSON file.
@@ -86,7 +90,9 @@ class FormulaSerializer:
 
     @staticmethod
     def export_to_csv(
-        rows_with_metadata: List[List[Dict]], output_path: str, sheet_name: str = "Sheet1"
+        rows_with_metadata: List[List[Dict]],
+        output_path: str,
+        sheet_name: str = "Sheet1",
     ) -> None:
         """
         Export formulas to a CSV file for auditing.
@@ -201,7 +207,9 @@ class FormulaSerializer:
         return {
             "total_cells": total_cells,
             "formula_cells": formula_cells,
-            "formula_percentage": (formula_cells / total_cells * 100) if total_cells > 0 else 0,
+            "formula_percentage": (
+                (formula_cells / total_cells * 100) if total_cells > 0 else 0
+            ),
             "by_type": formula_types,
             "error_formulas": error_formulas,
             "average_formula_length": round(avg_length, 1),

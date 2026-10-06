@@ -9,11 +9,11 @@ add_shortcuts() {
   else
     echo "❌ No shell config found"; return 1
   fi
-  
+
   if grep -q "dash-pystreamxl" "$RC_FILE"; then
     echo "⚠️  Shortcuts already installed"; return 0
   fi
-  
+
   cat >> "$RC_FILE" << 'ALIASES'
 
 # PyStreamXL dashboard shortcuts
@@ -21,7 +21,7 @@ alias dash-pystreamxl='pystreamxl dashboard --static'
 alias dash-pystreamxl-live='pystreamxl dashboard'
 alias dash-pystreamxl-export='pystreamxl dashboard --export /tmp/pystreamxl_metrics.json && echo ✓ Exported'
 ALIASES
-  
+
   echo "✅ Shortcuts added to $RC_FILE"
   echo "   Run: source $RC_FILE"
 }

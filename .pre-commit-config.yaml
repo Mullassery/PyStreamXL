@@ -8,16 +8,16 @@ repos:
       - id: check-added-large-files
         args: ['--maxkb=500']
 
-  - repo: https://github.com/rust-lang/rust-clippy
-    rev: v1.77.0
+  # rust-lang/rust-clippy and rust-lang/rustfmt do not actually publish a
+  # .pre-commit-hooks.yaml (verified: both 404 at any tag) -- they are the
+  # upstream tool source repos, not pre-commit-hook mirrors. Using the
+  # known-working community mirror instead (verified working 2026-10-06).
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
     hooks:
+      - id: fmt
       - id: clippy
-        args: ['--all-targets', '--', '-W', 'clippy::all']
-
-  - repo: https://github.com/rust-lang/rustfmt
-    rev: v1.7.0
-    hooks:
-      - id: rustfmt
+        args: ['--', '-D', 'warnings']
 
   - repo: https://github.com/psf/black
     rev: 24.1.1

@@ -9,16 +9,16 @@ Enables:
 """
 
 import re
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 
 
 class FormulaReferenceMapper:
     """Extract and modify cell references in Excel formulas."""
 
     # Regex pattern for cell references (A1, $A$1, $A1, A$1)
-    CELL_REF_PATTERN = r'\$?[A-Z]+\$?[0-9]+'
+    CELL_REF_PATTERN = r"\$?[A-Z]+\$?[0-9]+"
     # Regex pattern for ranges (A1:A10, $A$1:$B$10, etc)
-    RANGE_PATTERN = r'(\$?[A-Z]+\$?[0-9]+):(\$?[A-Z]+\$?[0-9]+)'
+    RANGE_PATTERN = r"(\$?[A-Z]+\$?[0-9]+):(\$?[A-Z]+\$?[0-9]+)"
 
     @staticmethod
     def extract_cell_refs(formula: str) -> List[str]:
@@ -94,9 +94,7 @@ class FormulaReferenceMapper:
 
         def shift_cell_ref(match):
             ref = match.group(0)
-            return FormulaReferenceMapper._shift_single_ref(
-                ref, row_offset, col_offset
-            )
+            return FormulaReferenceMapper._shift_single_ref(ref, row_offset, col_offset)
 
         formula_text = formula.lstrip("=")
         shifted = re.sub(
@@ -129,7 +127,9 @@ class FormulaReferenceMapper:
             )
         else:
             # Format: A1 or $A1
-            col_part, row_part = FormulaReferenceMapper._parse_col_row(ref_without_first_dollar)
+            col_part, row_part = FormulaReferenceMapper._parse_col_row(
+                ref_without_first_dollar
+            )
 
         # Convert to numbers
         col_num = FormulaReferenceMapper._col_to_num(col_part)

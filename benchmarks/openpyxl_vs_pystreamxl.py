@@ -4,6 +4,7 @@ Benchmark: openpyxl vs pystreamxl on large XLSX files.
 Usage:
     python benchmarks/openpyxl_vs_streamxl.py benchmarks/large_file_test.xlsx
 """
+
 import sys
 import time
 import tracemalloc
@@ -11,6 +12,7 @@ import tracemalloc
 
 def bench_openpyxl(path: str):
     import openpyxl
+
     tracemalloc.start()
     t0 = time.perf_counter()
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
@@ -24,6 +26,7 @@ def bench_openpyxl(path: str):
 
 def bench_streamxl(path: str):
     import pystreamxl
+
     tracemalloc.start()
     t0 = time.perf_counter()
     count = sum(1 for _ in pystreamxl.read(path))

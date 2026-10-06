@@ -93,7 +93,9 @@ class PyStreamXLServer:
             return {"status": "error", "message": f"Source '{source_id}' not found"}
 
         sheet_names = source["sheets"]
-        sheet_name = query if query in sheet_names else (sheet_names[0] if sheet_names else None)
+        sheet_name = (
+            query if query in sheet_names else (sheet_names[0] if sheet_names else None)
+        )
 
         try:
             rows: List[Any] = []
@@ -158,7 +160,10 @@ class PyStreamXLServer:
             }
 
         if format not in ("json", "csv"):
-            return {"status": "error", "message": f"Unsupported format: '{format}' (use 'json' or 'csv')"}
+            return {
+                "status": "error",
+                "message": f"Unsupported format: '{format}' (use 'json' or 'csv')",
+            }
 
         try:
             rows = list(read(source["path"], sheet=sheet))

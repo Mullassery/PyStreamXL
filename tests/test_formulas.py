@@ -24,69 +24,69 @@ def formula_workbook():
     ws.title = "Formulas"
 
     # Headers
-    ws['A1'] = "Name"
-    ws['B1'] = "Value1"
-    ws['C1'] = "Value2"
-    ws['D1'] = "Result"
-    ws['E1'] = "Type"
+    ws["A1"] = "Name"
+    ws["B1"] = "Value1"
+    ws["C1"] = "Value2"
+    ws["D1"] = "Result"
+    ws["E1"] = "Type"
 
     # SUM formula
-    ws['A2'] = "Sum"
-    ws['B2'] = 10
-    ws['C2'] = 20
-    ws['D2'] = "=SUM(B2:C2)"
-    ws['E2'] = "sum"
+    ws["A2"] = "Sum"
+    ws["B2"] = 10
+    ws["C2"] = 20
+    ws["D2"] = "=SUM(B2:C2)"
+    ws["E2"] = "sum"
 
     # AVERAGE formula
-    ws['A3'] = "Average"
-    ws['B3'] = 30
-    ws['C3'] = 40
-    ws['D3'] = "=AVERAGE(B3:C3)"
-    ws['E3'] = "average"
+    ws["A3"] = "Average"
+    ws["B3"] = 30
+    ws["C3"] = 40
+    ws["D3"] = "=AVERAGE(B3:C3)"
+    ws["E3"] = "average"
 
     # IF formula
-    ws['A4'] = "Conditional"
-    ws['B4'] = 50
-    ws['C4'] = 60
-    ws['D4'] = "=IF(B4>C4,\"B\",\"C\")"
-    ws['E4'] = "if"
+    ws["A4"] = "Conditional"
+    ws["B4"] = 50
+    ws["C4"] = 60
+    ws["D4"] = '=IF(B4>C4,"B","C")'
+    ws["E4"] = "if"
 
     # VLOOKUP formula (simplified)
-    ws['A5'] = "Lookup"
-    ws['B5'] = 1
-    ws['C5'] = 2
-    ws['D5'] = "=INDEX(C2:C4,B5)"
-    ws['E5'] = "index_match"
+    ws["A5"] = "Lookup"
+    ws["B5"] = 1
+    ws["C5"] = 2
+    ws["D5"] = "=INDEX(C2:C4,B5)"
+    ws["E5"] = "index_match"
 
     # COUNT formula
-    ws['A6'] = "Count"
-    ws['B6'] = 100
-    ws['C6'] = 200
-    ws['D6'] = "=COUNT(B2:C6)"
-    ws['E6'] = "count"
+    ws["A6"] = "Count"
+    ws["B6"] = 100
+    ws["C6"] = 200
+    ws["D6"] = "=COUNT(B2:C6)"
+    ws["E6"] = "count"
 
     # PRODUCT formula
-    ws['A7'] = "Product"
-    ws['B7'] = 5
-    ws['C7'] = 6
-    ws['D7'] = "=PRODUCT(B7:C7)"
-    ws['E7'] = "product"
+    ws["A7"] = "Product"
+    ws["B7"] = 5
+    ws["C7"] = 6
+    ws["D7"] = "=PRODUCT(B7:C7)"
+    ws["E7"] = "product"
 
     # Custom formula
-    ws['A8'] = "Custom"
-    ws['B8'] = 10
-    ws['C8'] = 5
-    ws['D8'] = "=B8^C8"
-    ws['E8'] = "custom"
+    ws["A8"] = "Custom"
+    ws["B8"] = 10
+    ws["C8"] = 5
+    ws["D8"] = "=B8^C8"
+    ws["E8"] = "custom"
 
     # Plain cell (no formula)
-    ws['A9'] = "Plain"
-    ws['B9'] = 123
-    ws['C9'] = 456
-    ws['D9'] = 579
-    ws['E9'] = "none"
+    ws["A9"] = "Plain"
+    ws["B9"] = 123
+    ws["C9"] = 456
+    ws["D9"] = 579
+    ws["E9"] = "none"
 
-    with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
         wb.save(tmp.name)
         yield tmp.name
     os.unlink(tmp.name)
@@ -220,7 +220,9 @@ def test_read_with_columns_and_formulas(formula_workbook):
     """Test reading with column filtering and formulas."""
     columns = ["Name", "Result"]
     rows = list(
-        pystreamxl.read(formula_workbook, as_dict=True, columns=columns, with_formulas=True)
+        pystreamxl.read(
+            formula_workbook, as_dict=True, columns=columns, with_formulas=True
+        )
     )
     assert len(rows) == 8
 
@@ -240,7 +242,9 @@ def test_formula_value_preservation(formula_workbook):
     sum_row = rows[1]
     result_cell = sum_row[3]
     # Value might be None (not calculated by Excel) or the calculated result
-    assert result_cell["value"] is None or isinstance(result_cell["value"], (int, float, str))
+    assert result_cell["value"] is None or isinstance(
+        result_cell["value"], (int, float, str)
+    )
     assert result_cell["formula"] is not None
     assert "SUM" in result_cell["formula"].upper()
 
@@ -249,8 +253,6 @@ def test_empty_cells_with_formulas(formula_workbook):
     """Test that empty cells are handled correctly with formula mode."""
     rows = list(pystreamxl.read(formula_workbook, with_formulas=True))
 
-    # All rows should have the same number of cells (with None for empty ones)
-    row_lengths = [len(row) for row in rows]
     # Lengths might vary, but that's OK as long as each cell is a dict
     for row in rows:
         for cell in row:
