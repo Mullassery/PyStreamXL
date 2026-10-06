@@ -14,7 +14,7 @@ use std::rc::Rc;
 use zip::read::ZipFile;
 use zip::ZipArchive;
 
-type StreamingParser<'a> = SheetParser<BufReader<ZipFile<'a>>>;
+type StreamingParser<'a> = SheetParser<BufReader<ZipFile<'a, File>>>;
 
 self_cell!(
     struct StreamingSheetCell {
