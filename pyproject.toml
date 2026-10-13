@@ -10,7 +10,7 @@ authors = [{ name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com" }
 maintainers = [{ name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com" }]
 readme = "README.md"
 license = "Apache-2.0"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = ["rich>=13.0,<16"]
 keywords = [
     "excel",

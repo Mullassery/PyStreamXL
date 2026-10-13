@@ -17,7 +17,7 @@ against large `.xlsx` exports.
 
 [![PyPI](https://img.shields.io/pypi/v/pystreamxl)](https://pypi.org/project/pystreamxl/)
 [![CI](https://github.com/Mullassery/PyStreamXL/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyStreamXL/actions/workflows/ci.yml)
-[![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org)
+[![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue)](https://www.python.org)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
 
 ## Use cases
