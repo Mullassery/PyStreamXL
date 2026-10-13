@@ -1,47 +1,103 @@
 # PyStreamXL
 
-[![Graphify](https://img.shields.io/badge/Graphify-knowledge%20graph-blue)](https://github.com/Graphify-Labs/graphify)
-
-## Problem
-
-`openpyxl` and similar pure-Python Excel readers load the whole workbook
-into memory before you can touch a single row — fine for small files, a
-real ceiling for ETL pipelines and data engineering workloads working
-against large `.xlsx` exports.
-
-## Solution
-
-**Stream large `.xlsx` files row-by-row in constant memory, powered by a Rust core with no `unsafe` code.**
-
-`pip install`s as `pystreamxl`, `import pystreamxl`. Read multi-sheet Excel workbooks without loading them fully into memory, extract formulas and comments, write new `.xlsx` files, and append to existing ones — all through a small, plain Python API backed by a Rust engine.
-
 [![PyPI](https://img.shields.io/pypi/v/pystreamxl)](https://pypi.org/project/pystreamxl/)
 [![CI](https://github.com/Mullassery/PyStreamXL/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyStreamXL/actions/workflows/ci.yml)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue)](https://www.python.org)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
 
-## Use cases
+Stream large `.xlsx` files row-by-row in constant memory, powered by a Rust core with no `unsafe` code.
 
-- **ETL against large Excel exports** that don't fit comfortably in memory
-  with `openpyxl` — `read()` keeps memory flat regardless of file size.
-- **Extracting formulas/comments for audit or migration tooling**, not
-  just cell values.
-- **Appending to a growing log-style `.xlsx` file** without rewriting the
-  whole workbook or losing other sheets.
-- **Not yet a good fit for:** SQL-style querying across sheets, formula
-  *evaluation* (only extraction/classification), or pandas/Parquet/Arrow
-  export built in — see [Honest feature list](#honest-feature-list) for
-  the full "what's not here" list.
+## What it is
 
----
+PyStreamXL reads multi-sheet Excel workbooks without loading them fully into memory,
+extracts formulas and comments, writes new `.xlsx` files, and appends to existing ones —
+all through a small, plain Python API backed by a Rust engine. It installs as
+`pystreamxl` and imports as `pystreamxl`. Compared with `openpyxl` on large exports, the
+goal is flat memory use and faster wall-clock time for streaming iteration.
 
-## Install
+## Features / Highlights
+
+- **Streaming reads** — `read()` / `stream()` return a real Rust iterator; rows are
+  parsed and yielded one at a time, not collected into a Python list up front.
+- **Multi-sheet support** — `sheets()`, `read_all()`, and `writer().add_sheet()`.
+- **Streaming writes** — `write()`, `writer()`, and `append()` produce real `.xlsx`
+  files; `append()` preserves other sheets.
+- **Formula extraction** — formula text plus a best-effort formula-type classification
+  (`with_formulas=True`), `FormulaReferenceMapper` for shifting/rewriting references,
+  and `FormulaSerializer` for exporting/importing formulas as JSON or CSV.
+- **Comment extraction** — cell comments and authors, via `with_formulas=True`.
+- **Conditional formatting** — `conditional_formats()` reads every
+  `<conditionalFormatting>`/`<cfRule>` (type, operator, formulas, priority,
+  `stopIfTrue`) and resolves `dxfId` against `xl/styles.xml` into concrete font/fill
+  values.
+- **Type-aware cells** — strings, numbers, booleans, dates, datetimes, and empty cells
+  round-trip correctly.
+- **Error recovery & validation** — `validate_excel_file()` and `ErrorRecoveryHandler`
+  classify and optionally recover from malformed cells instead of hard-failing.
+- **Security hardening** — path validation, file-size limits, and ZIP-bomb defenses
+  enforced before/while a file is opened; CSV export is sanitized against
+  formula-injection.
+- **Optional REST API** — `pystreamxl.server` (requires `pystreamxl[server]`) wraps the
+  streaming engine behind HTTP endpoints. No authentication — see limitations.
+
+## Who it's for / Use cases
+
+- **ETL against large Excel exports** that don't fit comfortably in memory with
+  `openpyxl` — `read()` keeps memory flat regardless of file size.
+- **Extracting formulas and comments for audit or migration tooling**, not just cell
+  values.
+- **Appending to a growing log-style `.xlsx` file** without rewriting the whole workbook
+  or losing other sheets.
+- **Data engineering pipelines** that need a fast, dependency-light reader for `.xlsx`
+  with an optional HTTP surface.
+
+## What it is not
+
+- **No SQL-style query language.** `execute_query()` in the REST API streams rows from a
+  named sheet; it does not parse arbitrary queries.
+- **No pandas/Parquet/Arrow export built in.** Convert `read()`'s output yourself.
+- **No formula *evaluation*.** Formula text is extracted and classified, not recalculated.
+- **The `pystreamxl dashboard` CLI renders sample data, not live telemetry.** Every mode
+  prints an explicit "SAMPLE DATA — not live" warning.
+- **The optional REST server has no authentication.** `PyStreamXLServer` /
+  `create_flask_app()` have no login, API key, or token check — anyone who can reach the
+  port can read and query every loaded source. Keep it on `localhost` or behind your own
+  auth layer (reverse proxy, API gateway).
+- **Prebuilt wheels are macOS arm64 only.** Every PyPI release has shipped exactly one
+  platform wheel plus an sdist; Linux/Windows/x86_64-mac users build from source, which
+  requires a Rust toolchain and [maturin](https://www.maturin.rs/).
+- **Some listed release features are not reachable from Python.** ~1,180 lines of Rust
+  (collaboration detection, incremental recalculation, cross-sheet dependency analysis)
+  compile and pass their own tests but are not referenced by `python/src/lib.rs`; see
+  [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md).
+- **Not all conditional-formatting detail is modeled.** `colorScale`/`dataBar`/`iconSet`
+  rules are captured at the type/sqref/priority level only; their inline color-stop and
+  threshold definitions are not represented.
+
+## Project status
+
+**Production/stable core, with disclosed gaps.** Current version **6.1.2**
+(`Development Status :: 5 - Production/Stable`). The read/write/stream engine is covered
+by the Rust and Python test suites and streams in flat memory (verified 2026-10-04 — see
+[`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) gap #10). The `Production/Stable` classifier is
+broader than the test coverage of every optional surface; the honest technical-debt list
+lives in `ROADMAP_HONEST.md`.
+
+## Installation
 
 ```bash
 pip install pystreamxl
 ```
 
-A prebuilt wheel is currently published only for macOS (arm64); other platforms install from the source distribution, which requires a Rust toolchain (see `rust-toolchain.toml`) and [maturin](https://www.maturin.rs/) to build. Every PyPI release to date (1.2.0 through 5.2.0) has shipped exactly one platform wheel plus an sdist — no Linux or Windows wheels have been published yet.
+A prebuilt wheel is currently published only for macOS (arm64). Other platforms install
+from the source distribution, which requires a Rust toolchain (see `rust-toolchain.toml`)
+and [maturin](https://www.maturin.rs/).
+
+Requires Python 3.9+. The REST server extra:
+
+```bash
+pip install "pystreamxl[server]"
+```
 
 ## Quick start
 
@@ -52,15 +108,11 @@ for row in pystreamxl.read("data.xlsx"):
     print(row)  # ['Name', 'Age', 'Score']
 ```
 
-`read()` streams rows one at a time — memory use stays flat regardless of file size.
-
-## Real, working examples
+## Usage
 
 **Read as dictionaries, keyed by header row:**
 
 ```python
-import pystreamxl
-
 for row in pystreamxl.read("sales.xlsx", as_dict=True):
     print(row["Customer"], row["Amount"])
 ```
@@ -113,17 +165,16 @@ pystreamxl.append("log.xlsx", [[datetime.date.today(), "finished"]])
 **Extract formulas and comments:**
 
 ```python
+from pystreamxl import FormulaSerializer
+
 rows = list(pystreamxl.read("model.xlsx", with_formulas=True))
 # each cell is a dict: {"value": ..., "formula": ..., "formula_type": ...,
 #                        "comment": ..., "comment_author": ...}
-
-from pystreamxl import FormulaSerializer
-export = FormulaSerializer.export_formulas(rows)
 FormulaSerializer.export_to_json(rows, "formulas.json")
 FormulaSerializer.export_to_csv(rows, "formulas.csv")  # sanitized against CSV/formula injection
 ```
 
-**Export to CSV safely** — untrusted cell content is never written to CSV verbatim (see [Security](#security) below):
+**Export to CSV safely** — untrusted cell content is never written verbatim:
 
 ```python
 import csv
@@ -146,47 +197,27 @@ if report.has_fatal_errors():
     print(report.format_summary())
 ```
 
-More runnable examples live in [`examples/`](examples/).
+**CLI:**
 
-## Honest feature list
-
-What's here and real, backed by the Rust core and covered by the test suite:
-
-- **Streaming reads** — `read()` / `stream()`: a real Rust `__iter__`/`__next__` iterator over the sheet — you get rows one at a time, not a pre-built Python list. **Fixed for real (2026-10-04):** a 2026-09-22 benchmark had found this was *not* actually O(1) memory as claimed (`XlsxStream::open()` decompressed the whole sheet XML before iteration started, so peak RSS scaled with sheet size). `SheetParser` now streams the zip entry's body incrementally via a real `BufRead` source instead of buffering it first — re-verified via live RSS sampling across a 1.2M-row file: memory plateaus within the first 50k rows and stays flat (<0.1% drift) for the remaining 1.15M rows. See gap #10 in [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) for the full before/after and the one remaining, intentional per-file (not per-row) cost. `read_rows_all_at_once()`/`read_rows_with_metadata_all_at_once()` remain available as an explicit escape hatch for callers that need random access or to iterate the result more than once.
-- **Multi-sheet support** — `sheets()`, `read_all()`, and `writer().add_sheet()`.
-- **Streaming writes** — `write()`, `writer()`, `append()`, all producing real `.xlsx` files.
-- **Formula extraction** — read formula text and a best-effort formula-type classification (`with_formulas=True`), plus `FormulaReferenceMapper` for shifting/rewriting cell references and `FormulaSerializer` for exporting/importing formulas as JSON or CSV.
-- **Comment extraction** — cell comments and authors, via `with_formulas=True`.
-- **Conditional formatting rules** — `conditional_formats()` reads every `<conditionalFormatting>`/`<cfRule>` in a sheet (type, operator, formulas, priority, `stopIfTrue`) and resolves each rule's `dxfId` against `xl/styles.xml`'s `<dxfs>` into concrete font color/bold/italic and fill colors. `colorScale`/`dataBar`/`iconSet` rules are captured (type, sqref, priority) but their inline color-stop/threshold definitions aren't modeled — those rule types don't use `dxfId` in the first place.
-- **Type-aware cells** — strings, numbers, booleans, dates, datetimes, and empty cells round-trip correctly.
-- **Error recovery & validation** — `validate_excel_file()` and `ErrorRecoveryHandler` classify and (optionally) recover from malformed cells instead of hard-failing on the whole file.
-- **Security hardening** — path validation, file-size limits, and ZIP-bomb defenses (entry-size, compression-ratio, and total-decompressed-size limits) enforced before/while a file is opened. CSV export is sanitized against formula-injection (see below).
-- **REST API (optional)** — `pystreamxl.server.PyStreamXLServer` / `create_flask_app()` wrap the real streaming engine behind HTTP endpoints (`/sources`, `/sources/<id>/query`, `/sources/<id>/export`, ...). Requires `pip install "pystreamxl[server]"`. **Has no authentication — see Security below before exposing it to any network you don't fully trust.**
-
-What's **not** here, so you don't have to find out the hard way:
-
-- No SQL-style query language — `execute_query()` in the REST API streams rows from a named sheet, it does not parse arbitrary queries.
-- No pandas/Parquet/Arrow export built in. Convert `read()`'s output yourself, or open an issue if this matters to you.
-- No formula *evaluation* — formula text is extracted and classified, not recalculated.
-- The `pystreamxl dashboard` CLI command renders sample data, not live telemetry — every mode (bare, `--static`, `--alerts`, `--recommendations`, `--export`) shows the same explicit "SAMPLE DATA — not live" warning.
-- **No authentication on the REST server** — `PyStreamXLServer`/`create_flask_app()` have no login, API key, or token check of any kind. Anyone who can reach the port can read and query every loaded source. Do not expose it beyond `localhost`/a trusted private network without putting your own auth layer (reverse proxy, API gateway, etc.) in front of it. Tracked in [RepoIssues #45](https://github.com/Mullassery/RepoIssues/issues/45) pending a decision on which auth scheme to add natively.
+```bash
+pystreamxl dashboard          # sample extraction dashboard
+pystreamxl dashboard --static # same sample data, clearly labeled "SAMPLE DATA — not live"
+pystreamxl --version
+```
 
 ## Security
 
-- **Path & size validation** — `validate_read_path()` / `validate_write_path()` reject non-`.xlsx` paths, path traversal, and oversized files before any parsing happens.
-- **ZIP-bomb defenses** — the Rust core enforces a per-entry size limit, a compression-ratio limit, and a total-decompressed-size limit while unpacking a workbook (see `core/src/zip_reader.rs`), tested against real crafted archives in `core/tests/zip_bomb_defense.rs`.
-- **CSV/formula-injection protection** — `pystreamxl.security.sanitize_csv_cell()` neutralizes any string cell that starts with `=`, `+`, `-`, `@`, TAB, or CR (the standard CSV-injection trigger set) by prefixing it with `'`, so a malicious workbook can't turn a CSV export into an executable formula when reopened in Excel/LibreOffice/Google Sheets. `FormulaSerializer.export_to_csv()` applies this automatically; apply it yourself when writing CSV from `read()` output (see the example above).
+- **Path & size validation** — `validate_read_path()` / `validate_write_path()` reject
+  non-`.xlsx` paths, path traversal (when a `base_dir` is supplied), and oversized files
+  before parsing.
+- **ZIP-bomb defenses** — per-entry size limit, compression-ratio limit, and total
+  decompressed-size limit enforced by the Rust core (`core/src/zip_reader.rs`).
+- **CSV / formula-injection protection** — `pystreamxl.security.sanitize_csv_cell()`
+  neutralizes string cells starting with `=`, `+`, `-`, `@`, TAB, or CR.
+- **Known gap:** the optional REST server has no authentication.
 
-**Limits, enforced by default (no configuration needed):**
-
-| Limit | Value |
-|---|---|
-| Max file size | 512 MB |
-| Max size per ZIP entry | 512 MB |
-| Max total decompressed size | 1 GB |
-| Max compression ratio | 30:1 |
-
-Handle malformed or malicious files by catching `SecurityError`:
+Enforced limits (by default): max file size 512 MB, max size per ZIP entry 512 MB, max
+total decompressed size 1 GB, max compression ratio 30:1. Handle malicious files with:
 
 ```python
 from pystreamxl import SecurityError, read
@@ -198,82 +229,46 @@ except SecurityError as e:
     print(f"Security violation: {e}")
 ```
 
-**Known gap: the optional REST server has no authentication.** `PyStreamXLServer`/`create_flask_app()` (see "REST API (optional)" above) accept requests from anyone who can reach the port — there is no API key, token, or login of any kind today. Keep it on `localhost` or behind your own auth layer (reverse proxy, API gateway) if you deploy it. Tracked in [RepoIssues #45](https://github.com/Mullassery/RepoIssues/issues/45).
-
 Found a security issue? See [SECURITY.md](SECURITY.md).
 
-## Performance
-
-Rows are parsed and yielded one at a time rather than being collected into a Python list up front, and it's consistently faster than `openpyxl` on both reads and writes. Memory now stays flat during iteration regardless of sheet size (fixed 2026-10-04 — see "Honest feature list" above and [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) gap #10 for the before/after). See [`benchmarks/`](benchmarks/) for the scripts used to compare against `openpyxl`, and [`examples/memory_benchmark.py`](examples/memory_benchmark.py) to measure it yourself against your own files (note: that script uses `tracemalloc`, which only tracks Python-allocator memory, not the Rust-side heap — for a true peak-RSS measurement use `resource.getrusage`/`psutil` sampled during iteration instead, as `ROADMAP_HONEST.md` gap #10 did):
-
-```bash
-python examples/memory_benchmark.py your_file.xlsx
-```
-
-Actual numbers depend heavily on your file's structure (shared strings, formulas, formatting) — measure on your own workloads rather than trusting a generic table.
-
-### vs openpyxl, on real data
-
-Methodology: 150,000 real, live NYC 311 Service Request rows pulled from
-NYC Open Data's Socrata API (`data.cityofnewyork.us/resource/erm2-nwe9`,
-current as of 2026-09-22 — not synthetic/fabricated rows), 14 columns,
-written to a real 2-sheet `.xlsx` workbook (75k rows/sheet, 19MB) via
-`openpyxl`. Both libraries iterated every row of every sheet; row counts
-and a positional checksum matched exactly across all three methods
-(correctness verified, not just speed). 3 runs each, median reported,
-single-process wall-clock via `time.perf_counter()`, peak RSS via
-`resource.getrusage(...).ru_maxrss` on macOS/arm64, Python 3.13.
-
-| Rows | pystreamxl `read()` | openpyxl `read_only=True` | openpyxl full load |
-|------|---|---|---|
-| 10,000  | 0.07s · 28MB peak RSS | 0.61s · 31MB peak RSS | — |
-| 30,000  | 0.19s · 52MB peak RSS | 1.89s · 32MB peak RSS | — |
-| 75,000  | 0.48s · 103MB peak RSS | 4.72s · 36MB peak RSS | — |
-| 150,000 (2 sheets) | 0.96s · 192MB peak RSS | 9.27s · 43MB peak RSS | 13.5s · 1,040MB peak RSS |
-
-**pystreamxl is ~9.7x faster than `openpyxl(read_only=True)` and ~14x
-faster than `openpyxl()` full-load** at 150k rows — but at that size it
-uses **~4.5x more peak memory than `openpyxl(read_only=True)`** (192MB
-vs 43MB), because `read()` isn't actually O(1) yet (see above). If your
-bottleneck is wall-clock time, pystreamxl wins clearly. If your bottleneck
-is memory on a very large file and you don't need every column loaded at
-once, `openpyxl(read_only=True)` currently uses less RAM. Reproduce with
-`benchmarks/openpyxl_vs_streamxl.py` against any real `.xlsx` file.
-
-## CLI
-
-```bash
-pystreamxl dashboard          # sample extraction dashboard (unlabeled placeholder, see note above)
-pystreamxl dashboard --static # same sample data, clearly labeled "SAMPLE DATA — not live"
-pystreamxl --version
-```
-
-## Development
-
-```bash
-git clone https://github.com/Mullassery/PyStreamXL.git
-cd PyStreamXL
-pip install -e ".[dev]"       # builds the Rust extension via maturin and installs test deps
-pytest tests/ -v
-cargo test --release --all-features     # Rust unit + integration tests (both core and python crates)
-```
-
-On macOS you may need `RUSTFLAGS="-C link-args=-undefined -C link-args=dynamic_lookup"` before `cargo build`/`cargo test` for the PyO3 extension crate to link outside of `maturin`/`pip install`.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
-
-## Docs
+## Documentation
 
 - [`docs/architecture/README.md`](docs/architecture/README.md) — how the Rust engine and Python API fit together, including known dead code
 - [`docs/xlsx_format.md`](docs/xlsx_format.md) — XLSX/ZIP/XML format notes
 - [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) — unvarnished list of what's missing, broken, or technical debt
+- [`benchmarks/`](benchmarks/) — benchmark scripts and committed results comparing against `openpyxl`
+- [`examples/`](examples/) — runnable examples, including `memory_benchmark.py`
 - [`CHANGELOG.md`](CHANGELOG.md) — release history
 - [`SECURITY.md`](SECURITY.md) — security model, limits, and what it does *not* protect against
+
+Rows are yielded one at a time, and memory stays flat during iteration regardless of sheet
+size (fixed 2026-10-04; see `ROADMAP_HONEST.md` gap #10). The `pyproject.toml` description
+cites **3.8–5.6x faster than `openpyxl`** in this repo's committed benchmarks
+(`benchmarks/results.md`); actual numbers depend heavily on file structure, so measure on
+your own workloads rather than trusting a generic table.
+
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a
+PR. See [CODE_OF_CONDUCT.md](docs/CODE_OF_CONDUCT.md) for community expectations.
+
+```bash
+git clone https://github.com/Mullassery/PyStreamXL.git
+cd PyStreamXL
+pip install -e ".[dev]"        # builds the Rust extension via maturin and installs test deps
+pytest tests/ -v
+cargo test --release --all-features
+```
+
+## Related projects
+
+- [PyStreamXL](https://github.com/Mullassery/PyStreamXL) — stream large Excel workbooks with constant memory
+- [PyStreamPDF](https://github.com/Mullassery/PyStreamPDF) — token-efficient PDF extraction for RAG
+- [PyStreamMCP](https://github.com/Mullassery/PyStreamMCP) — context and token optimization for AI agents
+- [PyStreamAI](https://github.com/Mullassery/PyStreamAI) — ML deployment toolkit (canary/A-B, cost tracking, ONNX)
+- [PyTokenCalc](https://github.com/Mullassery/PyTokenCalc) — LLM token counting and cost estimation
+- [Browse all projects](https://github.com/Mullassery?tab=repositories)
 
 ## License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
-
----
-
-**PyStreamXL** | Constant-memory Excel streaming | Rust core, Python API
