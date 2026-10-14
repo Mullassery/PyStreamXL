@@ -13,7 +13,7 @@ pub fn parse(xml: &[u8]) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     loop {
         match reader.read_event()? {
             Event::Start(ref e) if e.name().as_ref() == b"t" => in_t = true,
-            Event::Text(e) if in_t => current.push_str(&e.unescape()?),
+            Event::Text(e) if in_t => current.push_str(&quick_xml::escape::unescape(&e.decode()?)?),
             Event::End(ref e) if e.name().as_ref() == b"t" => in_t = false,
             Event::End(ref e) if e.name().as_ref() == b"si" => {
                 strings.push(std::mem::take(&mut current));

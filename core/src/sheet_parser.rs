@@ -116,7 +116,7 @@ impl<R: BufRead> SheetParser<R> {
                     _ => {}
                 },
                 Event::Text(ref e) if in_v || in_t => {
-                    cell_value.push_str(&e.unescape()?);
+                    cell_value.push_str(&quick_xml::escape::unescape(&e.decode()?)?);
                 }
                 // Self-closing empty cell: <c/> or <c r="A1"/>
                 Event::Empty(ref e) if e.name().as_ref() == b"c" => {
@@ -185,10 +185,10 @@ impl<R: BufRead> SheetParser<R> {
                     _ => {}
                 },
                 Event::Text(ref e) if in_v || in_t => {
-                    cell_value.push_str(&e.unescape()?);
+                    cell_value.push_str(&quick_xml::escape::unescape(&e.decode()?)?);
                 }
                 Event::Text(ref e) if in_f => {
-                    cell_formula.push_str(&e.unescape()?);
+                    cell_formula.push_str(&quick_xml::escape::unescape(&e.decode()?)?);
                 }
                 Event::Empty(ref e) if e.name().as_ref() == b"c" => {
                     if let Some(ref mut r) = row {

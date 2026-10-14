@@ -51,7 +51,7 @@ impl CommentCache {
                     _ => {}
                 },
                 Event::Text(ref e) if in_text => {
-                    current_text.push_str(&e.unescape()?);
+                    current_text.push_str(&quick_xml::escape::unescape(&e.decode()?)?);
                 }
                 Event::End(ref e) => match e.name().as_ref() {
                     b"t" => in_text = false,

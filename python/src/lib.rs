@@ -8,7 +8,7 @@ use streamxl_core::{XlsxStream, XlsxWriter};
 
 // ── Reading ───────────────────────────────────────────────────────────────────
 
-fn cell_to_pyobject(py: Python<'_>, cell: &CellValue) -> PyResult<PyObject> {
+fn cell_to_pyobject(py: Python<'_>, cell: &CellValue) -> PyResult<Py<PyAny>> {
     match cell {
         CellValue::String(s) => Ok(s.clone().into_pyobject(py)?.into_any().unbind()),
         CellValue::Number(n) => Ok(n.into_pyobject(py)?.into_any().unbind()),
@@ -253,7 +253,7 @@ fn stream_rows_with_metadata(path: &str, sheet: Option<&str>) -> PyResult<PyRowI
 
 // ── Writing ───────────────────────────────────────────────────────────────────
 
-fn pyobject_to_writecell(py: Python<'_>, obj: &PyObject) -> PyResult<WriteCell> {
+fn pyobject_to_writecell(py: Python<'_>, obj: &Py<PyAny>) -> PyResult<WriteCell> {
     let bound = obj.bind(py);
 
     if bound.is_none() {
@@ -262,7 +262,7 @@ fn pyobject_to_writecell(py: Python<'_>, obj: &PyObject) -> PyResult<WriteCell> 
 
     // Check PyDateTime before PyDate: datetime is a subclass of date in Python
     if bound.is_instance_of::<PyDateTime>() {
-        if let Ok(dt) = bound.downcast::<PyDateTime>() {
+        if let Ok(dt) = bound.cast::<PyDateTime>() {
             let serial = dates::datetime_to_serial(
                 dt.get_year(),
                 dt.get_month() as u32,
@@ -277,7 +277,7 @@ fn pyobject_to_writecell(py: Python<'_>, obj: &PyObject) -> PyResult<WriteCell> 
     }
 
     if bound.is_instance_of::<PyDate>() {
-        if let Ok(d) = bound.downcast::<PyDate>() {
+        if let Ok(d) = bound.cast::<PyDate>() {
             let serial =
                 dates::date_to_serial(d.get_year(), d.get_month() as u32, d.get_day() as u32);
             return Ok(WriteCell::Date(serial));
@@ -298,7 +298,7 @@ fn pyobject_to_writecell(py: Python<'_>, obj: &PyObject) -> PyResult<WriteCell> 
 }
 
 #[pyfunction]
-fn write(py: Python<'_>, path: &str, rows: PyObject) -> PyResult<()> {
+fn write(py: Python<'_>, path: &str, rows: Py<PyAny>) -> PyResult<()> {
     let mut writer = XlsxWriter::new(path)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
     for row_obj in rows.bind(py).try_iter()? {
@@ -338,7 +338,7 @@ impl PyXlsxWriter {
     }
 
     #[pyo3(signature = (row, bold = false))]
-    fn write_row(&mut self, py: Python<'_>, row: PyObject, bold: bool) -> PyResult<()> {
+    fn write_row(&mut self, py: Python<'_>, row: Py<PyAny>, bold: bool) -> PyResult<()> {
         let writer = self.inner.as_mut().ok_or_else(|| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("writer already closed")
         })?;
@@ -375,9 +375,9 @@ impl PyXlsxWriter {
 
     fn __exit__(
         &mut self,
-        _exc_type: PyObject,
-        _exc_val: PyObject,
-        _exc_tb: PyObject,
+        _exc_type: Py<PyAny>,
+        _exc_val: Py<PyAny>,
+        _exc_tb: Py<PyAny>,
     ) -> PyResult<bool> {
         self.close()?;
         Ok(false)

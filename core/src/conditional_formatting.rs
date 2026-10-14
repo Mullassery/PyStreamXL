@@ -64,7 +64,7 @@ pub fn parse(
                 _ => {}
             },
             Event::Text(ref e) if in_formula => {
-                pending_formula.push_str(&e.unescape()?);
+                pending_formula.push_str(&quick_xml::escape::unescape(&e.decode()?)?);
             }
             Event::End(ref e) => match e.name().as_ref() {
                 b"formula" => {
