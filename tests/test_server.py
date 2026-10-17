@@ -264,3 +264,38 @@ class TestFlaskAppReal:
             content_type="application/json",
         )
         assert resp.status_code == 400
+
+
+class TestFlaskApiKeyAuth:
+    """`PYSTREAMXL_API_KEY` gates every route when it is set."""
+
+    @pytest.fixture(autouse=True)
+    def _require_flask(self):
+        pytest.importorskip("flask")
+
+    def test_missing_or_wrong_key_is_rejected(self, monkeypatch):
+        monkeypatch.setenv("PYSTREAMXL_API_KEY", "s3cr3t")
+        app = create_flask_app()
+        app.config["TESTING"] = True
+        with app.test_client() as client:
+            assert client.get("/health").status_code == 401
+            assert (
+                client.get("/health", headers={"X-API-Key": "wrong"}).status_code == 401
+            )
+
+    def test_matching_key_is_accepted(self, monkeypatch):
+        monkeypatch.setenv("PYSTREAMXL_API_KEY", "s3cr3t")
+        app = create_flask_app()
+        app.config["TESTING"] = True
+        with app.test_client() as client:
+            resp = client.get("/health", headers={"X-API-Key": "s3cr3t"})
+            assert resp.status_code == 200
+            assert resp.get_json()["status"] == "healthy"
+
+    def test_unset_key_warns_but_leaves_server_open(self, monkeypatch):
+        monkeypatch.delenv("PYSTREAMXL_API_KEY", raising=False)
+        with pytest.warns(RuntimeWarning):
+            app = create_flask_app()
+        app.config["TESTING"] = True
+        with app.test_client() as client:
+            assert client.get("/health").status_code == 200

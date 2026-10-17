@@ -10,7 +10,9 @@ Nothing here returns synthetic/hardcoded data.
 
 import csv
 import io
+import os
 import warnings
+from hmac import compare_digest
 from typing import Any, Dict, List, Optional
 
 from . import __version__
@@ -222,6 +224,33 @@ def create_flask_app(server: Optional[PyStreamXLServer] = None):
 
     app = Flask(__name__)
     srv = server or PyStreamXLServer()
+
+    # Optional API-key authentication. When PYSTREAMXL_API_KEY is set, every
+    # route requires a matching X-API-Key header and returns 401 otherwise.
+    # When it is not set the server stays open (backwards compatible for local
+    # development) but warns loudly, since an unauthenticated REST server
+    # should never be bound to a non-loopback interface.
+    api_key = os.environ.get("PYSTREAMXL_API_KEY")
+    if api_key:
+
+        @app.before_request
+        def _require_api_key():
+            supplied = request.headers.get("X-API-Key", "")
+            if not compare_digest(supplied.encode("utf-8"), api_key.encode("utf-8")):
+                return (
+                    jsonify({"status": "error", "message": "unauthorized"}),
+                    401,
+                )
+
+    else:
+        warnings.warn(
+            "PyStreamXL REST server is running without authentication "
+            "(PYSTREAMXL_API_KEY is not set). Bind it to 127.0.0.1 only, or "
+            "set PYSTREAMXL_API_KEY to require an X-API-Key header on every "
+            "request.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
 
     @app.route("/health", methods=["GET"])
     def health():
