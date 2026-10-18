@@ -8,6 +8,15 @@ releases (v1.0.0 through v5.3.0) predate it and are not reconstructed
 here to avoid fabricating dates/details that weren't tracked at the
 time — see `git log` and GitHub Releases for that history.
 
+## [6.1.6] - 2026-10-19
+
+### Added
+- Optional Parquet export (`pystreamxl.to_parquet`, `[arrow]` extra) that
+  streams XLSX rows into a `ParquetWriter` batch by batch.
+- Committed a calamine/Polars comparison (`benchmarks/calamine_vs_pystreamxl.md`):
+  PyStreamXL is a streaming reader, not a speed winner against vectorized
+  whole-sheet loaders. README now states that explicitly.
+
 ## [6.1.5] - 2026-10-18
 
 ### Added

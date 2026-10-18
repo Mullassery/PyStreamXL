@@ -50,4 +50,9 @@ Invest; packaging and honest claims are the blockers.
 
 ## Implementation status
 
-No code changes in this pass.
+Added optional Parquet export (`to_parquet`, `[arrow]` extra) that streams
+batches into a `ParquetWriter`, plus a committed calamine/Polars comparison.
+The comparison found python-calamine much faster for whole-sheet loads
+(0.192s vs 3.87s at 50k rows); README now frames PyStreamXL as bounded-memory
+streaming, not a raw-speed winner. Version `6.1.6`. Parquet test passes with
+pyarrow installed.

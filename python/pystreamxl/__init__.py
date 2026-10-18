@@ -10,6 +10,7 @@ from .api import (
 )
 from .core import XlsxWriter
 from .security import SecurityError, get_security_limits, sanitize_csv_cell
+from .export import to_parquet
 
 # Formula support (v1.2.0+)
 from ._formula_support import (
@@ -58,6 +59,7 @@ __all__ = [
     "SecurityError",
     "get_security_limits",
     "sanitize_csv_cell",
+    "to_parquet",
     # Formula support (v1.2.0+)
     "FormulaAnalyzer",
     "FormulaPreserver",

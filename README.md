@@ -244,7 +244,10 @@ Found a security issue? See [SECURITY.md](SECURITY.md).
 Rows are yielded one at a time, and memory stays flat during iteration regardless of sheet
 size (fixed 2026-10-04; see `ROADMAP_HONEST.md` gap #10). The `pyproject.toml` description
 cites **3.8–5.6x faster than `openpyxl`** in this repo's committed benchmarks
-(`benchmarks/results.md`); actual numbers depend heavily on file structure, so measure on
+(`benchmarks/results.md`). That is an openpyxl baseline: python-calamine is much
+faster at whole-sheet loads (see `benchmarks/calamine_vs_pystreamxl.md`), so
+choose PyStreamXL for bounded-memory streaming, not raw speed. Actual numbers
+depend heavily on file structure, so measure on
 your own workloads rather than trusting a generic table.
 
 ## Contributing
