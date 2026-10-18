@@ -384,6 +384,235 @@ impl PyXlsxWriter {
     }
 }
 
+// ── Formula analysis (cross-sheet / collaboration / incremental recalc) ────────
+//
+// These three analyzers were implemented and unit-tested in `streamxl-core`
+// but never reachable from Python, so genuinely-tested functionality was dead
+// weight (PYSTREAMXL-004). They are now bridged here and surfaced through
+// `pystreamxl.analyzers`.
+
+use std::collections::HashMap;
+use streamxl_core::collaboration_detection::CollaborationDetector;
+use streamxl_core::cross_sheet_analysis::CrossSheetAnalyzer;
+use streamxl_core::incremental_recalculation::IncrementalRecalculator;
+
+fn f32_map_to_pydict(py: Python<'_>, map: &HashMap<String, f32>) -> PyResult<Py<PyDict>> {
+    let dict = PyDict::new(py);
+    for (k, v) in map {
+        dict.set_item(k, *v)?;
+    }
+    Ok(dict.into())
+}
+
+fn usize_map_to_pydict(py: Python<'_>, map: &HashMap<String, usize>) -> PyResult<Py<PyDict>> {
+    let dict = PyDict::new(py);
+    for (k, v) in map {
+        dict.set_item(k, *v)?;
+    }
+    Ok(dict.into())
+}
+
+#[pyclass(module = "pystreamxl._core")]
+struct CrossSheetAnalyzerPy {
+    inner: CrossSheetAnalyzer,
+}
+
+#[pymethods]
+impl CrossSheetAnalyzerPy {
+    #[new]
+    fn new() -> Self {
+        Self {
+            inner: CrossSheetAnalyzer::new(),
+        }
+    }
+
+    fn add_sheet(&mut self, sheet_name: String) {
+        self.inner.add_sheet(sheet_name);
+    }
+
+    fn add_formula(&mut self, sheet: String, cell: String, formula: String) {
+        self.inner.add_formula(sheet, cell, formula);
+    }
+
+    /// Detect formulas that reference other sheets.
+    fn analyze_dependencies(&mut self) {
+        self.inner.analyze_dependencies();
+    }
+
+    /// Detect identical formulas repeated across cells/sheets.
+    fn detect_redundancies(&mut self) {
+        self.inner.detect_redundancies();
+    }
+
+    #[getter]
+    fn dependency_count(&self) -> usize {
+        self.inner
+            .get_statistics()
+            .get("total_dependencies")
+            .copied()
+            .unwrap_or(0.0) as usize
+    }
+
+    #[getter]
+    fn redundancy_count(&self) -> usize {
+        self.inner
+            .get_statistics()
+            .get("redundant_calculations")
+            .copied()
+            .unwrap_or(0.0) as usize
+    }
+
+    /// `[(redundancy_id, savings_score), ...]`, best first.
+    fn consolidation_opportunities(&self, py: Python<'_>) -> PyResult<Py<PyList>> {
+        let list = PyList::empty(py);
+        for (id, score) in self.inner.get_consolidation_opportunities() {
+            list.append((id, score))?;
+        }
+        Ok(list.into())
+    }
+
+    /// `[("Sheet.Cell", ref_count), ...]`, most-depended-on first.
+    fn critical_paths(&self, py: Python<'_>) -> PyResult<Py<PyList>> {
+        let list = PyList::empty(py);
+        for (cell, count) in self.inner.get_critical_paths() {
+            list.append((cell, count))?;
+        }
+        Ok(list.into())
+    }
+
+    fn statistics(&self, py: Python<'_>) -> PyResult<Py<PyDict>> {
+        f32_map_to_pydict(py, &self.inner.get_statistics())
+    }
+}
+
+#[pyclass(module = "pystreamxl._core")]
+struct IncrementalRecalculatorPy {
+    inner: IncrementalRecalculator,
+}
+
+#[pymethods]
+impl IncrementalRecalculatorPy {
+    #[new]
+    #[pyo3(signature = (threshold = 0.01))]
+    fn new(threshold: f64) -> Self {
+        Self {
+            inner: IncrementalRecalculator::new(threshold),
+        }
+    }
+
+    fn register_cell(&mut self, cell_id: String, formula: String) {
+        self.inner.register_cell(cell_id, formula);
+    }
+
+    fn add_dependency(&mut self, cell: &str, dep: &str) {
+        self.inner.add_dependency(cell, dep);
+    }
+
+    /// Update a cell's value; returns a dict describing the change
+    /// (`cell_id`, `old_value`, `new_value`, `affected_cells`, `recalc_time_ms`).
+    fn update_cell(
+        &mut self,
+        py: Python<'_>,
+        cell_id: &str,
+        new_value: f64,
+    ) -> PyResult<Py<PyDict>> {
+        let change = self.inner.update_cell(cell_id, new_value);
+        let d = PyDict::new(py);
+        d.set_item("cell_id", change.cell_id)?;
+        d.set_item("old_value", change.old_value)?;
+        d.set_item("new_value", change.new_value)?;
+        d.set_item("affected_cells", change.affected_cells)?;
+        d.set_item("recalc_time_ms", change.recalc_time_ms)?;
+        Ok(d.into())
+    }
+
+    fn get_dirty_cells(&self, py: Python<'_>) -> PyResult<Py<PyList>> {
+        let list = PyList::empty(py);
+        let mut cells = self.inner.get_dirty_cells();
+        cells.sort();
+        for c in cells {
+            list.append(c)?;
+        }
+        Ok(list.into())
+    }
+
+    /// Recalculate all dirty cells; returns `{cell_id: new_value}`.
+    fn recalculate_batch(&mut self, py: Python<'_>) -> PyResult<Py<PyDict>> {
+        let dict = PyDict::new(py);
+        for (cell, value) in self.inner.recalculate_batch() {
+            dict.set_item(cell, value)?;
+        }
+        Ok(dict.into())
+    }
+    fn recalc_stats(&self, py: Python<'_>) -> PyResult<Py<PyDict>> {
+        usize_map_to_pydict(py, &self.inner.get_recalc_stats())
+    }
+
+    fn estimate_recalc_scope(&self) -> f32 {
+        self.inner.estimate_recalc_scope()
+    }
+}
+
+#[pyclass(module = "pystreamxl._core")]
+struct CollaborationDetectorPy {
+    inner: CollaborationDetector,
+}
+
+#[pymethods]
+impl CollaborationDetectorPy {
+    #[new]
+    fn new() -> Self {
+        Self {
+            inner: CollaborationDetector::new(),
+        }
+    }
+
+    fn register_cell(&mut self, cell_id: String, formula: String) {
+        self.inner.register_cell(cell_id, formula);
+    }
+
+    fn add_reference(&mut self, from_cell: &str, to_cell: &str) {
+        self.inner.add_reference(from_cell, to_cell);
+    }
+
+    fn detect_collaboration_groups(&mut self) {
+        self.inner.detect_collaboration_groups();
+    }
+
+    fn identify_optimizations(&mut self) {
+        self.inner.identify_optimizations();
+    }
+
+    fn top_optimizations(&self, py: Python<'_>, n: usize) -> PyResult<Py<PyList>> {
+        let list = PyList::empty(py);
+        for opp in self.inner.get_top_optimizations(n) {
+            let value_score = opp.value_score();
+            let d = PyDict::new(py);
+            d.set_item("opp_id", opp.opp_id)?;
+            d.set_item("cell_group", opp.cell_group)?;
+            d.set_item("optimization_type", opp.optimization_type)?;
+            d.set_item("estimated_speedup", opp.estimated_speedup)?;
+            d.set_item("complexity_reduction", opp.complexity_reduction)?;
+            d.set_item("risk_level", opp.risk_level)?;
+            d.set_item("value_score", value_score)?;
+            list.append(d)?;
+        }
+        Ok(list.into())
+    }
+
+    fn circular_dependencies(&self, py: Python<'_>) -> PyResult<Py<PyList>> {
+        let list = PyList::empty(py);
+        for cycle in self.inner.detect_circular_dependencies() {
+            list.append(cycle)?;
+        }
+        Ok(list.into())
+    }
+
+    fn statistics(&self, py: Python<'_>) -> PyResult<Py<PyDict>> {
+        f32_map_to_pydict(py, &self.inner.get_statistics())
+    }
+}
+
 // ── Module ────────────────────────────────────────────────────────────────────
 
 #[pymodule]
@@ -396,6 +625,9 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(sheets, m)?)?;
     m.add_function(wrap_pyfunction!(conditional_formats, m)?)?;
     m.add_class::<PyXlsxWriter>()?;
+    m.add_class::<CrossSheetAnalyzerPy>()?;
+    m.add_class::<IncrementalRecalculatorPy>()?;
+    m.add_class::<CollaborationDetectorPy>()?;
     m.add_class::<PyRowIter>()?;
     m.add_class::<PyRowIterMetadata>()?;
     Ok(())

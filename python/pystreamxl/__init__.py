@@ -25,6 +25,13 @@ from ._formula_support import (
 from .formula_reference_mapper import FormulaReferenceMapper
 from .formula_io import FormulaSerializer
 
+# Formula analysis (Rust-backed): cross-sheet, collaboration, incremental recalc
+from .analyzers import (
+    CollaborationDetector,
+    CrossSheetAnalyzer,
+    IncrementalRecalculator,
+)
+
 # Phase 5: Error Recovery & Validation
 from .error_recovery import (
     ErrorSeverity,
@@ -61,6 +68,10 @@ __all__ = [
     # Phase 3: Formula Tools (v1.2.0+)
     "FormulaReferenceMapper",
     "FormulaSerializer",
+    # Formula analysis (Rust-backed)
+    "CollaborationDetector",
+    "CrossSheetAnalyzer",
+    "IncrementalRecalculator",
     # Phase 5: Error Recovery & Validation (v1.2.0+)
     "ErrorSeverity",
     "ErrorCategory",

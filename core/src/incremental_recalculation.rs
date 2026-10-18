@@ -171,18 +171,31 @@ impl IncrementalRecalculator {
         self.dirty_cells.iter().cloned().collect()
     }
 
-    /// Batch recalculate dirty cells
+    /// Batch recalculate dirty cells.
+    ///
+    /// Cells are processed in dependency (topological) order so a derived
+    /// cell is always computed after the cells it depends on; source cells
+    /// with no tracked dependencies keep their value rather than being
+    /// zeroed. Both properties were violated by the previous implementation,
+    /// which iterated a hash set in arbitrary order and reset every dirty
+    /// cell (including inputs) to `sum(empty) == 0`.
     pub fn recalculate_batch(&mut self) -> HashMap<String, f64> {
         let mut results = HashMap::new();
-        let dirty: Vec<String> = self.dirty_cells.iter().cloned().collect();
+        let order = self._topological_dirty_order();
 
-        for cell_id in dirty {
+        for cell_id in order {
             // Collect dependency values first
             let deps = self
                 .cells
                 .get(&cell_id)
                 .map(|n| n.dependencies.clone())
                 .unwrap_or_default();
+
+            // A cell with no tracked dependencies is a source/leaf input
+            // (not a derived formula). Leave it alone.
+            if deps.is_empty() {
+                continue;
+            }
 
             let new_value: f64 = deps
                 .iter()
@@ -203,6 +216,60 @@ impl IncrementalRecalculator {
 
         self.dirty_cells.clear();
         results
+    }
+
+    /// Order the current dirty set so each cell follows the dirty cells it
+    /// depends on (Kahn's algorithm over the dirty subgraph). Cells caught
+    /// in a dependency cycle are appended in a deterministic order so the
+    /// pass still terminates.
+    fn _topological_dirty_order(&self) -> Vec<String> {
+        let mut indegree: HashMap<String, usize> =
+            self.dirty_cells.iter().map(|c| (c.clone(), 0)).collect();
+        let mut adj: HashMap<String, Vec<String>> = HashMap::new();
+
+        for cell in &self.dirty_cells {
+            if let Some(node) = self.cells.get(cell) {
+                for dep in &node.dependencies {
+                    if self.dirty_cells.contains(dep) {
+                        *indegree.get_mut(cell).unwrap() += 1;
+                        adj.entry(dep.clone()).or_default().push(cell.clone());
+                    }
+                }
+            }
+        }
+
+        let mut ready: Vec<String> = indegree
+            .iter()
+            .filter(|(_, d)| **d == 0)
+            .map(|(c, _)| c.clone())
+            .collect();
+        ready.sort();
+
+        let mut order = Vec::with_capacity(self.dirty_cells.len());
+        while let Some(cell) = ready.pop() {
+            order.push(cell.clone());
+            if let Some(children) = adj.get(&cell) {
+                for child in children {
+                    let d = indegree.get_mut(child).unwrap();
+                    *d -= 1;
+                    if *d == 0 {
+                        ready.push(child.clone());
+                    }
+                }
+            }
+        }
+
+        // Cycle fallback: anything still un-emitted (in a cycle) is appended
+        // deterministically.
+        let mut remainder: Vec<String> = self
+            .dirty_cells
+            .iter()
+            .filter(|c| !order.contains(c))
+            .cloned()
+            .collect();
+        remainder.sort();
+        order.extend(remainder);
+        order
     }
 
     /// Get recalculation statistics
@@ -390,6 +457,43 @@ mod tests {
 
         let results = calc.recalculate_batch();
         assert!(results.contains_key("A2"));
+    }
+
+    #[test]
+    fn test_recalculate_batch_preserves_source_cells() {
+        // Regression: the changed source cell A1 must keep its value (it has
+        // no dependencies), and the dependent B1 must equal it — independent
+        // of hash-set iteration order.
+        for _ in 0..50 {
+            let mut calc = IncrementalRecalculator::new(0.0);
+            calc.register_cell("A1".to_string(), "=5".to_string());
+            calc.register_cell("B1".to_string(), "=A1".to_string());
+            calc.add_dependency("B1", "A1");
+            calc.update_cell("A1", 5.0);
+            let results = calc.recalculate_batch();
+            assert_eq!(results.get("B1"), Some(&5.0));
+            assert_eq!(calc.cells.get("A1").unwrap().current_value, 5.0);
+        }
+    }
+
+    #[test]
+    fn test_recalculate_batch_handles_chain_in_order() {
+        // A3 depends on A2 depends on A1; A1 is a source. The topological
+        // pass must compute A2 before A3 so A3 sees A2's new value.
+        let mut calc = IncrementalRecalculator::new(0.0);
+        calc.register_cell("A1".to_string(), "=1".to_string());
+        calc.register_cell("A2".to_string(), "=A1".to_string());
+        calc.register_cell("A3".to_string(), "=A2".to_string());
+        calc.add_dependency("A2", "A1");
+        calc.add_dependency("A3", "A2");
+
+        // Drive the source, then set intermediate values that the batch must
+        // overwrite in the right order.
+        calc.update_cell("A1", 7.0);
+        let results = calc.recalculate_batch();
+
+        assert_eq!(results.get("A2"), Some(&7.0));
+        assert_eq!(results.get("A3"), Some(&7.0));
     }
 
     #[test]

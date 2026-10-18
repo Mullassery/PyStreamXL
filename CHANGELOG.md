@@ -8,6 +8,27 @@ releases (v1.0.0 through v5.3.0) predate it and are not reconstructed
 here to avoid fabricating dates/details that weren't tracked at the
 time — see `git log` and GitHub Releases for that history.
 
+## [6.1.5] - 2026-10-18
+
+### Added
+- Bridge the three previously-unreachable `streamxl-core` formula analyzers
+  into Python (PYSTREAMXL-004): `pystreamxl.CrossSheetAnalyzer`,
+  `IncrementalRecalculator`, and `CollaborationDetector` are now exposed via
+  `pystreamxl.analyzers` / the package root. Cross-sheet dependency and
+  redundancy analysis, invalidation-graph incremental recalculation, and
+  collaboration-group / optimization / circular-dependency detection are now
+  usable from Python, with tests in `tests/test_analyzers.py`.
+
+### Fixed
+- `IncrementalRecalculator::recalculate_batch` was order-dependent and
+  clobbered source cells: it iterated the dirty set in hash order and reset
+  every dirty cell — including inputs with no tracked dependencies — to
+  `sum(empty) == 0`, so a dependent processed after its source could be
+  zeroed. It now skips dependency-less source cells and processes the dirty
+  set in topological (dependency) order, with cycle fallback. Surfaced while
+  bridging the analyzers to Python; regression tests added in
+  `incremental_recalculation.rs`.
+
 ## [6.1.4] - 2026-10-18
 
 ### Security
