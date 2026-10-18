@@ -95,6 +95,26 @@ jobs:
       - name: Run pytest
         run: pytest tests/ -v --tb=short
 
+      - name: Streaming throughput & memory regression check (RECHECK-017)
+        if: matrix.python-version == '3.12'
+        run: |
+          python - <<'PY'
+          import tempfile, time, tracemalloc, pystreamxl
+          rows = [[f"cell_{i}", float(i), i % 2 == 0, "<tag> & \"quote\""] for i in range(10_000)]
+          with tempfile.NamedTemporaryFile(suffix=".xlsx") as tmp:
+              t0 = time.perf_counter()
+              pystreamxl.write(tmp.name, rows)
+              tracemalloc.start()
+              out = list(pystreamxl.read(tmp.name))
+              _, peak = tracemalloc.get_traced_memory()
+              tracemalloc.stop()
+              elapsed = time.perf_counter() - t0
+              assert len(out) == 10_000 and out[0][3] == '<tag> & "quote"'
+              assert elapsed < 10.0, f"10k-row roundtrip regressed: {elapsed:.2f}s"
+              assert peak < 64 * 1024 * 1024, f"Python heap exceeded 64 MiB: {peak}"
+              print(f"Benchmark OK: 10k rows in {elapsed:.3f}s, peak Python heap {peak/1024:.1f} KiB")
+          PY
+
   dependency-audit:
     name: Dependency Security Audit
     runs-on: ubuntu-latest

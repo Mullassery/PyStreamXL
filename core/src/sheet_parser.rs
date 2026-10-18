@@ -73,8 +73,7 @@ pub struct SheetParser<R: BufRead> {
 
 impl<R: BufRead> SheetParser<R> {
     pub fn new(source: R, sst: Rc<Vec<String>>, styles: Rc<StyleInfo>) -> Self {
-        let mut reader = Reader::from_reader(source);
-        reader.config_mut().trim_text(true);
+        let reader = Reader::from_reader(source);
         Self {
             reader,
             sst,
@@ -117,6 +116,9 @@ impl<R: BufRead> SheetParser<R> {
                 },
                 Event::Text(ref e) if in_v || in_t => {
                     cell_value.push_str(&quick_xml::escape::unescape(&e.decode()?)?);
+                }
+                Event::GeneralRef(ref e) if in_v || in_t => {
+                    crate::shared_strings::push_general_ref(&mut cell_value, e)?;
                 }
                 // Self-closing empty cell: <c/> or <c r="A1"/>
                 Event::Empty(ref e) if e.name().as_ref() == b"c" => {
@@ -187,8 +189,14 @@ impl<R: BufRead> SheetParser<R> {
                 Event::Text(ref e) if in_v || in_t => {
                     cell_value.push_str(&quick_xml::escape::unescape(&e.decode()?)?);
                 }
+                Event::GeneralRef(ref e) if in_v || in_t => {
+                    crate::shared_strings::push_general_ref(&mut cell_value, e)?;
+                }
                 Event::Text(ref e) if in_f => {
                     cell_formula.push_str(&quick_xml::escape::unescape(&e.decode()?)?);
+                }
+                Event::GeneralRef(ref e) if in_f => {
+                    crate::shared_strings::push_general_ref(&mut cell_formula, e)?;
                 }
                 Event::Empty(ref e) if e.name().as_ref() == b"c" => {
                     if let Some(ref mut r) = row {
@@ -227,20 +235,21 @@ impl<R: BufRead> SheetParser<R> {
     }
 
     fn resolve_cell(&self, cell_type: &str, value: &str, style_idx: usize) -> CellValue {
+        let trimmed = value.trim();
         match cell_type {
             "s" => {
-                let idx: usize = value.parse().unwrap_or(0);
+                let idx: usize = trimmed.parse().unwrap_or(0);
                 self.sst
                     .get(idx)
                     .map(|s| CellValue::String(s.clone()))
                     .unwrap_or(CellValue::Empty)
             }
             "inlineStr" => CellValue::String(value.to_string()),
-            "b" => CellValue::Bool(value == "1"),
-            "e" => CellValue::Error(value.to_string()), // Error cell type
-            _ if value.is_empty() => CellValue::Empty,
+            "b" => CellValue::Bool(trimmed == "1"),
+            "e" => CellValue::Error(trimmed.to_string()), // Error cell type
+            _ if trimmed.is_empty() => CellValue::Empty,
             _ => {
-                if let Ok(n) = value.parse::<f64>() {
+                if let Ok(n) = trimmed.parse::<f64>() {
                     if self.styles.is_datetime(style_idx) {
                         CellValue::DateTime(n)
                     } else if self.styles.is_date(style_idx) {

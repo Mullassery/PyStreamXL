@@ -53,6 +53,9 @@ impl CommentCache {
                 Event::Text(ref e) if in_text => {
                     current_text.push_str(&quick_xml::escape::unescape(&e.decode()?)?);
                 }
+                Event::GeneralRef(ref e) if in_text => {
+                    crate::shared_strings::push_general_ref(&mut current_text, e)?;
+                }
                 Event::End(ref e) => match e.name().as_ref() {
                     b"t" => in_text = false,
                     b"comment" => {

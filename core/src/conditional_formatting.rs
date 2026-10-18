@@ -66,6 +66,9 @@ pub fn parse(
             Event::Text(ref e) if in_formula => {
                 pending_formula.push_str(&quick_xml::escape::unescape(&e.decode()?)?);
             }
+            Event::GeneralRef(ref e) if in_formula => {
+                crate::shared_strings::push_general_ref(&mut pending_formula, e)?;
+            }
             Event::End(ref e) => match e.name().as_ref() {
                 b"formula" => {
                     in_formula = false;

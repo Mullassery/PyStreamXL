@@ -8,6 +8,14 @@ releases (v1.0.0 through v5.3.0) predate it and are not reconstructed
 here to avoid fabricating dates/details that weren't tracked at the
 time — see `git log` and GitHub Releases for that history.
 
+## [6.1.4] - 2026-10-18
+
+### Security
+- Upgrade `zip` crate from `8.x` to `9.x` (`>= 9.0.1`), resolving `RUSTSEC-2026-0367`, `RUSTSEC-2026-0368`, and `RUSTSEC-2026-0369` (RECHECK-029).
+
+### Fixed
+- Handle `quick-xml 0.41` `Event::GeneralRef` entities (`&lt;`, `&gt;`, `&amp;`, `&quot;`, `&apos;`, and numeric char refs) across `shared_strings`, `sheet_parser`, `comments`, and `conditional_formatting` so XML special characters round-trip without loss (RECHECK-032).
+
 ## [6.1.3] - 2026-10-17
 
 ### Fixed
