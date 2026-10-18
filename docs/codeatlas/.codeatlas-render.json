@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "outputs": {
+    "md": [
+      "core.2.md",
+      "docs.3.md",
+      "overview.md",
+      "pystreamxl.5.1.md",
+      "python.5.md",
+      "tools.8.md"
+    ],
+    "html": [
+      "core.2.html",
+      "docs.3.html",
+      "overview.html",
+      "pystreamxl.5.1.html",
+      "python.5.html",
+      "tools.8.html"
+    ]
+  }
+}
