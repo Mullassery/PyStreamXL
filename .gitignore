@@ -30,4 +30,4 @@ benchmarks/*.xlsx
 # OS
 .DS_Store
 
-graphify-out/
+codeatlas-out/

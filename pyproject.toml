@@ -65,6 +65,8 @@ Changelog = "https://github.com/Mullassery/PyStreamXL/releases"
 Discussions = "https://github.com/Mullassery/PyStreamXL/discussions"
 
 [project.optional-dependencies]
+# Embedded architecture/knowledge-graph engine behind tools/codeatlas.
+architecture = ["codeatlas-rs>=0.3.0"]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
