@@ -5,7 +5,7 @@
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue)](https://www.python.org)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
 
-Stream large `.xlsx` files row-by-row in constant memory, powered by a Rust core with no `unsafe` code.
+Stream large `.xlsx` files row-by-row with no full-sheet materialization, powered by a Rust core with no `unsafe` code.
 
 ## What it is
 
@@ -13,7 +13,7 @@ PyStreamXL reads multi-sheet Excel workbooks without loading them fully into mem
 extracts formulas and comments, writes new `.xlsx` files, and appends to existing ones —
 all through a small, plain Python API backed by a Rust engine. It installs as
 `pystreamxl` and imports as `pystreamxl`. Compared with `openpyxl` on large exports, the
-goal is flat memory use and faster wall-clock time for streaming iteration.
+goal is bounded, row-by-row processing and faster wall-clock time than whole-sheet loaders. Process RSS still grows with allocator retention; see `benchmarks/rss_stream.md`.
 
 ## Features / Highlights
 
@@ -78,7 +78,7 @@ goal is flat memory use and faster wall-clock time for streaming iteration.
 
 **Production/stable core, with disclosed gaps.** Current version **6.1.2**
 (`Development Status :: 5 - Production/Stable`). The read/write/stream engine is covered
-by the Rust and Python test suites and streams in flat memory (verified 2026-10-04 — see
+by the Rust and Python test suites and streams row-by-row without materializing the whole sheet (see `benchmarks/rss_stream.md` for process RSS evidence —
 [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) gap #10). The `Production/Stable` classifier is
 broader than the test coverage of every optional surface; the honest technical-debt list
 lives in `ROADMAP_HONEST.md`.
@@ -265,7 +265,7 @@ cargo test --release --all-features
 
 ## Related projects
 
-- [PyStreamXL](https://github.com/Mullassery/PyStreamXL) — stream large Excel workbooks with constant memory
+- [PyStreamXL](https://github.com/Mullassery/PyStreamXL) — stream large Excel workbooks row-by-row without full-sheet materialization
 - [PyStreamPDF](https://github.com/Mullassery/PyStreamPDF) — token-efficient PDF extraction for RAG
 - [PyStreamMCP](https://github.com/Mullassery/PyStreamMCP) — context and token optimization for AI agents
 - [PyStreamAI](https://github.com/Mullassery/PyStreamAI) — ML deployment toolkit (canary/A-B, cost tracking, ONNX)

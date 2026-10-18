@@ -8,6 +8,14 @@ releases (v1.0.0 through v5.3.0) predate it and are not reconstructed
 here to avoid fabricating dates/details that weren't tracked at the
 time — see `git log` and GitHub Releases for that history.
 
+## [6.1.7] - 2026-10-19
+
+### Changed
+- Corrected the memory claim: PyStreamXL streams without full-sheet
+  materialization, but process RSS grows with allocator retention (~174 MB at
+  500k rows) even though the live Python heap stays ~0.003 MB. Added
+  `benchmarks/rss_stream.md` with reproducible evidence. No constant-RSS claim.
+
 ## [6.1.6] - 2026-10-19
 
 ### Added
