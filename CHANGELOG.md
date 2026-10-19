@@ -8,6 +8,22 @@ releases (v1.0.0 through v5.3.0) predate it and are not reconstructed
 here to avoid fabricating dates/details that weren't tracked at the
 time — see `git log` and GitHub Releases for that history.
 
+## [Unreleased]
+
+### Added
+- CI test matrix now covers CPython 3.9 alongside 3.10–3.12.
+- Wheel-install smoke job: builds a wheel, installs it non-editably on Python 3.9 and
+  3.12, imports `pystreamxl`, checks `detect_circular_references`, and round-trips a
+  temporary `.xlsx` file.
+- Release workflow builds cp39 wheels for Linux (x86_64, aarch64), macOS (x86_64,
+  arm64), and Windows in addition to cp310–cp312.
+
+### Fixed
+- Restored the documented Python 3.9 support: source and tests compile under 3.9 and the
+  full 3.9 suite passes (188 passed, 1 skipped).
+- README no longer claims wheels are macOS arm64-only; the stale Python 3.8 classifier
+  was removed from `pyproject.toml`.
+
 ## [6.2.0] - 2026-10-20
 
 ### Added

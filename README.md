@@ -69,9 +69,10 @@ goal is bounded, row-by-row processing and faster wall-clock time than whole-she
   `create_flask_app()` have no login, API key, or token check — anyone who can reach the
   port can read and query every loaded source. Keep it on `localhost` or behind your own
   auth layer (reverse proxy, API gateway).
-- **Prebuilt wheels are macOS arm64 only.** Every PyPI release has shipped exactly one
-  platform wheel plus an sdist; Linux/Windows/x86_64-mac users build from source, which
-  requires a Rust toolchain and [maturin](https://www.maturin.rs/).
+- **No wheels for Python 3.13+ or PyPy.** Releases build CPython 3.9–3.12 wheels for
+  Linux (x86_64, aarch64), macOS (x86_64, arm64), and Windows; other
+  interpreter/platform combinations build from the sdist, which requires a Rust
+  toolchain and [maturin](https://www.maturin.rs/).
 - **Some listed release features are not reachable from Python.** ~1,180 lines of Rust
   (collaboration detection, incremental recalculation, cross-sheet dependency analysis)
   compile and pass their own tests but are not referenced by `python/src/lib.rs`; see
@@ -82,7 +83,7 @@ goal is bounded, row-by-row processing and faster wall-clock time than whole-she
 
 ## Project status
 
-**Production/stable core, with disclosed gaps.** Current version **6.1.2**
+**Production/stable core, with disclosed gaps.** Current version **6.2.0**
 (`Development Status :: 5 - Production/Stable`). The read/write/stream engine is covered
 by the Rust and Python test suites and streams row-by-row without materializing the whole sheet (see `benchmarks/rss_stream.md` for process RSS evidence —
 [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) gap #10). The `Production/Stable` classifier is
@@ -95,11 +96,14 @@ lives in `ROADMAP_HONEST.md`.
 pip install pystreamxl
 ```
 
-A prebuilt wheel is currently published only for macOS (arm64). Other platforms install
-from the source distribution, which requires a Rust toolchain (see `rust-toolchain.toml`)
-and [maturin](https://www.maturin.rs/).
+Releases publish prebuilt wheels for Linux (x86_64, aarch64), macOS (x86_64, arm64),
+and Windows on CPython 3.9–3.12. Other interpreter/platform combinations install from
+the source distribution, which requires a Rust toolchain (see `rust-toolchain.toml`) and
+[maturin](https://www.maturin.rs/).
 
-Requires Python 3.9+. The REST server extra:
+Requires Python 3.9+. CI runs the test suite on CPython 3.9, 3.10, 3.11, and 3.12, and a
+wheel-smoke job installs each built wheel non-editably and exercises an XLSX round-trip.
+The REST server extra:
 
 ```bash
 pip install "pystreamxl[server]"
