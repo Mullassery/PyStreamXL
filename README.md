@@ -250,6 +250,16 @@ choose PyStreamXL for bounded-memory streaming, not raw speed. Actual numbers
 depend heavily on file structure, so measure on
 your own workloads rather than trusting a generic table.
 
+## Known issues and deferred work
+
+**Blocked / failed:**
+- Windows wheel — local cross-compile toolchain fails; use the GitHub release workflow.
+
+**Rejected / deferred:**
+- SQL query language, formula recalculation, dashboard.
+
+Full shipped/blocked/rejected detail: [`QUEUE_STATUS.md`](QUEUE_STATUS.md).
+
 ## Queue status
 
 Shipped, blocked/failed, and rejected work for this repository is documented in
