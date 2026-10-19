@@ -5,7 +5,7 @@ Supports reading, writing, and modifying formulas in XLSX files.
 This CRITICAL feature unblocks finance/accounting teams.
 """
 
-from typing import List, Dict, Optional, Tuple, Any
+from typing import List, Dict, Optional, Tuple, Any, Iterable
 from dataclasses import dataclass
 from enum import Enum
 import re
@@ -351,3 +351,95 @@ class FormulaSubstitution:
         """
         pattern = re.escape(old_range)
         return re.sub(pattern, new_range, formula, flags=re.IGNORECASE)
+
+
+# ---------------------------------------------------------------------------
+# Dependency-graph validation (pre-flight, before export)
+# ---------------------------------------------------------------------------
+
+_CELL_REF = re.compile(r"^\$?([A-Za-z]+)\$?([0-9]+)$")
+
+
+def _normalize_ref(ref: str) -> str:
+    return ref.replace("$", "").upper()
+
+
+def _col_to_letters(col: int) -> str:
+    letters = ""
+    value = col + 1
+    while value > 0:
+        value, rem = divmod(value - 1, 26)
+        letters = chr(65 + rem) + letters
+    return letters
+
+
+def _letters_to_col(letters: str) -> int:
+    value = 0
+    for ch in letters.upper():
+        value = value * 26 + (ord(ch) - 64)
+    return value - 1
+
+
+def _expand_range(start: str, end: str) -> List[str]:
+    a = _CELL_REF.match(_normalize_ref(start))
+    b = _CELL_REF.match(_normalize_ref(end))
+    if not a or not b:
+        return []
+    c1, r1 = _letters_to_col(a.group(1)), int(a.group(2))
+    c2, r2 = _letters_to_col(b.group(1)), int(b.group(2))
+    cells = []
+    for row in range(min(r1, r2), max(r1, r2) + 1):
+        for col in range(min(c1, c2), max(c1, c2) + 1):
+            cells.append(f"{_col_to_letters(col)}{row}")
+    return cells
+
+
+def detect_circular_references(cells: Iterable[FormulaCell]) -> List[List[str]]:
+    """Return dependency cycles among formula cells (including self-references).
+
+    Cells use 0-based ``(row, col)`` like :class:`FormulaPreserver`/openpyxl, so
+    ``FormulaCell(0, 0, "=B1")`` is cell ``A1``. Ranges such as ``A1:A10`` are
+    expanded, and ``$`` absolute markers are ignored for dependency identity.
+    Call this before export to reject a workbook whose formulas cannot resolve.
+    """
+    formula_cells = list(cells)
+    labels = {
+        f"{_col_to_letters(cell.col)}{cell.row + 1}": cell for cell in formula_cells
+    }
+    graph: Dict[str, set] = {}
+    for label, cell in labels.items():
+        refs = {_normalize_ref(ref) for ref in FormulaAnalyzer.extract_references(cell.formula)}
+        for start, end in FormulaAnalyzer.extract_ranges(cell.formula):
+            refs.update(_expand_range(start, end))
+        graph[label] = {ref for ref in refs if ref in labels}
+
+    WHITE, GRAY, BLACK = 0, 1, 2
+    color: Dict[str, int] = {node: WHITE for node in graph}
+    stack: List[str] = []
+    cycles: List[List[str]] = []
+
+    def visit(node: str) -> None:
+        color[node] = GRAY
+        stack.append(node)
+        for neighbour in sorted(graph.get(node, ())):
+            state = color.get(neighbour, WHITE)
+            if state == WHITE:
+                visit(neighbour)
+            elif state == GRAY:
+                start = stack.index(neighbour)
+                cycles.append(stack[start:] + [neighbour])
+        stack.pop()
+        color[node] = BLACK
+
+    for node in sorted(graph):
+        if color[node] == WHITE:
+            visit(node)
+
+    unique: List[List[str]] = []
+    seen = set()
+    for cycle in cycles:
+        key = frozenset(cycle)
+        if key not in seen:
+            seen.add(key)
+            unique.append(cycle)
+    return unique

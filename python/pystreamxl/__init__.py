@@ -19,6 +19,7 @@ from ._formula_support import (
     FormulaSubstitution,
     FormulaType,
     FormulaCell,
+    detect_circular_references,
     FormulaMapping,
 )
 
@@ -66,6 +67,7 @@ __all__ = [
     "FormulaSubstitution",
     "FormulaType",
     "FormulaCell",
+    "detect_circular_references",
     "FormulaMapping",
     # Phase 3: Formula Tools (v1.2.0+)
     "FormulaReferenceMapper",
