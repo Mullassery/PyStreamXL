@@ -250,6 +250,11 @@ choose PyStreamXL for bounded-memory streaming, not raw speed. Actual numbers
 depend heavily on file structure, so measure on
 your own workloads rather than trusting a generic table.
 
+## Queue status
+
+Shipped, blocked/failed, and rejected work for this repository is documented in
+[`QUEUE_STATUS.md`](QUEUE_STATUS.md).
+
 ## Contributing
 
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a
