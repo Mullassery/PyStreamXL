@@ -25,6 +25,10 @@ goal is bounded, row-by-row processing and faster wall-clock time than whole-she
 - **Formula extraction** — formula text plus a best-effort formula-type classification
   (`with_formulas=True`), `FormulaReferenceMapper` for shifting/rewriting references,
   and `FormulaSerializer` for exporting/importing formulas as JSON or CSV.
+- **Formula dependency validation** — `detect_circular_references()` /
+  `validate_formula_rows()` find multi-cell cycles, self-references, and
+  range-expanded dependencies; `write(..., validate_formulas=True)` rejects
+  circular workbooks before export.
 - **Comment extraction** — cell comments and authors, via `with_formulas=True`.
 - **Conditional formatting** — `conditional_formats()` reads every
   `<conditionalFormatting>`/`<cfRule>` (type, operator, formulas, priority,
@@ -57,6 +61,8 @@ goal is bounded, row-by-row processing and faster wall-clock time than whole-she
   named sheet; it does not parse arbitrary queries.
 - **No pandas/Parquet/Arrow export built in.** Convert `read()`'s output yourself.
 - **No formula *evaluation*.** Formula text is extracted and classified, not recalculated.
+  Dependency validation detects circular references; it does not resolve
+  dynamic references such as `INDIRECT`/`OFFSET`.
 - **The `pystreamxl dashboard` CLI renders sample data, not live telemetry.** Every mode
   prints an explicit "SAMPLE DATA — not live" warning.
 - **The optional REST server has no authentication.** `PyStreamXLServer` /
@@ -172,6 +178,20 @@ rows = list(pystreamxl.read("model.xlsx", with_formulas=True))
 #                        "comment": ..., "comment_author": ...}
 FormulaSerializer.export_to_json(rows, "formulas.json")
 FormulaSerializer.export_to_csv(rows, "formulas.csv")  # sanitized against CSV/formula injection
+```
+
+**Validate formula dependencies before export:**
+
+```python
+from pystreamxl import FormulaCell, detect_circular_references
+
+cycles = detect_circular_references([
+    FormulaCell(0, 0, "=B1"),
+    FormulaCell(0, 1, "=A1"),
+])
+# [['A1', 'B1', 'A1']]
+
+pystreamxl.write("out.xlsx", rows, validate_formulas=True)  # raises on cycles
 ```
 
 **Export to CSV safely** — untrusted cell content is never written verbatim:

@@ -8,6 +8,7 @@ from .core import (
     XlsxWriter as _XlsxWriter,
 )
 from .security import validate_read_path, validate_write_path
+from ._formula_support import validate_formula_rows
 
 
 def read(
@@ -101,7 +102,11 @@ def stream(path: str) -> Iterator[List[Any]]:
     yield from read(path)
 
 
-def write(path: str, rows: Iterable[Iterable[Any]]) -> None:
+def write(
+    path: str,
+    rows: Iterable[Iterable[Any]],
+    validate_formulas: bool = False,
+) -> None:
     """
     Write rows to an Excel (.xlsx) file.
 
@@ -110,6 +115,10 @@ def write(path: str, rows: Iterable[Iterable[Any]]) -> None:
         rows: Iterable of iterables of cell values.
               Supported types: str, int, float, bool, None,
               datetime.date, datetime.datetime.
+        validate_formulas: When True, materialize ``rows`` and reject circular
+              formula dependencies before writing. Default False preserves the
+              streaming behavior (and lets intentional iterative workbooks be
+              written unchanged).
 
     Example::
 
@@ -122,6 +131,13 @@ def write(path: str, rows: Iterable[Iterable[Any]]) -> None:
         SecurityError: If path fails security validation.
     """
     validate_write_path(path)
+    if validate_formulas:
+        materialized = [list(row) for row in rows]
+        cycles = validate_formula_rows(materialized)
+        if cycles:
+            raise ValueError(f"Circular formula dependencies detected: {cycles}")
+        write_rows(path, materialized)
+        return
     write_rows(path, rows)
 
 

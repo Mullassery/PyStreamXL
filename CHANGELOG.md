@@ -8,6 +8,17 @@ releases (v1.0.0 through v5.3.0) predate it and are not reconstructed
 here to avoid fabricating dates/details that weren't tracked at the
 time — see `git log` and GitHub Releases for that history.
 
+## [6.2.0] - 2026-10-20
+
+### Added
+- `detect_circular_references()` / `validate_formula_rows()`: static dependency
+  validation for multi-cell cycles, self-references, and range-expanded
+  references (`A1:A10`).
+- `write(..., validate_formulas=True)` rejects circular workbooks before export
+  (opt-in; default streaming behavior is unchanged).
+- Tests for cycles, acyclic workbooks, self-references, range expansion, and the
+  export gate.
+
 ## [6.1.7] - 2026-10-19
 
 ### Changed

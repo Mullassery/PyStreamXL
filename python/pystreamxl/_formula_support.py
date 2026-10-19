@@ -443,3 +443,19 @@ def detect_circular_references(cells: Iterable[FormulaCell]) -> List[List[str]]:
             seen.add(key)
             unique.append(cycle)
     return unique
+
+
+def validate_formula_rows(rows: Iterable[Iterable[Any]]) -> List[List[str]]:
+    """Return circular dependencies among formula cells in row-major rows.
+
+    ``rows`` is the same shape accepted by :func:`pystreamxl.write`; cell
+    ``(0, 0)`` is ``A1``. Use this before export to fail early on cycles.
+    """
+    cells: List[FormulaCell] = []
+    for row_idx, row in enumerate(rows):
+        if not isinstance(row, (list, tuple)):
+            continue
+        for col_idx, value in enumerate(row):
+            if isinstance(value, str) and value.startswith("="):
+                cells.append(FormulaCell(row_idx, col_idx, value))
+    return detect_circular_references(cells)

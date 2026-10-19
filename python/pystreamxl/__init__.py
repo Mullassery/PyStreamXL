@@ -20,6 +20,7 @@ from ._formula_support import (
     FormulaType,
     FormulaCell,
     detect_circular_references,
+    validate_formula_rows,
     FormulaMapping,
 )
 
@@ -68,6 +69,7 @@ __all__ = [
     "FormulaType",
     "FormulaCell",
     "detect_circular_references",
+    "validate_formula_rows",
     "FormulaMapping",
     # Phase 3: Formula Tools (v1.2.0+)
     "FormulaReferenceMapper",
