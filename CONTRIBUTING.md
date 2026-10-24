@@ -28,7 +28,7 @@ examples/                  # runnable usage examples
 docs/                       # architecture, feature, and format docs
 ```
 
-Note: `core/src/lib.rs` also declares `collaboration_detection.rs`, `incremental_recalculation.rs`, and `cross_sheet_analysis.rs`. These are **not** wired into `python/src/lib.rs` or exposed to Python at all — they are dead code left over from abandoned feature work (see `docs/internal/ROADMAP_HONEST.md`). Don't build on top of them without first deciding whether to finish wiring them up or delete them.
+The formula analyzers in `core/src/lib.rs` (`collaboration_detection.rs`, `incremental_recalculation.rs`, and `cross_sheet_analysis.rs`) are wired into the PyO3 bridge and exposed as `pystreamxl.analyzers` (`CollaborationDetector`, `IncrementalRecalculator`, `CrossSheetAnalyzer`). Changes there should keep the Rust and Python surfaces in sync and add tests on both sides.
 
 ## Dev setup
 
@@ -72,12 +72,11 @@ export RUSTFLAGS="-C link-args=-undefined -C link-args=dynamic_lookup"
 
 ## Known gaps if you're looking for something to work on
 
-See the "What's not here" section of `README.md` and `docs/internal/ROADMAP_HONEST.md` for the current, honest list of missing features and technical debt (dead Rust modules, single-platform wheel, etc.) — the lint/fmt CI gate mentioned there is now in place. Full tracked backlog: [Mullassery/RepoIssues](https://github.com/Mullassery/RepoIssues), filtered to the `repo:PyStreamXL` label, with [#52](https://github.com/Mullassery/RepoIssues/issues/52) as the master index.
+See the "What's not here" section of `README.md` and `docs/internal/ROADMAP_HONEST.md` for the current, honest list of missing features and technical debt (single-platform wheel, etc.) — the lint/fmt CI gate mentioned there is now in place. Full tracked backlog: [Mullassery/RepoIssues](https://github.com/Mullassery/RepoIssues), filtered to the `repo:PyStreamXL` label, with [#52](https://github.com/Mullassery/RepoIssues/issues/52) as the master index.
 
 **Maintainer-only action items** (need repo/PyPI-project settings access this audit process doesn't have):
 
 - **PyPI Trusted Publisher (OIDC) is not configured** for this project ([RepoIssues #46](https://github.com/Mullassery/RepoIssues/issues/46)). `.github/workflows/release.yml` is structurally correct (builds wheels for Linux/macOS/Windows, verified with `actionlint`) but its `publish` job will fail on the first real tag push until OIDC trust is set up at https://pypi.org/manage/project/pystreamxl/settings/publishing/ for this repo. The workflow has never been fired end-to-end with a real tag.
-- **1,180 lines of dead Rust code** (`collaboration_detection.rs`, `incremental_recalculation.rs`, `cross_sheet_analysis.rs` — the v4.0.0/v5.0.0 "headline features" that were never wired into the Python API) need a finish-or-delete decision ([RepoIssues #48](https://github.com/Mullassery/RepoIssues/issues/48)).
 - **The "5 - Production/Stable" PyPI classifier** may be more confident than the current state (no server auth, some dependency bumps blocked, etc.) warrants — a maintainer call, not a bug ([RepoIssues #51](https://github.com/Mullassery/RepoIssues/issues/51)).
 
 ## License

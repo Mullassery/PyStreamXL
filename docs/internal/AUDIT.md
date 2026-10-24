@@ -69,7 +69,7 @@ rather than left holding this audit's now-superseded rewrite.
 - **TD-0023** (P2) — Release workflow builds wheels for Linux/macOS/Windows but can't publish: PyPI Trusted Publisher (OIDC) isn't configured yet. Same recurring gap pattern seen elsewhere in this org. Requires either OIDC setup on the PyPI project or a manual `twine upload` with credentials this audit doesn't have access to.
 - **TD-0021** (P2, partially complete) — Multi-platform wheel building is now defined in CI but has never actually been run (no release tag pushed with it yet).
 - **TD-0017** (P2, resolved-with-caveat) — Dependency-audit CI job added but self-described by its author as unverified end-to-end.
-- **TD-0019** (P3) — ~16 low-priority clippy style warnings, concentrated in Rust modules (`collaboration_detection.rs`, `cross_sheet_analysis.rs`, `incremental_recalculation.rs`) that are compiled and tested but **completely unused** — not wired into the PyO3 bridge at all. This dead-code situation is the single biggest piece of architecture debt in the repo; fixing style warnings in modules that might get deleted isn't worth doing before that decision is made.
+- **TD-0019** (P3) — clippy style warnings in the analyzer modules are cleared, and the modules are now wired into the PyO3 bridge as `pystreamxl.analyzers`.
 
 ## CI Status
 

@@ -257,7 +257,7 @@ Found a security issue? See [SECURITY.md](SECURITY.md).
 
 ## Documentation
 
-- [`docs/architecture/README.md`](docs/architecture/README.md) — how the Rust engine and Python API fit together, including known dead code
+- [`docs/architecture/README.md`](docs/architecture/README.md) — how the Rust engine and Python API fit together, including the Python analyzer bridge
 - [`docs/formula_validation.md`](docs/formula_validation.md) — circular-dependency detection and the export gate
 - [`docs/xlsx_format.md`](docs/xlsx_format.md) — XLSX/ZIP/XML format notes
 - [`docs/internal/ROADMAP_HONEST.md`](docs/internal/ROADMAP_HONEST.md) — unvarnished list of what's missing, broken, or technical debt

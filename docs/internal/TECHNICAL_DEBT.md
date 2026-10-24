@@ -18,7 +18,7 @@ misattributed. Only a handful of this audit's findings survived as
 genuinely unique contributions after reconciliation.
 
 Total items: 23
-Open: 6
+Open: 5
 Resolved: 17 (4 by this audit, 13 by upstream's independent pass)
 Critical (P0): 0
 High (P1): 1 open, rest resolved
@@ -64,7 +64,7 @@ None found.
 | TD-0011 | DOCUMENTATION | Root `CONTRIBUTING.md` had a stale layout, wrong license claim (MIT vs actual Apache-2.0), and listed shipped features as outstanding | RESOLVED | Upstream — comprehensively rewritten (correct layout including the dead-code-module callout, correct license, points at `CHANGELOG.md`/`ROADMAP_HONEST.md`). This audit's own rewrite was superseded and discarded in favor of upstream's during reconciliation. |
 | TD-0014 | DOCUMENTATION | `docs/CONTRIBUTING.md` was actually mislabeled Claude-agent build instructions with a stale "not yet implemented" list | RESOLVED | **This audit** (partially) — upstream deleted the stale file outright (correctly recognizing the problem) but didn't replace it with equivalent agent-facing build guidance. This audit's content survives as the new root `CLAUDE.md`, corrected for the `pystreamxl` rename. |
 | TD-0015 | DOCUMENTATION / SECURITY | `SECURITY_AUDIT.md` was a frozen v1.0.1-era snapshot contradicting the current codebase | RESOLVED | Upstream — archived verbatim as `docs/archive/SECURITY_AUDIT_v1_2026-07_STALE.md` (historical record, correctly left unedited) and superseded by a new, much more thorough `SECURITY.md` that documents a real path-traversal bug this audit never found (see Resolved Historical Issues). This audit's own rewrite of `SECURITY_AUDIT.md` was discarded during reconciliation — it would have been a redundant, less-accurate duplicate of upstream's `SECURITY.md`. |
-| TD-0019 | REFACTOR / TEST_DEBT | ~16 non-blocking clippy style warnings (`Default` impls, `is_multiple_of`, dead fields, empty doc-comment lines) | **OPEN** | Low priority; concentrated in the dead/unwired `collaboration_detection.rs`/`cross_sheet_analysis.rs`/`incremental_recalculation.rs`/`formula_parser.rs` modules upstream has flagged as needing a wire-up-or-delete decision — fixing style warnings in code that might get deleted isn't worth doing yet. |
+| TD-0019 | REFACTOR / TEST_DEBT | ~16 non-blocking clippy style warnings (`Default` impls, `is_multiple_of`, dead fields, empty doc-comment lines) | RESOLVED | Warnings cleared while wiring the three analyzer modules into `pystreamxl.analyzers`; CI keeps clippy green. |
 | TD-0022 | DOCUMENTATION | No `CHANGELOG.md` existed despite a long version history | RESOLVED | Upstream — added `CHANGELOG.md` |
 
 ## Explicit TODOs / FIXMEs / stubs
@@ -74,7 +74,7 @@ None found in source. Confirmed again post-reconciliation.
 ## Partial Implementations
 
 - `colorScale`/`dataBar`/`iconSet` conditional-formatting rule types parsed for type/sqref/priority only, not inline color-stop/threshold children — already honestly disclosed, not new debt.
-- `collaboration_detection.rs`, `cross_sheet_analysis.rs`, `incremental_recalculation.rs` — entire Rust modules compiled and tested but never wired into the PyO3 bridge (`python/src/lib.rs`) or exposed to Python at all. Explicitly documented by upstream in `CONTRIBUTING.md` as abandoned feature work needing a finish-or-delete decision. This is the single largest piece of architecture debt in the repo.
+- `collaboration_detection.rs`, `cross_sheet_analysis.rs`, `incremental_recalculation.rs` — wired into the PyO3 bridge (`python/src/lib.rs`) and exposed as `pystreamxl.analyzers`; regression tests live in `tests/test_analyzers.py`.
 
 ## CI/CD Debt
 
@@ -99,7 +99,7 @@ None found in source. Confirmed again post-reconciliation.
 
 ## Architecture Debt
 
-- Three entire Rust modules (collaboration detection, cross-sheet analysis, incremental recalculation) compiled, tested, and completely unused — see Partial Implementations above. This is more significant than anything originally captured as TD-0013/TD-0016 and wasn't flagged by this audit's first pass; found only while reconciling against upstream's `CONTRIBUTING.md` note.
+- Three Rust modules (collaboration detection, cross-sheet analysis, incremental recalculation) are now exposed through `pystreamxl.analyzers`; see Partial Implementations above.
 
 ## Performance Debt
 
