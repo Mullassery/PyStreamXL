@@ -56,6 +56,8 @@ starts, and record the decision in the PR or changelog.
 
 ## OSS gap analysis — 2026-10-24
 
+**What matters most here:** install coverage and honest memory claims. macOS-arm64-only contradicts the README, and RSS grows to ~69 MB at 250k rows; ship multi-platform wheels and prove 1M-row behavior before claiming constant memory.
+
 Scope: Compared PyStreamXL's streaming `.xlsx` reader/writer, formula fidelity, and memory behavior against the four libraries a data engineer would shortlist for large-workbook ingestion.
 
 ### Comparable OSS projects
