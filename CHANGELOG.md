@@ -93,7 +93,7 @@ time — see `git log` and GitHub Releases for that history.
   (all interfaces) to `127.0.0.1`. Callers that need to bind a
   non-loopback address still can by passing `host` explicitly; there is
   still no authentication on the REST API regardless of bind address —
-  see `TECHNICAL_DEBT.md` TD-0012.
+  see `docs/internal/TECHNICAL_DEBT.md` TD-0012.
 
 ### Changed
 - `rich` dependency given an upper bound (`>=13.0,<15`) instead of an
@@ -125,7 +125,7 @@ time — see `git log` and GitHub Releases for that history.
   delegates to the new one.
 
 ### Fixed
-- **Real O(1) memory for `read()`/`stream()`** (ROADMAP_HONEST.md gap #10).
+- **Real O(1) memory for `read()`/`stream()`** (docs/internal/ROADMAP_HONEST.md gap #10).
   `XlsxStream::open()` previously decompressed the entire sheet XML into a
   `Vec<u8>` before any row was yielded, so peak RSS scaled with sheet size
   despite the Python-facing API already being a real row-by-row iterator.
@@ -257,7 +257,7 @@ time — see `git log` and GitHub Releases for that history.
   `collaboration_detection.rs`, `incremental_recalculation.rs`, and
   `cross_sheet_analysis.rs` (1,180 lines) are dead code never wired
   into the Python bridge.
-- Added `ROADMAP_HONEST.md`.
+- Added `docs/internal/ROADMAP_HONEST.md`.
 - Added `Cargo.lock` to `[tool.maturin]` reproducibility story (see
   Fixed above).
 

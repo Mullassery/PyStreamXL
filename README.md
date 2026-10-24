@@ -76,7 +76,7 @@ goal is bounded, row-by-row processing and faster wall-clock time than whole-she
 - **Some listed release features are not reachable from Python.** ~1,180 lines of Rust
   (collaboration detection, incremental recalculation, cross-sheet dependency analysis)
   compile and pass their own tests but are not referenced by `python/src/lib.rs`; see
-  [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md).
+  [`docs/internal/ROADMAP_HONEST.md`](docs/internal/ROADMAP_HONEST.md).
 - **Not all conditional-formatting detail is modeled.** `colorScale`/`dataBar`/`iconSet`
   rules are captured at the type/sqref/priority level only; their inline color-stop and
   threshold definitions are not represented.
@@ -86,9 +86,9 @@ goal is bounded, row-by-row processing and faster wall-clock time than whole-she
 **Production/stable core, with disclosed gaps.** Current version **6.2.0**
 (`Development Status :: 5 - Production/Stable`). The read/write/stream engine is covered
 by the Rust and Python test suites and streams row-by-row without materializing the whole sheet (see `benchmarks/rss_stream.md` for process RSS evidence —
-[`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) gap #10). The `Production/Stable` classifier is
+[`docs/internal/ROADMAP_HONEST.md`](docs/internal/ROADMAP_HONEST.md) gap #10). The `Production/Stable` classifier is
 broader than the test coverage of every optional surface; the honest technical-debt list
-lives in `ROADMAP_HONEST.md`.
+lives in `docs/internal/ROADMAP_HONEST.md`.
 
 ## Installation
 
@@ -260,14 +260,14 @@ Found a security issue? See [SECURITY.md](SECURITY.md).
 - [`docs/architecture/README.md`](docs/architecture/README.md) — how the Rust engine and Python API fit together, including known dead code
 - [`docs/formula_validation.md`](docs/formula_validation.md) — circular-dependency detection and the export gate
 - [`docs/xlsx_format.md`](docs/xlsx_format.md) — XLSX/ZIP/XML format notes
-- [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) — unvarnished list of what's missing, broken, or technical debt
+- [`docs/internal/ROADMAP_HONEST.md`](docs/internal/ROADMAP_HONEST.md) — unvarnished list of what's missing, broken, or technical debt
 - [`benchmarks/`](benchmarks/) — benchmark scripts and committed results comparing against `openpyxl`
 - [`examples/`](examples/) — runnable examples, including `memory_benchmark.py`
 - [`CHANGELOG.md`](CHANGELOG.md) — release history
 - [`SECURITY.md`](SECURITY.md) — security model, limits, and what it does *not* protect against
 
 Rows are yielded one at a time, and memory stays flat during iteration regardless of sheet
-size (fixed 2026-10-04; see `ROADMAP_HONEST.md` gap #10). The `pyproject.toml` description
+size (fixed 2026-10-04; see `docs/internal/ROADMAP_HONEST.md` gap #10). The `pyproject.toml` description
 cites **3.8–5.6x faster than `openpyxl`** in this repo's committed benchmarks
 (`benchmarks/results.md`). That is an openpyxl baseline: python-calamine is much
 faster at whole-sheet loads (see `benchmarks/calamine_vs_pystreamxl.md`), so
@@ -283,7 +283,7 @@ your own workloads rather than trusting a generic table.
 **Rejected / deferred:**
 - SQL query language, formula recalculation, dashboard.
 
-Full shipped/blocked/rejected detail: [`QUEUE_STATUS.md`](QUEUE_STATUS.md).
+Full shipped/blocked/rejected detail: [`docs/internal/QUEUE_STATUS.md`](docs/internal/QUEUE_STATUS.md).
 
 ## Contributing
 

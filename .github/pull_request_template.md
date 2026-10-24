@@ -20,5 +20,5 @@
 - [ ] If this changes what the library does or doesn't do, `README.md`'s
       "Honest feature list" / "What's not here" sections are updated to match
 - [ ] No new placeholder/stub code that looks like it works but doesn't
-      (see `ROADMAP_HONEST.md` for what "doesn't work" already looks like here)
+      (see `../docs/internal/ROADMAP_HONEST.md` for what "doesn't work" already looks like here)
 - [ ] `CHANGELOG.md` updated under `[Unreleased]`

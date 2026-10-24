@@ -103,5 +103,5 @@ of the v4.0.0 ("Real-time Collaboration Detection") and v5.0.0
 none of it is reachable from the actual Python package. The README's
 "Honest feature list" correctly does not advertise these as features,
 which means this code has been effectively abandoned in place rather
-than exposed or removed. See `ROADMAP_HONEST.md` for the decision this
+than exposed or removed. See `../internal/ROADMAP_HONEST.md` for the decision this
 needs (finish wiring it up, or delete it).

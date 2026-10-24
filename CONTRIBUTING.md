@@ -28,7 +28,7 @@ examples/                  # runnable usage examples
 docs/                       # architecture, feature, and format docs
 ```
 
-Note: `core/src/lib.rs` also declares `collaboration_detection.rs`, `incremental_recalculation.rs`, and `cross_sheet_analysis.rs`. These are **not** wired into `python/src/lib.rs` or exposed to Python at all — they are dead code left over from abandoned feature work (see `ROADMAP_HONEST.md`). Don't build on top of them without first deciding whether to finish wiring them up or delete them.
+Note: `core/src/lib.rs` also declares `collaboration_detection.rs`, `incremental_recalculation.rs`, and `cross_sheet_analysis.rs`. These are **not** wired into `python/src/lib.rs` or exposed to Python at all — they are dead code left over from abandoned feature work (see `docs/internal/ROADMAP_HONEST.md`). Don't build on top of them without first deciding whether to finish wiring them up or delete them.
 
 ## Dev setup
 
@@ -72,7 +72,7 @@ export RUSTFLAGS="-C link-args=-undefined -C link-args=dynamic_lookup"
 
 ## Known gaps if you're looking for something to work on
 
-See the "What's not here" section of `README.md` and `ROADMAP_HONEST.md` for the current, honest list of missing features and technical debt (dead Rust modules, single-platform wheel, etc.) — the lint/fmt CI gate mentioned there is now in place. Full tracked backlog: [Mullassery/RepoIssues](https://github.com/Mullassery/RepoIssues), filtered to the `repo:PyStreamXL` label, with [#52](https://github.com/Mullassery/RepoIssues/issues/52) as the master index.
+See the "What's not here" section of `README.md` and `docs/internal/ROADMAP_HONEST.md` for the current, honest list of missing features and technical debt (dead Rust modules, single-platform wheel, etc.) — the lint/fmt CI gate mentioned there is now in place. Full tracked backlog: [Mullassery/RepoIssues](https://github.com/Mullassery/RepoIssues), filtered to the `repo:PyStreamXL` label, with [#52](https://github.com/Mullassery/RepoIssues/issues/52) as the master index.
 
 **Maintainer-only action items** (need repo/PyPI-project settings access this audit process doesn't have):
 
