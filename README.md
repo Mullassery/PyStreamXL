@@ -255,6 +255,16 @@ except SecurityError as e:
 
 Found a security issue? See [SECURITY.md](SECURITY.md).
 
+## Publishing
+
+The release workflow builds Linux/macOS/Windows wheels and an sdist on tag
+pushes. Publishing uses PyPI Trusted Publishing when configured; until then a
+token-based fallback is available:
+
+```bash
+PYPI_API_TOKEN=pypi-... scripts/publish_pypi.sh
+```
+
 ## Documentation
 
 - [`docs/architecture/README.md`](docs/architecture/README.md) — how the Rust engine and Python API fit together, including the Python analyzer bridge
