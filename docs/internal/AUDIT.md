@@ -30,8 +30,8 @@ Critical: 0 · High: 5 · Medium: 11 · Low: 6
 
 ## After Reconciliation
 
-Open debt: 6
-Critical: 0 · High: 1 (TD-0012, server auth) · Medium: 4 · Low: 1
+Open debt: 5
+Critical: 0 · High: 0 · Medium: 4 · Low: 1
 
 ## Items This Audit Actually Fixed (surviving, non-redundant)
 
@@ -64,7 +64,6 @@ rather than left holding this audit's now-superseded rewrite.
 
 ## Items Remaining
 
-- **TD-0012** (P1) — No authentication on the REST server. Product decision required.
 - **TD-0018** (P2) — Dependabot backlog, including a `pyo3` major-version bump needing compatibility testing, and a direct conflict between this audit's `rich<15` cap and an open `rich>=15` Dependabot branch.
 - **TD-0023** (P2) — Release workflow builds wheels for Linux/macOS/Windows but can't publish: PyPI Trusted Publisher (OIDC) isn't configured yet. Same recurring gap pattern seen elsewhere in this org. Requires either OIDC setup on the PyPI project or a manual `twine upload` with credentials this audit doesn't have access to.
 - **TD-0021** (P2, partially complete) — Multi-platform wheel building is now defined in CI but has never actually been run (no release tag pushed with it yet).
@@ -100,7 +99,7 @@ write-side size caps, and the deliberate choice to make path confinement
 opt-in rather than default. This audit's net contribution to security was
 the server default-bind fix (TD-0007); everything else security-related
 this audit found was either already covered better upstream or is now
-tracked as genuinely open (TD-0012, TD-0023).
+tracked as genuinely open (TD-0023).
 
 ## Dependency Status
 

@@ -35,7 +35,7 @@ None found.
 |---|---|---|---|---|
 | TD-0001 | BUG | `__version__` disagreed with `pyproject.toml`/`Cargo.toml` (5.2.0 vs 5.3.0 at the time) | RESOLVED | Upstream (version now unified at 6.1.0 across all manifests) |
 | TD-0002 | BUG | CLI `--version` hardcoded a literal version string, independent of the package version | RESOLVED | Upstream |
-| TD-0012 | SECURITY / ARCHITECTURE | `PyStreamXLServer`'s REST API has no authentication of any kind | **OPEN** | — (needs a product decision: API key / mTLS / reverse-proxy-only) |
+| TD-0012 | SECURITY / ARCHITECTURE | `PyStreamXLServer`'s REST API had no authentication | RESOLVED | Opt-in `PYSTREAMXL_API_KEY` / `X-API-Key` auth with 401 responses; covered by `tests/test_server.py` |
 
 ## P2 — Medium
 
@@ -93,7 +93,6 @@ None found in source. Confirmed again post-reconciliation.
 
 ## Security Debt
 
-- TD-0012 (open — no server auth)
 - TD-0023 (open — PyPI publishing not fully set up)
 - See `SECURITY.md` for the comprehensive current security posture — it now supersedes this file for anything beyond the ID-tracked items above.
 
