@@ -1,7 +1,7 @@
 # PyStreamXL
 
 [![PyPI](https://img.shields.io/pypi/v/pystreamxl)](https://pypi.org/project/pystreamxl/)
-[![CI](https://github.com/Mullassery/PyStreamXL/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyStreamXL/actions/workflows/ci.yml)
+[![CI](../PyStreamXL/actions/workflows/ci.yml/badge.svg)](../PyStreamXL/actions/workflows/ci.yml)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue)](https://www.python.org)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
 
@@ -301,7 +301,7 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
 PR. See [CODE_OF_CONDUCT.md](docs/CODE_OF_CONDUCT.md) for community expectations.
 
 ```bash
-git clone https://github.com/Mullassery/PyStreamXL.git
+git clone ../PyStreamXL
 cd PyStreamXL
 pip install -e ".[dev]"        # builds the Rust extension via maturin and installs test deps
 pytest tests/ -v
@@ -310,12 +310,12 @@ cargo test --release --all-features
 
 ## Related projects
 
-- [PyStreamXL](https://github.com/Mullassery/PyStreamXL) — stream large Excel workbooks row-by-row without full-sheet materialization
-- [PyStreamPDF](https://github.com/Mullassery/PyStreamPDF) — token-efficient PDF extraction for RAG
-- [PyStreamMCP](https://github.com/Mullassery/PyStreamMCP) — context and token optimization for AI agents
-- [PyStreamAI](https://github.com/Mullassery/PyStreamAI) — ML deployment toolkit (canary/A-B, cost tracking, ONNX)
-- [PyTokenCalc](https://github.com/Mullassery/PyTokenCalc) — LLM token counting and cost estimation
-- [Browse all projects](https://github.com/Mullassery?tab=repositories)
+- [PyStreamXL](../PyStreamXL) — stream large Excel workbooks row-by-row without full-sheet materialization
+- [PyStreamPDF](../PyStreamPDF) — token-efficient PDF extraction for RAG
+- [PyStreamMCP](../PyStreamMCP) — context and token optimization for AI agents
+- [PyStreamAI](../PyStreamAI) — ML deployment toolkit (canary/A-B, cost tracking, ONNX)
+- [PyTokenCalc](../PyTokenCalc) — LLM token counting and cost estimation
+- [Browse all projects](../Mullassery-profile)
 
 ## License
 

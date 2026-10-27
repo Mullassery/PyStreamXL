@@ -72,12 +72,12 @@ export RUSTFLAGS="-C link-args=-undefined -C link-args=dynamic_lookup"
 
 ## Known gaps if you're looking for something to work on
 
-See the "What's not here" section of `README.md` and `docs/internal/ROADMAP_HONEST.md` for the current, honest list of missing features and technical debt (single-platform wheel, etc.) — the lint/fmt CI gate mentioned there is now in place. Full tracked backlog: [Mullassery/RepoIssues](https://github.com/Mullassery/RepoIssues), filtered to the `repo:PyStreamXL` label, with [#52](https://github.com/Mullassery/RepoIssues/issues/52) as the master index.
+See the "What's not here" section of `README.md` and `docs/internal/ROADMAP_HONEST.md` for the current, honest list of missing features and technical debt (single-platform wheel, etc.) — the lint/fmt CI gate mentioned there is now in place. Full tracked backlog: [Mullassery/RepoIssues](../RepoIssues), filtered to the `repo:PyStreamXL` label, with [#52](../RepoIssues/issues/52) as the master index.
 
 **Maintainer-only action items** (need repo/PyPI-project settings access this audit process doesn't have):
 
-- **PyPI Trusted Publisher (OIDC) is not configured** for this project ([RepoIssues #46](https://github.com/Mullassery/RepoIssues/issues/46)). `.github/workflows/release.yml` is structurally correct (builds wheels for Linux/macOS/Windows, verified with `actionlint`) but its `publish` job will fail on the first real tag push until OIDC trust is set up at https://pypi.org/manage/project/pystreamxl/settings/publishing/ for this repo. The workflow has never been fired end-to-end with a real tag.
-- **The "5 - Production/Stable" PyPI classifier** may be more confident than the current state (no server auth, some dependency bumps blocked, etc.) warrants — a maintainer call, not a bug ([RepoIssues #51](https://github.com/Mullassery/RepoIssues/issues/51)).
+- **PyPI Trusted Publisher (OIDC) is not configured** for this project ([RepoIssues #46](../RepoIssues/issues/46)). `.github/workflows/release.yml` is structurally correct (builds wheels for Linux/macOS/Windows, verified with `actionlint`) but its `publish` job will fail on the first real tag push until OIDC trust is set up at https://pypi.org/manage/project/pystreamxl/settings/publishing/ for this repo. The workflow has never been fired end-to-end with a real tag.
+- **The "5 - Production/Stable" PyPI classifier** may be more confident than the current state (no server auth, some dependency bumps blocked, etc.) warrants — a maintainer call, not a bug ([RepoIssues #51](../RepoIssues/issues/51)).
 
 ## License
 
