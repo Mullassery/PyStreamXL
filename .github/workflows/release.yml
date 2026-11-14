@@ -43,7 +43,7 @@ jobs:
           target: ${{ matrix.target }}
           manylinux: auto
           args: --release --out dist -i 3.9 -i 3.10 -i 3.11 -i 3.12
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: wheels-linux-${{ matrix.target }}
           path: dist
@@ -63,7 +63,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           args: --release --auditwheel=repair --out dist -i 3.9 -i 3.10 -i 3.11 -i 3.12
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: wheels-macos-${{ matrix.target }}
           path: dist
@@ -79,7 +79,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           args: --release --out dist -i 3.9 -i 3.10 -i 3.11 -i 3.12
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: wheels-windows
           path: dist
@@ -93,7 +93,7 @@ jobs:
         with:
           command: sdist
           args: --out dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: wheels-sdist
           path: dist
