@@ -1,0 +1,10 @@
+{
+  "project_name": "PyStreamXL",
+  "output_dir": "docs/codeatlas",
+  "formats": [
+    "markdown",
+    "html"
+  ],
+  "depth_cap": 3,
+  "include_analysis": false
+}
